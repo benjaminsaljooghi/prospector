@@ -10,9 +10,8 @@ namespace Parser
     using System.Collections;
     using static Sequence;
 
-    public class Sequence : IEnumerable<char>, ICloneable
+    public partial class Sequence : IEnumerable<char>, ICloneable
     {
-        const int dyad_min = 5;
         public string Seq { get; }
         public int Length { get { return Seq.Length; } }
         public int Pos { get; }
@@ -75,16 +74,6 @@ namespace Parser
             return Clone();
         }
 
-        public Sequence Substring(int start, int length)
-        {
-            return new Sequence(Seq.Substring(start, length), Pos + start);
-        }
-
-        static string Substring(string sequence, int start, int end)
-        {
-            return sequence.Substring(start, end - start);
-        }
-
         private char[] ToCharArray()
         {
             return Seq.ToCharArray();
@@ -94,7 +83,11 @@ namespace Parser
         {
             return fasta.Seq;
         }
+    }
 
+    public partial class Sequence : IEnumerable<char>, ICloneable
+    {
+        const int dyad_min = 5;
         static Dictionary<char, char> complements = new Dictionary<char, char>
         {
             { 'A', 'T' },
@@ -103,10 +96,9 @@ namespace Parser
             { 'G', 'C' }
         };
 
-
-        public static string Str(IEnumerable<char> seq)
+        public Sequence Substring(int start, int length)
         {
-            return new string(seq.ToArray());
+            return new Sequence(Seq.Substring(start, length), Pos + start);
         }
 
         public static List<Sequence> Kmers(Sequence seq, int k)
@@ -146,8 +138,6 @@ namespace Parser
             return ReverseComplement(seq).Equals(seq);
         }
 
-
-
         public static bool Dyad(Sequence seq)
         {
             for (int i = dyad_min; i < seq.Length / 2; i++)
@@ -175,8 +165,6 @@ namespace Parser
             }
             return dyads;
         }
-
-
     }
 
     public class Program
