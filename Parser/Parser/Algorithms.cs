@@ -12,81 +12,6 @@ namespace Parser
 
     public partial class Sequence : IEnumerable<char>, ICloneable
     {
-        public string Seq { get; }
-        public int Length { get { return Seq.Length; } }
-        public int Pos { get; }
-
-        public Sequence(string sequence, int pos)
-        {
-            Seq = sequence;
-            Pos = pos;
-        }
-
-        public Sequence(char[] sequence, int pos) : this(new string(sequence), pos)
-        {
-
-        }
-        public Sequence(string file)
-        {
-            var reader = new StreamReader(file);
-            while (reader.ReadLine().StartsWith(">")) ;
-            Seq = reader.ReadToEnd().Replace("\n", "");
-            Pos = 0;
-        }
-
-        public override bool Equals(object obj)
-        {
-            var seq = obj as Sequence;
-            if (seq == null)
-            {
-                return false;
-            }
-            return this.Seq == seq.Seq;
-        }
-
-        public override int GetHashCode()
-        {
-            return Seq.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return Seq;
-        }
-
-        public IEnumerator<char> GetEnumerator()
-        {
-            return Seq.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return Seq.GetEnumerator();
-        }
-
-        public Sequence Clone()
-        {
-            return new Sequence(Seq, Pos);
-        }
-
-        object ICloneable.Clone()
-        {
-            return Clone();
-        }
-
-        private char[] ToCharArray()
-        {
-            return Seq.ToCharArray();
-        }
-
-        public static implicit operator string(Sequence fasta)
-        {
-            return fasta.Seq;
-        }
-    }
-
-    public partial class Sequence : IEnumerable<char>, ICloneable
-    {
         const int dyad_min = 5;
         static Dictionary<char, char> complements = new Dictionary<char, char>
         {
@@ -167,25 +92,25 @@ namespace Parser
         }
     }
 
-    public class Program
+    public class Algorithms
     {
         static void Main(string[] args)
         {
-            Sequence sequence = new Sequence(@"P:\Honours\crispr.fasta");
+            Sequence sequence = new Sequence(@"P:\Honours\sequence.fasta");
             foreach (List<Sequence> kmers in KmerWindow(sequence, 34, 38))
             {
                 List<Sequence> dyads = Dyads(kmers);
-                Dictionary<Sequence, List<int>> dyads_ = new Dictionary<Sequence, List<int>>();
+                Dictionary<Sequence, List<int>> arrays = new Dictionary<Sequence, List<int>>();
                 foreach (Sequence dyad in dyads)
                 {
-                    if (!dyads_.ContainsKey(dyad))
+                    if (!arrays.ContainsKey(dyad))
                     {
-                        dyads_.Add(dyad, new List<int>());
+                        arrays.Add(dyad, new List<int>());
                     }
-                    dyads_[dyad].Add(dyad.Pos);
+                    arrays[dyad].Add(dyad.Pos);
                 }
 
-                var myList = dyads_.ToList();
+                var myList = arrays.ToList();
 
                 myList.Sort(
                     delegate (KeyValuePair<Sequence, List<int>> pair1,
