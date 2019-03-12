@@ -10,6 +10,11 @@ namespace Parser
     using System.Collections;
     using static Sequence;
 
+    //public class Dyad : Sequence
+    //{
+    //    // ?
+    //}
+
     public partial class Sequence : IEnumerable<char>, ICloneable
     {
         const int dyad_min = 5;
