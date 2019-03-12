@@ -7,11 +7,77 @@ using System.Threading.Tasks;
 
 namespace Parser
 {
-    class Program
+    using System.Collections;
+    using static Sequence;
+
+    public class Sequence : IEnumerable<char>, ICloneable
     {
-        static void FindCRISPR(string sequence)
+        const int dyad_min = 5;
+        public string Seq { get; }
+        public int Length { get { return Seq.Length; } }
+        public int Pos { get; }
+
+        public Sequence(string sequence, int pos)
+        {
+            Seq = sequence;
+            Pos = pos;
+        }
+
+        public Sequence(char[] sequence, int pos) : this(new string(sequence), pos)
         {
 
+        }
+        public Sequence(string file)
+        {
+            var reader = new StreamReader(file);
+            while (reader.ReadLine().StartsWith(">")) ;
+            Seq = reader.ReadToEnd().Replace("\n", "");
+            Pos = 0;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var seq = obj as Sequence;
+            if (seq == null)
+            {
+                return false;
+            }
+            return this.Seq == seq.Seq;
+        }
+
+        public override int GetHashCode()
+        {
+            return Seq.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return Seq;
+        }
+
+        public IEnumerator<char> GetEnumerator()
+        {
+            return Seq.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return Seq.GetEnumerator();
+        }
+
+        public Sequence Clone()
+        {
+            return new Sequence(Seq, Pos);
+        }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+
+        public Sequence Substring(int start, int length)
+        {
+            return new Sequence(Seq.Substring(start, length), Pos + start);
         }
 
         static string Substring(string sequence, int start, int end)
@@ -19,68 +85,137 @@ namespace Parser
             return sequence.Substring(start, end - start);
         }
 
-        static string ReadFASTA(string file)
+        private char[] ToCharArray()
         {
-            var reader = new StreamReader(file);
-            while (true)
+            return Seq.ToCharArray();
+        }
+
+        public static implicit operator string(Sequence fasta)
+        {
+            return fasta.Seq;
+        }
+
+        static Dictionary<char, char> complements = new Dictionary<char, char>
+        {
+            { 'A', 'T' },
+            { 'T', 'A' },
+            { 'C', 'G' },
+            { 'G', 'C' }
+        };
+
+
+        public static string Str(IEnumerable<char> seq)
+        {
+            return new string(seq.ToArray());
+        }
+
+        public static List<Sequence> Kmers(Sequence seq, int k)
+        {
+            List<Sequence> kmers = new List<Sequence>();
+            int n = seq.Length - k + 1;
+            for (int i = 0; i < n; i++)
             {
-                var line = reader.ReadLine();
-                if (line.StartsWith(">"))
+                kmers.Add(seq.Substring(i, k));
+            }
+            return kmers;
+        }
+
+        public static List<List<Sequence>> KmerWindow(Sequence seq, int k_start, int k_end)
+        {
+            var kmerWindow = new List<List<Sequence>>();
+            for (int k = k_start; k < k_end; k++)
+            {
+                kmerWindow.Add(Kmers(seq, k));
+            }
+            return kmerWindow;
+        }
+
+        static Sequence ReverseComplement(Sequence seq)
+        {
+            char[] rc = seq.ToCharArray();
+            for (int i = 0; i < rc.Length; i++)
+            {
+                rc[i] = complements[rc[i]];
+            }
+            Array.Reverse(rc);
+            return new Sequence(rc, seq.Pos);
+        }
+
+        static bool Palindrome(Sequence seq)
+        {
+            return ReverseComplement(seq).Equals(seq);
+        }
+
+
+
+        public static bool Dyad(Sequence seq)
+        {
+            for (int i = dyad_min; i < seq.Length / 2; i++)
+            {
+                Sequence beginning = seq.Substring(0, i);
+                Sequence end = seq.Substring(seq.Length - i, i);
+                Sequence end_rc = ReverseComplement(end);
+                if (beginning.Equals(end_rc))
                 {
-                    break;
+                    return true;
                 }
             }
-            return reader.ReadToEnd().Replace("\n", "");
+            return false;
         }
 
-        static string ReverseComplement(string sequence)
+        public static List<Sequence> Dyads(List<Sequence> kmers)
         {
-            char[] chars = sequence.ToCharArray();
-            for (int i = 0; i < chars.Length; i++)
+            List<Sequence> dyads = new List<Sequence>();
+            foreach (Sequence kmer in kmers)
             {
-                switch (chars[i])
+                if (Dyad(kmer))
                 {
-                    case 'A':
-                        chars[i] = 'T';
-                        break;
-                    case 'C':
-                        chars[i] = 'G';
-                        break;
-                    case 'G':
-                        chars[i] = 'C';
-                        break;
-                    case 'T':
-                        chars[i] = 'A';
-                        break;
-                    default:
-                        break;
+                    dyads.Add(kmer);
                 }
             }
-            return new string(chars);
+            return dyads;
         }
 
-        static string Reverse(string sequence)
-        {
-            char[] chars = sequence.ToCharArray();
-            Array.Reverse(chars);
-            return new string(chars);
-        }
 
-        static bool Palindrome(string sequence)
-        {
-            return Reverse(ReverseComplement(sequence)).Equals(sequence);
-        }
+    }
 
+    public class Program
+    {
         static void Main(string[] args)
         {
-            Console.WriteLine(Palindrome("ACCTAGGT"));
-            //string sequence = ReadFASTA(@"P:\Honours\sequence.fasta");
-            //Console.WriteLine("length: {0:n0}", sequence.Length);
-            //string cas9 = Substring(sequence, 854751, 858857);
-            //Console.WriteLine("cas9, len: " + cas9.Length + "\n" + cas9);
-            //string crispr = Substring(sequence, 860819, 861250);
-            //Console.WriteLine("cas9: ", cas9);
-            //Console.WriteLine("\ncrispr: ", crispr);
+            Sequence sequence = new Sequence(@"P:\Honours\crispr.fasta");
+            foreach (List<Sequence> kmers in KmerWindow(sequence, 34, 38))
+            {
+                List<Sequence> dyads = Dyads(kmers);
+                Dictionary<Sequence, List<int>> dyads_ = new Dictionary<Sequence, List<int>>();
+                foreach (Sequence dyad in dyads)
+                {
+                    if (!dyads_.ContainsKey(dyad))
+                    {
+                        dyads_.Add(dyad, new List<int>());
+                    }
+                    dyads_[dyad].Add(dyad.Pos);
+                }
+
+                var myList = dyads_.ToList();
+
+                myList.Sort(
+                    delegate (KeyValuePair<Sequence, List<int>> pair1,
+                    KeyValuePair<Sequence, List<int>> pair2)
+                    {
+                        return pair1.Value.Count().CompareTo(pair2.Value.Count());
+                    }
+                );
+
+                foreach (KeyValuePair<Sequence, List<int>> dyad_positions in myList)
+                {
+                    if (dyad_positions.Value.Count() > 1)
+                    {
+                        string positions = String.Join(", ", dyad_positions.Value);
+                        Console.WriteLine("{0}: {1}", dyad_positions.Key, positions);
+                    }
+                }
+            }
 
         }
     }
