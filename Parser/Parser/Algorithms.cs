@@ -5,15 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using System.Net.Http;
+
 namespace Parser
 {
     using System.Collections;
     using static Sequence;
-
-    //public class Dyad : Sequence
-    //{
-    //    // ?
-    //}
 
     public partial class Sequence : IEnumerable<char>, ICloneable
     {
@@ -99,7 +96,7 @@ namespace Parser
 
     public class Algorithms
     {
-        static void Main(string[] args)
+        public static void PrintClusters()
         {
             Sequence sequence = new Sequence(@"P:\Honours\sequence.fasta");
             foreach (List<Sequence> kmers in KmerWindow(sequence, 34, 38))
@@ -134,7 +131,19 @@ namespace Parser
                     }
                 }
             }
+        }
 
+
+        private static readonly HttpClient client = new HttpClient();
+
+        public static void BLAST()
+        {
+            
+        }
+
+        static void Main(string[] args)
+        {
+            
         }
     }
 }
