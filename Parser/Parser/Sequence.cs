@@ -95,7 +95,8 @@ namespace Parser
             { 'A', 'T' },
             { 'T', 'A' },
             { 'C', 'G' },
-            { 'G', 'C' }
+            { 'G', 'C' },
+            { 'N', 'N' }
         };
 
         public Sequence Substring(int start, int length)
