@@ -24,14 +24,11 @@ namespace Parser
             Sequence cas9 = new Sequence("cas9.fasta");
             Sequence streptococcus = new Sequence("streptococcus.fasta");
             Sequence aureus = new Sequence("aureus.fasta");
-
             PrintClusters(aureus);
-
             //int array_begin = 860748;
             //Sequence upstream = streptococcus.Substring(array_begin - 10000, 10000);
             //Console.WriteLine("upstream length: " + upstream.Length);
             //Console.WriteLine("cas9 length: " + cas9.Length);
-
         }
 
 
@@ -51,7 +48,7 @@ namespace Parser
 
         public static void PrintClusters(Sequence sequence)
         {
-            foreach (List<Sequence> kmers in KmerWindow(sequence, 34, 38))
+            foreach (List<Sequence> kmers in KmerWindow(sequence, 30, 40))
             {
                 List<Sequence> dyads = Dyads(kmers);
                 Dictionary<Sequence, List<int>> arrays = new Dictionary<Sequence, List<int>>();
