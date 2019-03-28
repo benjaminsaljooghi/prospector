@@ -7,98 +7,50 @@ using System.Threading.Tasks;
 
 using System.Net.Http;
 
+using Microsoft.FSharp.Core;
+using Microsoft.FSharp.Collections;
+
 namespace Parser
 {
     using System.Collections;
     using static Sequence;
 
-    public partial class Sequence : IEnumerable<char>, ICloneable
-    {
-        const int dyad_min = 5;
-        static Dictionary<char, char> complements = new Dictionary<char, char>
-        {
-            { 'A', 'T' },
-            { 'T', 'A' },
-            { 'C', 'G' },
-            { 'G', 'C' }
-        };
-
-        public Sequence Substring(int start, int length)
-        {
-            return new Sequence(Seq.Substring(start, length), Pos + start);
-        }
-
-        public static List<Sequence> Kmers(Sequence seq, int k)
-        {
-            List<Sequence> kmers = new List<Sequence>();
-            int n = seq.Length - k + 1;
-            for (int i = 0; i < n; i++)
-            {
-                kmers.Add(seq.Substring(i, k));
-            }
-            return kmers;
-        }
-
-        public static List<List<Sequence>> KmerWindow(Sequence seq, int k_start, int k_end)
-        {
-            var kmerWindow = new List<List<Sequence>>();
-            for (int k = k_start; k < k_end; k++)
-            {
-                kmerWindow.Add(Kmers(seq, k));
-            }
-            return kmerWindow;
-        }
-
-        static Sequence ReverseComplement(Sequence seq)
-        {
-            char[] rc = seq.ToCharArray();
-            for (int i = 0; i < rc.Length; i++)
-            {
-                rc[i] = complements[rc[i]];
-            }
-            Array.Reverse(rc);
-            return new Sequence(rc, seq.Pos);
-        }
-
-        static bool Palindrome(Sequence seq)
-        {
-            return ReverseComplement(seq).Equals(seq);
-        }
-
-        public static bool Dyad(Sequence seq)
-        {
-            for (int i = dyad_min; i < seq.Length / 2; i++)
-            {
-                Sequence beginning = seq.Substring(0, i);
-                Sequence end = seq.Substring(seq.Length - i, i);
-                Sequence end_rc = ReverseComplement(end);
-                if (beginning.Equals(end_rc))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static List<Sequence> Dyads(List<Sequence> kmers)
-        {
-            List<Sequence> dyads = new List<Sequence>();
-            foreach (Sequence kmer in kmers)
-            {
-                if (Dyad(kmer))
-                {
-                    dyads.Add(kmer);
-                }
-            }
-            return dyads;
-        }
-    }
-
+   
     public class Algorithms
     {
-        public static void PrintClusters()
+
+        public static void Main()
         {
-            Sequence sequence = new Sequence(@"P:\Honours\sequence.fasta");
+            Sequence cas9 = new Sequence("cas9.fasta");
+            Sequence streptococcus = new Sequence("streptococcus.fasta");
+            Sequence aureus = new Sequence("aureus.fasta");
+
+            PrintClusters(aureus);
+
+            //int array_begin = 860748;
+            //Sequence upstream = streptococcus.Substring(array_begin - 10000, 10000);
+            //Console.WriteLine("upstream length: " + upstream.Length);
+            //Console.WriteLine("cas9 length: " + cas9.Length);
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+        public static void LocalAlignment(Sequence big, Sequence small)
+        {
+
+        }
+
+        public static void PrintClusters(Sequence sequence)
+        {
             foreach (List<Sequence> kmers in KmerWindow(sequence, 34, 38))
             {
                 List<Sequence> dyads = Dyads(kmers);
@@ -141,9 +93,5 @@ namespace Parser
             
         }
 
-        static void Main(string[] args)
-        {
-            
-        }
     }
 }
