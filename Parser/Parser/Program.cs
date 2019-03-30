@@ -24,14 +24,13 @@ namespace Parser
 
         public static void Serialize(object obj, string file_name, string dir = DIR)
         {
-            Write(dir, file_name, JsonConvert.SerializeObject(obj));
+            Write(JsonConvert.SerializeObject(obj), file_name, dir);
         }
 
         public static T Deserialize<T>(string file_name, string dir = DIR)
         {
-            return JsonConvert.DeserializeObject<T>(Read(dir, file_name));
+            return JsonConvert.DeserializeObject<T>(Read(file_name, dir));
         }
-
 
         public static void Main()
         {
