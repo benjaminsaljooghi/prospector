@@ -40,44 +40,6 @@ namespace Parser
             Console.ReadKey();
         }
 
-
-        //public static void PrintClusters(Sequence sequence)
-        //{
-        //    foreach (List<Sequence> kmers in KmerWindow(sequence, 23, 40))
-        //    {
-        //        List<Sequence> dyads = Dyads(kmers);
-        //        Dictionary<Sequence, List<int>> arrays = new Dictionary<Sequence, List<int>>();
-        //        foreach (Sequence dyad in dyads)
-        //        {
-        //            if (!arrays.ContainsKey(dyad))
-        //            {
-        //                arrays.Add(dyad, new List<int>());
-        //            }
-        //            arrays[dyad].Add(dyad.Pos);
-        //        }
-
-        //        var myList = arrays.ToList();
-
-        //        myList.Sort(
-        //            delegate (KeyValuePair<Sequence, List<int>> pair1,
-        //            KeyValuePair<Sequence, List<int>> pair2)
-        //            {
-        //                return pair1.Value.Count().CompareTo(pair2.Value.Count());
-        //            }
-        //        );
-
-        //        foreach (KeyValuePair<Sequence, List<int>> dyad_positions in myList)
-        //        {
-        //            if (dyad_positions.Value.Count() > 1)
-        //            {
-        //                string positions = String.Join(", ", dyad_positions.Value);
-        //                Console.WriteLine("{0}: {1}", dyad_positions.Key, positions);
-        //            }
-        //        }
-        //    }
-        //}
-
-
         private static readonly HttpClient client = new HttpClient();
 
         public static void BLAST()
