@@ -26,7 +26,7 @@ namespace Parser
 
         public Sequence(string file)
         {
-            var reader = new StreamReader(Path.Combine(Algorithm.dir, file));
+            var reader = new StreamReader(Path.Combine(Program.dir, file));
             while (reader.ReadLine().StartsWith(">")) ;
             Seq = reader.ReadToEnd().Replace("\n", "");
             Pos = 0;
