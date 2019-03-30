@@ -42,7 +42,7 @@ namespace Parser
 
         public override bool Equals(object obj)
         {
-            return Seq == obj as Sequence;
+            return Seq == (obj as Sequence).Seq;
         }
 
         public override int GetHashCode()
@@ -99,6 +99,27 @@ namespace Parser
             { 'N', 'N' }
         };
 
+
+        public static bool Mutant(Sequence a, Sequence b)
+        {
+            if (a.Length != b.Length)
+            {
+                throw new Exception("Mutants must be the same length.");
+            }
+
+            int allowed_point_mutations = a.Length / 10;
+            int point_mutations = 0;
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (a.Seq[i] != b.Seq[i] && ++point_mutations > allowed_point_mutations)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public Sequence Substring(int start, int length)
         {
             return new Sequence(Seq.Substring(start, length), Pos + start);
@@ -130,7 +151,8 @@ namespace Parser
             char[] rc = seq.ToCharArray();
             for (int i = 0; i < rc.Length; i++)
             {
-                rc[i] = complements[rc[i]];
+                char rc_char = rc[i];
+                rc[i] = complements[rc_char];
             }
             Array.Reverse(rc);
             return new Sequence(rc, seq.Pos);
@@ -168,6 +190,7 @@ namespace Parser
             }
             return dyads;
         }
+
     }
 
 
