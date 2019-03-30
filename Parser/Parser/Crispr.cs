@@ -39,11 +39,6 @@ namespace Parser
             return string.Format("{0} : {1}", Consensus, repeats);
         }
 
-        public string Json()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
-
 
         public static Crispr DiscoverCrispr(Sequence genome, Sequence consensus)
         {
@@ -107,24 +102,25 @@ namespace Parser
 
     public class Crisprs
     {
-        List<Crispr> crisprs = new List<Crispr>();
+        public List<Crispr> Clusters { get; } = new List<Crispr>();
 
         public void RegisterCrispr(Crispr new_crispr)
         {
-            foreach (Crispr crispr in crisprs)
+            foreach (Crispr crispr in Clusters)
             {
                 if (new_crispr.Consensus.Equals(crispr.Consensus))
                 {
                     throw new Exception("Consensus already registered.");
                 }
             }
-            crisprs.Add(new_crispr);
+            Clusters.Add(new_crispr);
         }
 
+        
         public override string ToString()
         {
             string result = "";
-            foreach (Crispr crispr in crisprs)
+            foreach (Crispr crispr in Clusters)
             {
                 result += string.Format("{0}\n", crispr);
             }

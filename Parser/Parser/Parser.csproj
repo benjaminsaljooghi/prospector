@@ -48,7 +48,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Parser.Algorithms</StartupObject>
+    <StartupObject>Parser.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -88,7 +88,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Algorithms.cs" />
+    <Compile Include="Blast.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Crispr.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sequence.cs" />
   </ItemGroup>

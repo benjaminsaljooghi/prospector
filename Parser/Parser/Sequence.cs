@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -10,13 +11,17 @@ namespace Parser
 {
     public partial class Sequence
     {
-        public string Seq { get; }
-        public int Length { get { return Seq.Length; } }
-        public int Pos { get; }
+        public string Seq { get; private set; }
 
-        public Sequence(string sequence, int pos)
+        [JsonIgnore]
+        public int Length { get { return Seq.Length; } }
+
+        public int Pos { get; private set; }
+
+        [JsonConstructor]
+        public Sequence(string seq, int pos)
         {
-            Seq = sequence;
+            Seq = seq;
             Pos = pos;
         }
 
@@ -26,7 +31,7 @@ namespace Parser
 
         public Sequence(string file)
         {
-            var reader = new StreamReader(Path.Combine(Program.dir, file));
+            var reader = new StreamReader(Path.Combine(Program.DIR, file));
             while (reader.ReadLine().StartsWith(">")) ;
             Seq = reader.ReadToEnd().Replace("\n", "");
             Pos = 0;
@@ -106,10 +111,10 @@ namespace Parser
             return frequencies;
         }
 
-        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k_min, int k_max)
+        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k_begin, int k_end)
         {
             List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = new List<KeyValuePair<Sequence, int>>();
-            for (int k = k_min; k < k_max; k++)
+            for (int k = k_begin; k <= k_end; k++)
             {
                 ordered_dyad_frequencies.AddRange(OrderedDyadFrequencies(genome, k));
             }
@@ -126,6 +131,18 @@ namespace Parser
             List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = dyad_frequencies.ToList();
             ordered_dyad_frequencies.Sort((a, b) => b.Value - a.Value);
             return ordered_dyad_frequencies;
+        }
+
+        public static List<Sequence> FrequencyOrderedDyads(Sequence genome, int k_begin, int k_end)
+        {
+            List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = OrderedDyadFrequencies(genome, k_begin, k_end);
+            List<Sequence> consensuses = new List<Sequence>();
+            foreach (KeyValuePair<Sequence, int> consensus in ordered_dyad_frequencies)
+            {
+                Console.WriteLine("Adding consensus {0} with global frequency {1}", consensus.Key, consensus.Value);
+                consensuses.Add(consensus.Key);
+            }
+            return consensuses;
         }
 
         public static bool Mutant(Sequence a, Sequence b)

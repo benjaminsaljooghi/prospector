@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
+
 
 using Newtonsoft.Json;
 
@@ -12,39 +12,44 @@ namespace Parser
     {
         public const string DIR = @"P:\Honours\";
 
+        public static void Write(string content, string file_name, string dir = DIR)
+        {
+            File.WriteAllText(Path.Combine(dir, file_name), content);
+        }
+
+        public static string Read(string file_name, string dir = DIR)
+        {
+            return File.ReadAllText(Path.Combine(dir, file_name));
+        }
+
+        public static void Serialize(object obj, string file_name, string dir = DIR)
+        {
+            Write(dir, file_name, JsonConvert.SerializeObject(obj));
+        }
+
+        public static T Deserialize<T>(string file_name, string dir = DIR)
+        {
+            return JsonConvert.DeserializeObject<T>(Read(dir, file_name));
+        }
+
+
         public static void Main()
-        { 
-            
-            //File.WriteAllText(Path.Combine(DIR, "crisprs.json"), crispr.Json());
+        {
+            Sequence cas9 = new Sequence("cas9.fasta");
+            Sequence pyogenes = new Sequence("pyogenes.fasta");
+            Sequence aureus = new Sequence("aureus.fasta");
 
+            //List<Sequence> dyads = Sequence.FrequencyOrderedDyads(aureus, Crispr.REPEAT_MIN, Crispr.REPEAT_MAX);
+            List<Sequence> dyads = Deserialize<List<Sequence>>("aureus_dyads.json");
 
+            Crisprs crisprs = Crisprs.DiscoverCrisprs(aureus, dyads);
+            Console.WriteLine(crisprs);
 
-            //Sequence cas9 = new Sequence("cas9.fasta");
-            //Sequence streptococcus = new Sequence("streptococcus.fasta");
-            //Sequence aureus = new Sequence("aureus.fasta");s
-
-
-            //List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = OrderedDyadFrequencies(aureus, REPEAT_MIN, REPEAT_MAX);
-            //List<Sequence> consensuses = new List<Sequence>();
-            //foreach (KeyValuePair<Sequence, int> consensus in ordered_dyad_frequencies)
-            //{
-            //    Console.WriteLine("Adding consensus {0} with global frequency {1}", consensus.Key, consensus.Value);
-            //    consensuses.Add(consensus.Key);
-            //}
-
-            //Crisprs crisprs = DiscoverCrisprs(aureus, consensuses);
-            //Console.WriteLine(crisprs);
-
+            Serialize(dyads, "aureus_dyads.json");
+            Serialize(crisprs, "aureus_crisprs.json");
 
             Console.WriteLine("Press any key to quit.");
             Console.ReadKey();
-        }
-
-        private static readonly HttpClient client = new HttpClient();
-
-        public static void BLAST()
-        {
-
         }
 
     }
