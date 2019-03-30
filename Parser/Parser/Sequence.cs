@@ -8,10 +8,8 @@ using System.Threading.Tasks;
 
 namespace Parser
 {
-    public partial class Sequence : IEnumerable<char>, ICloneable
+    public partial class Sequence
     {
-        const string dir = @"P:\Honours\";
-
         public string Seq { get; }
         public int Length { get { return Seq.Length; } }
         public int Pos { get; }
@@ -24,12 +22,11 @@ namespace Parser
 
         public Sequence(char[] sequence, int pos) : this(new string(sequence), pos)
         {
-
         }
 
         public Sequence(string file)
         {
-            var reader = new StreamReader(Path.Combine(dir, file));
+            var reader = new StreamReader(Path.Combine(Algorithm.dir, file));
             while (reader.ReadLine().StartsWith(">")) ;
             Seq = reader.ReadToEnd().Replace("\n", "");
             Pos = 0;
@@ -60,34 +57,24 @@ namespace Parser
             return Seq.GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return Seq.GetEnumerator();
-        }
-
         public Sequence Clone()
         {
             return new Sequence(Seq, Pos);
-        }
-
-        object ICloneable.Clone()
-        {
-            return Clone();
         }
 
         private char[] ToCharArray()
         {
             return Seq.ToCharArray();
         }
+
+        public Sequence Substring(int start, int length)
+        {
+            return new Sequence(Seq.Substring(start, length), Pos + start);
+        }
     }
 
 
-
-
-
-
-
-    public partial class Sequence : IEnumerable<char>, ICloneable
+    public partial class Sequence
     {
         const int dyad_min = 5;
         static Dictionary<char, char> complements = new Dictionary<char, char>
@@ -99,6 +86,47 @@ namespace Parser
             { 'N', 'N' }
         };
 
+        public static Dictionary<Sequence, int> DyadFrequencies(Sequence genome, int k)
+        {
+            Dictionary<Sequence, int> frequencies = new Dictionary<Sequence, int>();
+            int num_kmers = genome.Length - k + 1;
+            for (int i = 0; i < num_kmers; i++)
+            {
+                Sequence kmer = genome.Substring(i, k);
+                if (!Sequence.Dyad(kmer))
+                {
+                    continue;
+                }
+                if (!frequencies.ContainsKey(kmer))
+                {
+                    frequencies.Add(kmer, 0);
+                }
+                frequencies[kmer] += 1;
+            }
+            return frequencies;
+        }
+
+        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k_min, int k_max)
+        {
+            List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = new List<KeyValuePair<Sequence, int>>();
+            for (int k = k_min; k < k_max; k++)
+            {
+                ordered_dyad_frequencies.AddRange(OrderedDyadFrequencies(genome, k));
+            }
+            return ordered_dyad_frequencies;
+        }
+
+        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k)
+        {
+            return OrderedDyadFrequencies(DyadFrequencies(genome, k));
+        }
+
+        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Dictionary<Sequence, int> dyad_frequencies)
+        {
+            List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = dyad_frequencies.ToList();
+            ordered_dyad_frequencies.Sort((a, b) => b.Value - a.Value);
+            return ordered_dyad_frequencies;
+        }
 
         public static bool Mutant(Sequence a, Sequence b)
         {
@@ -118,11 +146,6 @@ namespace Parser
                 }
             }
             return true;
-        }
-
-        public Sequence Substring(int start, int length)
-        {
-            return new Sequence(Seq.Substring(start, length), Pos + start);
         }
 
         public static List<Sequence> Kmers(Sequence seq, int k)
@@ -146,7 +169,7 @@ namespace Parser
             return kmerWindow;
         }
 
-        static Sequence ReverseComplement(Sequence seq)
+        public static Sequence ReverseComplement(Sequence seq)
         {
             char[] rc = seq.ToCharArray();
             for (int i = 0; i < rc.Length; i++)
@@ -156,11 +179,6 @@ namespace Parser
             }
             Array.Reverse(rc);
             return new Sequence(rc, seq.Pos);
-        }
-
-        static bool Palindrome(Sequence seq)
-        {
-            return ReverseComplement(seq).Equals(seq);
         }
 
         public static bool Dyad(Sequence seq)
