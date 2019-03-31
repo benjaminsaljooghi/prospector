@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Parser
 {
@@ -41,9 +42,30 @@ namespace Parser
             {
                 repeats += repeat + " ";
             }
-            return string.Format("{0} : {1}", Consensus, repeats);
+            return string.Format($"{Consensus,-REPEAT_MAX} : {repeats}");
         }
 
+        public override bool Equals(object obj)
+        {
+            Crispr c = obj as Crispr;
+            if (c == null)
+            {
+                return false;
+            }
+            bool consensus = Consensus == c.Consensus;
+            bool repeats = Repeats.All(c.Repeats.Contains) && Repeats.Count == c.Repeats.Count;
+            return consensus && repeats;
+        }
+
+        public override int GetHashCode()
+        {
+            int hc = Consensus.GetHashCode() * 7;
+            foreach (int repeat in Repeats)
+            {
+                hc ^= repeat.GetHashCode();
+            }
+            return hc;
+        }
 
         public static Crispr DiscoverCrispr(Sequence genome, Sequence consensus)
         {
@@ -126,9 +148,27 @@ namespace Parser
             string result = "";
             foreach (Crispr crispr in Clusters)
             {
-                result += string.Format("{0}\n", crispr);
+                result += string.Format($"{crispr}\n");
             }
             return result;
+        }
+
+        public void PrintMutantConsensuses()
+        {
+            foreach (Crispr crispr in Clusters)
+            {
+                foreach (Crispr sub_crispr in Clusters)
+                {
+                    if (crispr.Equals(sub_crispr))
+                    {
+                        continue;
+                    }
+                    if (Sequence.Mutant(crispr.Consensus, sub_crispr.Consensus, allow_discrepant_lengths:true))
+                    {
+                        Console.WriteLine("Found a mutant.");
+                    }
+                }
+            }
         }
 
         public static Crisprs DiscoverCrisprs(Sequence genome, List<Sequence> consensuses)

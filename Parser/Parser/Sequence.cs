@@ -13,10 +13,10 @@ namespace Parser
     {
         public string Seq { get; private set; }
 
+        public int Pos { get; private set; }
+
         [JsonIgnore]
         public int Length { get { return Seq.Length; } }
-
-        public int Pos { get; private set; }
 
         [JsonConstructor]
         public Sequence(string seq, int pos)
@@ -49,7 +49,7 @@ namespace Parser
 
         public override int GetHashCode()
         {
-            return Seq.GetHashCode();
+            return Seq.GetHashCode() * 7 + Pos.GetHashCode() * 7;
         }
 
         public override string ToString()
@@ -145,17 +145,19 @@ namespace Parser
             return consensuses;
         }
 
-        public static bool Mutant(Sequence a, Sequence b)
+        public static bool Mutant(Sequence a, Sequence b, bool allow_discrepant_lengths = false)
         {
-            if (a.Length != b.Length)
+            if (!allow_discrepant_lengths && a.Length != b.Length)
             {
                 throw new Exception("Mutants must be the same length.");
             }
 
+            int len = Math.Min(a.Length, b.Length);
+
             int allowed_point_mutations = a.Length / 10;
             int point_mutations = 0;
 
-            for (int i = 0; i < a.Length; i++)
+            for (int i = 0; i < len; i++)
             {
                 if (a.Seq[i] != b.Seq[i] && ++point_mutations > allowed_point_mutations)
                 {
