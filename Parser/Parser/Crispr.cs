@@ -20,13 +20,18 @@ namespace Parser
             Repeats = new List<int>();
         }
 
-        public Sequence Consensus { get; }
+        public Sequence Consensus { get; private set; }
 
         public List<int> Repeats { get; }
 
         public void AddRepeat(int repeat_index)
         {
             Repeats.Add(repeat_index);
+        }
+
+        public void UpdateConsensus()
+        {
+            throw new NotImplementedException();
         }
 
         public override string ToString()
@@ -116,7 +121,6 @@ namespace Parser
             Clusters.Add(new_crispr);
         }
 
-        
         public override string ToString()
         {
             string result = "";
