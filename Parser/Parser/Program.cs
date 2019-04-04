@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-
 using Newtonsoft.Json;
+
+using static System.IO.File;
 
 namespace Parser
 {
@@ -12,24 +13,14 @@ namespace Parser
     {
         public const string DIR = @"P:\Honours\";
 
-        public static void Write(string path, string content)
-        {
-            File.WriteAllText(path, content);
-        }
-
-        public static string Read(string path)
-        {
-            return File.ReadAllText(path);
-        }
-
         public static void Serialize(string path, object obj)
         {
-            Write(path, JsonConvert.SerializeObject(obj));
+            WriteAllText(path, JsonConvert.SerializeObject(obj));
         }
 
         public static T Deserialize<T>(string path)
         {
-            return JsonConvert.DeserializeObject<T>(Read(path));
+            return JsonConvert.DeserializeObject<T>(ReadAllText (path));
         }
 
         public static void Execution(string bacterium_path)

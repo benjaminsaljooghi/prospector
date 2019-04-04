@@ -15,6 +15,8 @@ namespace Parser
         public const int SPACER_MIN = 21;
         public const int SPACER_MAX = 72;
 
+        public const int SCAN_DOMAIN = 100;
+
         public Crispr(Sequence consensus)
         {
             Consensus = consensus;
@@ -31,8 +33,17 @@ namespace Parser
             {
                 Repeats.Sort();
                 int last_repeat = Repeats[Repeats.Count - 1];
-                int len = Consensus.Length;
-                return last_repeat + len;
+                return last_repeat + Consensus.Length;
+            }
+        }
+
+        public int Start
+        {
+            get
+            {
+                Repeats.Sort();
+                int first_repeat = Repeats[0];
+                return first_repeat;
             }
         }
 
@@ -46,9 +57,10 @@ namespace Parser
             Repeats.AddRange(repeats);
         }
 
-        public void UpdateConsensus()
+        public void UpdateConsensus(Sequence genome)
         {
-            throw new NotImplementedException();
+            int consensus_index = Repeats.GroupBy(i => i).OrderByDescending(grp => grp.Count()).Select(grp => grp.Key).First();
+            Consensus = genome.Substring(consensus_index, Consensus.Length);
         }
 
         public override string ToString()
@@ -83,6 +95,22 @@ namespace Parser
             return hc;
         }
 
+        public static int MinDistance(Crispr a, Crispr b)
+        {
+            if (a.Start < b.Start)
+            {
+                return b.Start - a.End;
+            }
+            else if (a.Start > b.Start)
+            {
+
+            }
+            else
+            {
+                throw new Exception("Two CRISPRs have the same start position. This should not be possible.");
+            }
+        }
+
         public static Crispr DiscoverCrispr(Sequence genome, Sequence consensus)
         {
             Crispr crispr = new Crispr(consensus);
@@ -92,7 +120,7 @@ namespace Parser
 
             // Upstream scan
             int index = consensus.Pos + k + spacer_skip;
-            const int reset = 100;
+            const int reset = SCAN_DOMAIN;
             int countdown = reset;
             while (countdown-- > 0)
             {
