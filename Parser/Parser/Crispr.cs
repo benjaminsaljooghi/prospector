@@ -25,9 +25,25 @@ namespace Parser
 
         public List<int> Repeats { get; }
 
+        public int End
+        {
+            get
+            {
+                Repeats.Sort();
+                int last_repeat = Repeats[Repeats.Count - 1];
+                int len = Consensus.Length;
+                return last_repeat + len;
+            }
+        }
+
         public void AddRepeat(int repeat_index)
         {
             Repeats.Add(repeat_index);
+        }
+
+        public void AddRepeats(List<int> repeats)
+        {
+            Repeats.AddRange(repeats);
         }
 
         public void UpdateConsensus()
@@ -129,18 +145,25 @@ namespace Parser
 
     public class Crisprs
     {
-        public List<Crispr> Clusters { get; } = new List<Crispr>();
+        public HashSet<Crispr> Clusters { get; } = new HashSet<Crispr>();
 
         public void RegisterCrispr(Crispr new_crispr)
         {
-            foreach (Crispr crispr in Clusters)
-            {
-                if (new_crispr.Consensus.Equals(crispr.Consensus))
-                {
-                    throw new Exception("Consensus already registered.");
-                }
-            }
+            //foreach (Crispr crispr in Clusters)
+            //{
+            //    if (new_crispr.Consensus.Equals(crispr.Consensus))
+            //    {
+            //        throw new Exception("Consensus already registered.");
+            //        //Console.WriteLine("Tried to register a crispr with a consensus that is already registered. Merging the two CRISPRs...");
+            //        //crispr.AddRepeats(new_crispr.Repeats);
+            //    }
+            //}
             Clusters.Add(new_crispr);
+        }
+
+        public void RegisterCrisprs(Crisprs crisprs)
+        {
+            Clusters.UnionWith(crisprs.Clusters);
         }
 
         public override string ToString()
@@ -171,16 +194,39 @@ namespace Parser
             }
         }
 
-        public static Crisprs DiscoverCrisprs(Sequence genome, List<Sequence> consensuses)
+        public static Crisprs DiscoverCrisprs(Sequence genome, int k)
         {
             Crisprs crisprs = new Crisprs();
-            foreach (Sequence consensus in consensuses)
+            int num_kmers = genome.Length - k + 1;
+            for (int i = 0; i < num_kmers; i++)
             {
-                Crispr crispr = Crispr.DiscoverCrispr(genome, consensus);
+                Console.WriteLine($"{i} at entry");
+
+                Sequence kmer = genome.Substring(i, k);
+
+                if (!Sequence.Dyad(kmer))
+                {
+                    continue;
+                }
+
+                Console.WriteLine($"found CRISPR at {i} of genome len {genome.Length}");
+
+                Crispr crispr = Crispr.DiscoverCrispr(genome, kmer);
                 if (crispr != null)
                 {
                     crisprs.RegisterCrispr(crispr);
+                    i = crispr.End + 1;
                 }
+            }
+            return crisprs;
+        }
+
+        public static Crisprs DiscoverCrisprs(Sequence genome, int k_begin, int k_end)
+        {
+            Crisprs crisprs = new Crisprs();
+            for (int k = k_begin; k <= k_end; k++)
+            {
+                crisprs.RegisterCrisprs(DiscoverCrisprs(genome, k));   
             }
             return crisprs;
         }

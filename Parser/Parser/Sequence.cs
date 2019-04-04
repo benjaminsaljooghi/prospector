@@ -31,7 +31,7 @@ namespace Parser
 
         public Sequence(string file)
         {
-            var reader = new StreamReader(Path.Combine(Program.DIR, file));
+            var reader = new StreamReader(file);
             while (reader.ReadLine().StartsWith(">")) ;
             Seq = reader.ReadToEnd().Replace("\n", "");
             Pos = 0;
@@ -44,7 +44,8 @@ namespace Parser
 
         public override bool Equals(object obj)
         {
-            return Seq == (obj as Sequence).Seq;
+            Sequence seq = obj as Sequence;
+            return Seq == seq.Seq && Pos == seq.Pos;
         }
 
         public override int GetHashCode()
@@ -81,7 +82,7 @@ namespace Parser
 
     public partial class Sequence
     {
-        const int dyad_min = 5;
+        const int DYAD_MIN = 5;
         static Dictionary<char, char> complements = new Dictionary<char, char>
         {
             { 'A', 'T' },
@@ -91,59 +92,84 @@ namespace Parser
             { 'N', 'N' }
         };
 
-        public static Dictionary<Sequence, int> DyadFrequencies(Sequence genome, int k)
+        public static HashSet<Sequence> Dyads(Sequence genome, int k)
         {
-            Dictionary<Sequence, int> frequencies = new Dictionary<Sequence, int>();
+            HashSet<Sequence> dyads = new HashSet<Sequence>();
             int num_kmers = genome.Length - k + 1;
             for (int i = 0; i < num_kmers; i++)
             {
                 Sequence kmer = genome.Substring(i, k);
-                if (!Sequence.Dyad(kmer))
+                if (Dyad(kmer))
                 {
-                    continue;
+                    dyads.Add(kmer);
                 }
-                if (!frequencies.ContainsKey(kmer))
-                {
-                    frequencies.Add(kmer, 0);
-                }
-                frequencies[kmer] += 1;
             }
-            return frequencies;
+            return dyads;
         }
 
-        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k_begin, int k_end)
+        public static HashSet<Sequence> Dyads(Sequence genome, int k_begin, int k_end)
         {
-            List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = new List<KeyValuePair<Sequence, int>>();
+            HashSet<Sequence> dyads = new HashSet<Sequence>();
             for (int k = k_begin; k <= k_end; k++)
             {
-                ordered_dyad_frequencies.AddRange(OrderedDyadFrequencies(genome, k));
+                dyads.UnionWith(Dyads(genome, k));
             }
-            return ordered_dyad_frequencies;
+            return dyads;
         }
 
-        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k)
-        {
-            return OrderedDyadFrequencies(DyadFrequencies(genome, k));
-        }
+        //public static Dictionary<Sequence, int> DyadFrequencies(Sequence genome, int k)
+        //{
+        //    Dictionary<Sequence, int> frequencies = new Dictionary<Sequence, int>();
+        //    int num_kmers = genome.Length - k + 1;
+        //    for (int i = 0; i < num_kmers; i++)
+        //    {
+        //        Sequence kmer = genome.Substring(i, k);
+        //        if (!Sequence.Dyad(kmer))
+        //        {
+        //            continue;
+        //        }
+        //        if (!frequencies.ContainsKey(kmer))
+        //        {
+        //            frequencies.Add(kmer, 0);
+        //        }
+        //        frequencies[kmer] += 1;
+        //    }
+        //    return frequencies;
+        //}
 
-        public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Dictionary<Sequence, int> dyad_frequencies)
-        {
-            List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = dyad_frequencies.ToList();
-            ordered_dyad_frequencies.Sort((a, b) => b.Value - a.Value);
-            return ordered_dyad_frequencies;
-        }
+        //public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k_begin, int k_end)
+        //{
+        //    List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = new List<KeyValuePair<Sequence, int>>();
+        //    for (int k = k_begin; k <= k_end; k++)
+        //    {
+        //        ordered_dyad_frequencies.AddRange(OrderedDyadFrequencies(genome, k));
+        //    }
+        //    return ordered_dyad_frequencies;
+        //}
 
-        public static List<Sequence> FrequencyOrderedDyads(Sequence genome, int k_begin, int k_end)
-        {
-            List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = OrderedDyadFrequencies(genome, k_begin, k_end);
-            List<Sequence> consensuses = new List<Sequence>();
-            foreach (KeyValuePair<Sequence, int> consensus in ordered_dyad_frequencies)
-            {
-                Console.WriteLine("Adding consensus {0} with global frequency {1}", consensus.Key, consensus.Value);
-                consensuses.Add(consensus.Key);
-            }
-            return consensuses;
-        }
+        //public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Sequence genome, int k)
+        //{
+        //    return OrderedDyadFrequencies(DyadFrequencies(genome, k));
+        //}
+
+        //public static List<KeyValuePair<Sequence, int>> OrderedDyadFrequencies(Dictionary<Sequence, int> dyad_frequencies)
+        //{
+        //    List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = dyad_frequencies.ToList();
+        //    ordered_dyad_frequencies.Sort((a, b) => b.Value - a.Value);
+        //    return ordered_dyad_frequencies;
+        //}
+
+        //public static List<Sequence> FrequencyOrderedDyads(Sequence genome, int k_begin, int k_end)
+        //{
+        //    List<KeyValuePair<Sequence, int>> ordered_dyad_frequencies = OrderedDyadFrequencies(genome, k_begin, k_end);
+        //    List<Sequence> consensuses = new List<Sequence>();
+        //    foreach (KeyValuePair<Sequence, int> consensus in ordered_dyad_frequencies)
+        //    {
+        //        Console.WriteLine("Adding consensus {0} with global frequency {1}", consensus.Key, consensus.Value);
+        //        consensuses.Add(consensus.Key);
+        //    }
+        //    return consensuses;
+        //}
 
         public static bool Mutant(Sequence a, Sequence b, bool allow_discrepant_lengths = false)
         {
@@ -167,53 +193,75 @@ namespace Parser
             return true;
         }
 
-        public static List<Sequence> Kmers(Sequence seq, int k)
-        {
-            List<Sequence> kmers = new List<Sequence>();
-            int n = seq.Length - k + 1;
-            for (int i = 0; i < n; i++)
-            {
-                kmers.Add(seq.Substring(i, k));
-            }
-            return kmers;
-        }
+        //public static List<Sequence> Kmers(Sequence seq, int k)
+        //{
+        //    List<Sequence> kmers = new List<Sequence>();
+        //    int n = seq.Length - k + 1;
+        //    for (int i = 0; i < n; i++)
+        //    {
+        //        kmers.Add(seq.Substring(i, k));
+        //    }
+        //    return kmers;
+        //}
 
-        public static List<List<Sequence>> KmerWindow(Sequence seq, int k_start, int k_end)
-        {
-            var kmerWindow = new List<List<Sequence>>();
-            for (int k = k_start; k < k_end; k++)
-            {
-                kmerWindow.Add(Kmers(seq, k));
-            }
-            return kmerWindow;
-        }
+        //public static List<List<Sequence>> KmerWindow(Sequence seq, int k_start, int k_end)
+        //{
+        //    var kmerWindow = new List<List<Sequence>>();
+        //    for (int k = k_start; k < k_end; k++)
+        //    {
+        //        kmerWindow.Add(Kmers(seq, k));
+        //    }
+        //    return kmerWindow;
+        //}
 
-        public static Sequence ReverseComplement(Sequence seq)
-        {
-            char[] rc = seq.ToCharArray();
-            for (int i = 0; i < rc.Length; i++)
-            {
-                char rc_char = rc[i];
-                rc[i] = complements[rc_char];
-            }
-            Array.Reverse(rc);
-            return new Sequence(rc, seq.Pos);
-        }
+        //public static Sequence ReverseComplement(Sequence seq)
+        //{
+        //    char[] rc = seq.ToCharArray();
+        //    for (int i = 0; i < rc.Length; i++)
+        //    {
+        //        char rc_char = rc[i];
+        //        rc[i] = complements[rc_char];
+        //    }
+        //    Array.Reverse(rc);
+        //    return new Sequence(rc, seq.Pos);
+        //}
 
-        public static bool Dyad(Sequence seq)
+        //public static bool DyadCheck(Sequence seq, int dyad_min = DYAD_MIN)
+        //{
+        //    Sequence beginning = seq.Substring(0, dyad_min);
+        //    Sequence end = seq.Substring(seq.Length - dyad_min, dyad_min);
+        //    Sequence end_rc = ReverseComplement(end);
+        //    return beginning.Equals(end_rc);
+
+        //    //for (int i = dyad_min; i <= seq.Length / 2; i++)
+        //    //{
+        //    //    Sequence beginning = seq.Substring(0, i);
+        //    //    Sequence end = seq.Substring(seq.Length - i, i);
+        //    //    Sequence end_rc = ReverseComplement(end);
+        //    //    if (beginning.Equals(end_rc))
+        //    //    {
+        //    //        return true;
+        //    //    }
+        //    //}
+        //    //return false;
+        //}
+
+        public static bool Dyad(string seq, int dyad_min = DYAD_MIN)
         {
-            for (int i = dyad_min; i <= seq.Length / 2; i++)
+            int len = seq.Length;
+            for (int i = 0; i < dyad_min; i++)
             {
-                Sequence beginning = seq.Substring(0, i);
-                Sequence end = seq.Substring(seq.Length - i, i);
-                Sequence end_rc = ReverseComplement(end);
-                if (beginning.Equals(end_rc))
+                char beginning_upstream = seq[i];
+                char end_downstream = seq[len - i - 1];
+                char end_downstream_comp = complements[end_downstream];
+                if (beginning_upstream != end_downstream_comp)
                 {
-                    return true;
+                    return false;
                 }
             }
-            return false;
+            return true;
         }
+
 
         public static List<Sequence> Dyads(List<Sequence> kmers)
         {

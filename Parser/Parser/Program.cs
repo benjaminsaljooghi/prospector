@@ -12,52 +12,47 @@ namespace Parser
     {
         public const string DIR = @"P:\Honours\";
 
-        public static void Write(string content, string file_name, string dir = DIR)
+        public static void Write(string path, string content)
         {
-            File.WriteAllText(Path.Combine(dir, file_name), content);
+            File.WriteAllText(path, content);
         }
 
-        public static string Read(string file_name, string dir = DIR)
+        public static string Read(string path)
         {
-            return File.ReadAllText(Path.Combine(dir, file_name));
+            return File.ReadAllText(path);
         }
 
-        public static void Serialize(object obj, string file_name, string dir = DIR)
+        public static void Serialize(string path, object obj)
         {
-            Write(JsonConvert.SerializeObject(obj), file_name, dir);
+            Write(path, JsonConvert.SerializeObject(obj));
         }
 
-        public static T Deserialize<T>(string file_name, string dir = DIR)
+        public static T Deserialize<T>(string path)
         {
-            return JsonConvert.DeserializeObject<T>(Read(file_name, dir));
+            return JsonConvert.DeserializeObject<T>(Read(path));
+        }
+
+        public static void Execution(string bacterium_path)
+        {
+            Sequence bacterium = new Sequence(bacterium_path);
+            Crisprs crisprs = Crisprs.DiscoverCrisprs(bacterium, Crispr.REPEAT_MIN, Crispr.REPEAT_MAX);
+            Console.WriteLine(crisprs);
+            crisprs.PrintMutantConsensuses();
         }
 
         public static void Main()
         {
-            Sequence cas9 = new Sequence("SpyCas9.fasta");
-            Sequence pyogenes = new Sequence("pyogenes.fasta");
-            Sequence aureus = new Sequence("aureus.fasta");
+            string bacterium_path = Path.Combine(DIR, "aureus.fasta");
+            Execution(bacterium_path);
+            Quit();
+        }
 
-            // WRITE A METHOD TO DO A DYAD GENERATION, CRISPR DISCOVERY, AND SERIALIZE/DESERIALIZE FOR A PARTICULAR FILE NAME
-
-
-            List<Sequence> dyads = Sequence.FrequencyOrderedDyads(pyogenes, Crispr.REPEAT_MIN, Crispr.REPEAT_MAX);
-            //List<Sequence> dyads = Deserialize<List<Sequence>>("aureus_dyads.json");
-
-            Crisprs crisprs = Crisprs.DiscoverCrisprs(aureus, dyads);
-            Console.WriteLine(crisprs);
-
-
-            crisprs.PrintMutantConsensuses();
-
-            //Serialize(dyads, "aureus_dyads.json");
-            //Serialize(crisprs, "aureus_crisprs.json");
-
-
-
+        public static void Quit()
+        {
             Console.WriteLine("Press any key to quit.");
             Console.ReadKey();
         }
+
 
     }
 }
