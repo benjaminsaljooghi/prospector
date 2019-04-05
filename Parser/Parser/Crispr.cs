@@ -15,60 +15,61 @@ namespace Parser
         public const int SPACER_MIN = 21;
         public const int SPACER_MAX = 72;
 
-        public const int SCAN_DOMAIN = 100;
+        public const int SCAN_DOMAIN = 1000;
 
-        public Crispr(Sequence consensus)
+        public Crispr()
         {
-            Consensus = consensus;
-            Repeats = new List<int>();
+            Repeats = new List<Sequence>();
         }
 
-        public Sequence Consensus { get; private set; }
-
-        public List<int> Repeats { get; }
-
-        public int End
+        public List<Sequence> Repeats
         {
-            get
-            {
-                Repeats.Sort();
-                int last_repeat = Repeats[Repeats.Count - 1];
-                return last_repeat + Consensus.Length;
-            }
+            get;
         }
 
-        public int Start
+        public Sequence Consensus
         {
             get
             {
-                Repeats.Sort();
-                int first_repeat = Repeats[0];
-                return first_repeat;
+                return Repeats.GroupBy(i => i).OrderByDescending(grp => grp.Count()).Select(grp => grp.Key).First();
             }
         }
 
-        public void AddRepeat(int repeat_index)
+        public Sequence First
         {
-            Repeats.Add(repeat_index);
+            get
+            {
+                Repeats.Sort(Sequence.CompareStart);
+                return Repeats[0];
+            }
         }
 
-        public void AddRepeats(List<int> repeats)
+        public Sequence Last
+        {
+            get
+            {
+                Repeats.Sort(Sequence.CompareStart);
+                return Repeats[Repeats.Count - 1];
+            }                
+        }
+
+        public void AddRepeat(Sequence repeat)
+        {
+            Repeats.Add(repeat);
+        }
+
+        public void AddRepeats(List<Sequence> repeats)
         {
             Repeats.AddRange(repeats);
         }
 
-        public void UpdateConsensus(Sequence genome)
-        {
-            int consensus_index = Repeats.GroupBy(i => i).OrderByDescending(grp => grp.Count()).Select(grp => grp.Key).First();
-            Consensus = genome.Substring(consensus_index, Consensus.Length);
-        }
-
         public override string ToString()
         {
+            Repeats.Sort(Sequence.CompareStart);
             string repeats = "";
-            foreach (int repeat in Repeats)
+            foreach (Sequence repeat in Repeats)
             {
-                repeats += repeat + " ";
+                repeats += repeat.Start + " ";
             }
             return string.Format($"{Consensus,-REPEAT_MAX} : {repeats}");
         }
@@ -88,38 +89,57 @@ namespace Parser
         public override int GetHashCode()
         {
             int hc = Consensus.GetHashCode() * 7;
-            foreach (int repeat in Repeats)
+            foreach (Sequence repeat in Repeats)
             {
-                hc ^= repeat.GetHashCode();
+                hc += repeat.GetHashCode();
             }
             return hc;
         }
 
         public static int MinDistance(Crispr a, Crispr b)
         {
-            if (a.Start < b.Start)
-            {
-                return b.Start - a.End;
-            }
-            else if (a.Start > b.Start)
-            {
+            int a_start = a.First.Start;
+            int a_end = a.Last.End;
 
+            int b_start = b.First.Start;
+            int b_end = b.Last.End;
+
+            if (a_start == b_start)
+            {
+                return 0;
+            }
+            else if (a_start < b_start)
+            {
+                return b_start - a_end;
             }
             else
             {
-                throw new Exception("Two CRISPRs have the same start position. This should not be possible.");
+                return a_start- b_end;
             }
+        }
+
+        public static bool Mergeable(Crispr a, Crispr b)
+        {
+            bool mutant = Sequence.Mutant(a.Consensus, b.Consensus, true);
+            bool proximal = MinDistance(a, b) <= SCAN_DOMAIN;
+            return mutant && proximal;
+        }
+
+        public static int CompareByStart(Crispr a, Crispr b)
+        {
+            return a.First.Start - b.First.Start;
         }
 
         public static Crispr DiscoverCrispr(Sequence genome, Sequence consensus)
         {
-            Crispr crispr = new Crispr(consensus);
+            Crispr crispr = new Crispr();
+            crispr.AddRepeat(consensus);
 
             int k = consensus.Length;
             int spacer_skip = 10;
 
             // Upstream scan
-            int index = consensus.Pos + k + spacer_skip;
+            int index = consensus.Start + k + spacer_skip;
             const int reset = SCAN_DOMAIN;
             int countdown = reset;
             while (countdown-- > 0)
@@ -129,8 +149,8 @@ namespace Parser
                     Sequence kmer = genome.Substring(index++, k);
                     if (Sequence.Mutant(consensus, kmer))
                     {
-                        crispr.AddRepeat(kmer.Pos);
-                        index = kmer.Pos + k + spacer_skip;
+                        crispr.AddRepeat(kmer);
+                        index = kmer.Start + k + spacer_skip;
                         countdown = reset;
                     }
                 }
@@ -143,7 +163,7 @@ namespace Parser
             }
 
             // Downstream scan
-            index = consensus.Pos - k - spacer_skip;
+            index = consensus.Start - k - spacer_skip;
             countdown = reset;
             while (countdown-- > 0)
             {
@@ -152,8 +172,8 @@ namespace Parser
                     Sequence kmer = genome.Substring(index--, k);
                     if (Sequence.Mutant(consensus, kmer))
                     {
-                        crispr.AddRepeat(kmer.Pos);
-                        index = kmer.Pos - k - spacer_skip;
+                        crispr.AddRepeat(kmer);
+                        index = kmer.Start - k - spacer_skip;
                         countdown = reset;
                     }
                 }
@@ -173,25 +193,16 @@ namespace Parser
 
     public class Crisprs
     {
-        public HashSet<Crispr> Clusters { get; } = new HashSet<Crispr>();
+        public List<Crispr> Clusters { get; } = new List<Crispr>();
 
         public void RegisterCrispr(Crispr new_crispr)
         {
-            //foreach (Crispr crispr in Clusters)
-            //{
-            //    if (new_crispr.Consensus.Equals(crispr.Consensus))
-            //    {
-            //        throw new Exception("Consensus already registered.");
-            //        //Console.WriteLine("Tried to register a crispr with a consensus that is already registered. Merging the two CRISPRs...");
-            //        //crispr.AddRepeats(new_crispr.Repeats);
-            //    }
-            //}
             Clusters.Add(new_crispr);
         }
 
         public void RegisterCrisprs(Crisprs crisprs)
         {
-            Clusters.UnionWith(crisprs.Clusters);
+            Clusters.AddRange(crisprs.Clusters);
         }
 
         public override string ToString()
@@ -204,23 +215,50 @@ namespace Parser
             return result;
         }
 
-        public void PrintMutantConsensuses()
+        public void SortByStartPos()
         {
-            foreach (Crispr crispr in Clusters)
+            Clusters.Sort(Crispr.CompareByStart);
+        }
+
+        public void MergeCrisprs()
+        {
+            for (int i = 0; i < Clusters.Count; i++)
             {
-                foreach (Crispr sub_crispr in Clusters)
+                for (int j = 0; j < Clusters.Count; j++)
                 {
-                    if (crispr.Equals(sub_crispr))
+                    if (i == j)
                     {
                         continue;
                     }
-                    if (Sequence.Mutant(crispr.Consensus, sub_crispr.Consensus, allow_discrepant_lengths:true))
+                    Crispr a = Clusters.ElementAt(i);
+                    Crispr b = Clusters.ElementAt(j);
+                    if (Crispr.Mergeable(a, b))
                     {
-                        Console.WriteLine("Found a mutant.");
+                        a.AddRepeats(b.Repeats);
+                        Clusters.RemoveAt(j);
+                        MergeCrisprs();
                     }
                 }
             }
         }
+
+        //public void PrintMutantConsensuses()
+        //{
+        //    foreach (Crispr crispr in Clusters)
+        //    {
+        //        foreach (Crispr sub_crispr in Clusters)
+        //        {
+        //            if (crispr.Equals(sub_crispr))
+        //            {
+        //                continue;
+        //            }
+        //            if (Sequence.Mutant(crispr.Consensus, sub_crispr.Consensus, allow_discrepant_lengths:true))
+        //            {
+        //                Console.WriteLine("Found a mutant.");
+        //            }
+        //        }
+        //    }
+        //}
 
         public static Crisprs DiscoverCrisprs(Sequence genome, int k)
         {
@@ -228,7 +266,7 @@ namespace Parser
             int num_kmers = genome.Length - k + 1;
             for (int i = 0; i < num_kmers; i++)
             {
-                Console.WriteLine($"{i} at entry");
+                //Console.WriteLine($"{i} at entry");
 
                 Sequence kmer = genome.Substring(i, k);
 
@@ -237,13 +275,14 @@ namespace Parser
                     continue;
                 }
 
-                Console.WriteLine($"found CRISPR at {i} of genome len {genome.Length}");
+                //Console.WriteLine($"found dyad at {i} of genome len {genome.Length}");
 
                 Crispr crispr = Crispr.DiscoverCrispr(genome, kmer);
                 if (crispr != null)
                 {
+                    Console.WriteLine($"registering CRISPR...");
                     crisprs.RegisterCrispr(crispr);
-                    i = crispr.End + 1;
+                    i = crispr.Last.End + 1;
                 }
             }
             return crisprs;

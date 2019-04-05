@@ -26,9 +26,21 @@ namespace Parser
         public static void Execution(string bacterium_path)
         {
             Sequence bacterium = new Sequence(bacterium_path);
-            Crisprs crisprs = Crisprs.DiscoverCrisprs(bacterium, Crispr.REPEAT_MIN, Crispr.REPEAT_MAX);
+            //Crisprs crisprs = Crisprs.DiscoverCrisprs(bacterium, Crispr.REPEAT_MIN, Crispr.REPEAT_MAX);
+            //Serialize(Path.Combine(DIR, "aureus_crisprs.json"), crisprs);
+            Crisprs crisprs = Deserialize<Crisprs>(Path.Combine(DIR, "aureus_crisprs.json"));
+
+            Console.WriteLine("Before merging crisprs:");
+            //crisprs.SortByStartPos();
             Console.WriteLine(crisprs);
-            crisprs.PrintMutantConsensuses();
+
+
+            Console.WriteLine("After merging crisprs:");
+
+            crisprs.MergeCrisprs();
+
+            crisprs.SortByStartPos();
+            Console.WriteLine(crisprs); ;
         }
 
         public static void Main()

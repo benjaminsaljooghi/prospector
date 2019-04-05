@@ -13,19 +13,22 @@ namespace Parser
     {
         public string Seq { get; private set; }
 
-        public int Pos { get; private set; }
+        public int Start { get; private set; }
+
+        [JsonIgnore]
+        public int End { get { return Start + Seq.Length - 1; }  }
 
         [JsonIgnore]
         public int Length { get { return Seq.Length; } }
 
         [JsonConstructor]
-        public Sequence(string seq, int pos)
+        public Sequence(string seq, int start)
         {
             Seq = seq;
-            Pos = pos;
+            Start = start;
         }
 
-        public Sequence(char[] sequence, int pos) : this(new string(sequence), pos)
+        public Sequence(char[] sequence, int start) : this(new string(sequence), start)
         {
         }
 
@@ -34,7 +37,7 @@ namespace Parser
             var reader = new StreamReader(file);
             while (reader.ReadLine().StartsWith(">")) ;
             Seq = reader.ReadToEnd().Replace("\n", "");
-            Pos = 0;
+            Start = 0;
         }
 
         public static implicit operator string(Sequence fasta)
@@ -45,12 +48,12 @@ namespace Parser
         public override bool Equals(object obj)
         {
             Sequence seq = obj as Sequence;
-            return Seq == seq.Seq && Pos == seq.Pos;
+            return Seq == seq.Seq && Start == seq.Start;
         }
 
         public override int GetHashCode()
         {
-            return Seq.GetHashCode() * 7 + Pos.GetHashCode() * 7;
+            return Seq.GetHashCode() * 7 + Start.GetHashCode() * 7;
         }
 
         public override string ToString()
@@ -65,7 +68,7 @@ namespace Parser
 
         public Sequence Clone()
         {
-            return new Sequence(Seq, Pos);
+            return new Sequence(Seq, Start);
         }
 
         private char[] ToCharArray()
@@ -75,7 +78,12 @@ namespace Parser
 
         public Sequence Substring(int start, int length)
         {
-            return new Sequence(Seq.Substring(start, length), Pos + start);
+            return new Sequence(Seq.Substring(start, length), Start + start);
+        }
+
+        public static int CompareStart(Sequence a, Sequence b)
+        {
+            return a.Start - b.Start;
         }
     }
 
@@ -223,7 +231,7 @@ namespace Parser
         //        rc[i] = complements[rc_char];
         //    }
         //    Array.Reverse(rc);
-        //    return new Sequence(rc, seq.Pos);
+        //    return new Sequence(rc, seq.Start);
         //}
 
         //public static bool DyadCheck(Sequence seq, int dyad_min = DYAD_MIN)
