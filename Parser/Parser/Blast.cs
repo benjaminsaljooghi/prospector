@@ -9,14 +9,27 @@ using System.Net.Http;
 
 namespace Parser
 {
-    public class Blast
-    {
-        private static readonly HttpClient client = new HttpClient();
+    //public class Blast
+    //{
+    //    private static readonly HttpClient client = new HttpClient();
 
-        public static void BLAST()
-        {
+    //    public static async void BLASTAsync(Sequence seq)
+    //    {
+    //        var values = new Dictionary<string, string>
+    //        {
+    //           { "thing1", "hello" },
+    //           { "thing2", "world" }
+    //        };
 
-        }
+    //        var content = new FormUrlEncodedContent(values);
 
-    }
+    //        var response = await client.PostAsync("http://www.example.com/recepticle.aspx", content);
+
+    //        var responseString = await response.Content.ReadAsStringAsync();
+
+
+
+    //    }
+
+    //}
 }
