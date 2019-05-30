@@ -8,6 +8,18 @@ using namespace std;
 
 #define DYAD_MIN 5
 
+#define REPEAT_MIN 20
+#define REPEAT_MAX 60
+
+#define SPACER_MIN 21
+#define SPACER_MAX 72
+#define SPACER_SKIP 10
+
+#define REPEATS_MIN 3
+#define SCAN_DOMAIN 1000
+
+
+
 const map<char, char> complements =
 {
     { 'A', 'T' },
@@ -116,8 +128,108 @@ vector<string> get_dyads(string sequence, int k)
     return seqs;
 }
 
-void discover_crisprs(string genome, vector<string> kmers)
+class Sequence
 {
+public:
+    string seq;
+    int start;
+
+    Sequence(string seq, int start)
+    {
+        this->seq = seq;
+        this->start = start;
+    }
+
+    int length()
+    {
+        return seq.length();
+    }
+
+    int start()
+    {
+        return start;
+    }
+
+    int end()
+    {
+        return start + length() - 1;
+    }
+
+    Sequence substring(int start, int length)
+    {
+        return Sequence(this->seq.substr(start, length), this->start + start);
+    }
+};
+
+class Crispr
+{
+public:
+    vector<Sequence> repeats;
+
+};
+
+Crispr discover_crispr(string genome, int consensus_index, int consensus_len)
+{
+    //Crispr crispr = new Crispr();
+    //crispr.AddRepeat(consensus);
+    string consensus = genome.substr(consensus_index, consensus_len))
+
+    Cirpsr crispr;
+    crispr.push_back(consensus)
+
+    int k = consensus_size;
+    int spacer_skip = 10;
+
+    // Upstream scan
+    int index = consensus.Start + k + spacer_skip;
+    const int reset = SCAN_DOMAIN;
+    int countdown = reset;
+    while (countdown-- > 0)
+    {
+        try
+        {
+            Sequence kmer = genome.Substring(index++, k);
+            if (Sequence.Mutant(consensus, kmer))
+            {
+                crispr.AddRepeat(kmer);
+                index = kmer.Start + k + spacer_skip;
+                countdown = reset;
+            }
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Console.WriteLine("Index was out of bounds. Continuing...");
+            break;
+        }
+
+    }
+
+    // Downstream scan
+    index = consensus.Start - k - spacer_skip;
+    countdown = reset;
+    while (countdown-- > 0)
+    {
+        try
+        {
+            Sequence kmer = genome.Substring(index--, k);
+            if (Sequence.Mutant(consensus, kmer))
+            {
+                crispr.AddRepeat(kmer);
+                index = kmer.Start - k - spacer_skip;
+                countdown = reset;
+            }
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Console.WriteLine("Index was out of bounds. Continuing...");
+            break;
+        }
+    }
+
+    return crispr.Repeats.Count >= REPEATS_MIN ? crispr : null;
+}
+
+
 
 }
 
@@ -130,8 +242,8 @@ int main()
     string aureus = parse_single_seq(aureus_path);
     cout << aureus.length() << endl;
 
-    vector<string> kmers = get_kmers(aureus, 6);
-    cout << kmers.size() << endl;
+    vector<string> dyads = get_dyads(aureus, 6);
+    cout << dyads.size() << endl;
 
     return 0;
 }
