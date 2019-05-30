@@ -5,6 +5,9 @@ using namespace std;
 #include <string>
 #include <map>
 #include <vector>
+#include <algorithm>
+
+#pragma region consts
 
 #define DYAD_MIN 5
 
@@ -18,7 +21,7 @@ using namespace std;
 #define REPEATS_MIN 3
 #define SCAN_DOMAIN 1000
 
-
+#define ALLOW_DISCREPANT_LENGTHS false
 
 const map<char, char> complements =
 {
@@ -30,9 +33,11 @@ const map<char, char> complements =
     { 'n', 'n' },
 };
 
+#pragma endregion
+
+
 map<string, string> parse_fasta(string file_path)
 {
-
     cout << "reading: " << file_path << endl;
     ifstream input(file_path);
     if (!input.good())
@@ -45,9 +50,9 @@ map<string, string> parse_fasta(string file_path)
     while (getline(input, line))
     {
         if (line.empty() || line[0] == '>') // Identifier marker
-        { 
+        {
             if (!name.empty())
-            { 
+            {
                 // Get what we read from the last entry
                 seqs[name] = content;
                 name.clear();
@@ -61,7 +66,7 @@ map<string, string> parse_fasta(string file_path)
         else if (!name.empty())
         {
             if (line.find(' ') != string::npos) // Invalid sequence--no spaces allowed
-            { 
+            {
                 name.clear();
                 content.clear();
             }
@@ -72,7 +77,7 @@ map<string, string> parse_fasta(string file_path)
         }
     }
     if (!name.empty())
-    { 
+    {
         // Get what we read from the last 
         seqs[name] = content;
     }
@@ -96,7 +101,6 @@ vector<string> get_kmers(string sequence, int k)
     }
     return seqs;
 }
-
 
 bool is_dyad(string seq)
 {
@@ -123,16 +127,21 @@ vector<string> get_dyads(string sequence, int k)
         if (is_dyad(seq))
         {
             seqs.push_back(seq);
-        }        
+        }
     }
     return seqs;
 }
 
+
+
 class Sequence
 {
-public:
+    private:
+
     string seq;
     int start;
+
+    public:
 
     Sequence(string seq, int start)
     {
@@ -159,79 +168,105 @@ public:
     {
         return Sequence(this->seq.substr(start, length), this->start + start);
     }
+
+    char operator[](int i)
+    {
+        return seq[i];
+    }
+
 };
+
+bool mutant(Sequence a, Sequence b)
+{
+    if (!ALLOW_DISCREPANT_LENGTHS && a.length() != b.length())
+    {
+        throw exception();
+    }
+
+    int len = min(a.length(), b.length());
+
+    int allowed_point_mutations = a.length() / 10;
+    int point_mutations = 0;
+
+    for (int i = 0; i < len; i++)
+    {
+        if (a[i] != b[i] && ++point_mutations > allowed_point_mutations)
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 class Crispr
 {
-public:
+    public:
     vector<Sequence> repeats;
+
+    void add_repeat(Sequence repeat)
+    {
+        repeats.push_back(repeat);
+    }
 
 };
 
-Crispr discover_crispr(string genome, int consensus_index, int consensus_len)
+Crispr discover_crispr(Sequence genome, Sequence consensus)
 {
-    //Crispr crispr = new Crispr();
-    //crispr.AddRepeat(consensus);
-    string consensus = genome.substr(consensus_index, consensus_len))
+    Crispr crispr;
+    crispr.add_repeat(consensus);
 
-    Cirpsr crispr;
-    crispr.push_back(consensus)
-
-    int k = consensus_size;
-    int spacer_skip = 10;
+    int k = consensus.length();
 
     // Upstream scan
-    int index = consensus.Start + k + spacer_skip;
+    
+    int index = consensus.start() + k + SPACER_SKIP;
     const int reset = SCAN_DOMAIN;
     int countdown = reset;
     while (countdown-- > 0)
     {
-        try
-        {
-            Sequence kmer = genome.Substring(index++, k);
+        //try
+        //{
+            Sequence kmer = genome.substring(index++, k);
             if (Sequence.Mutant(consensus, kmer))
             {
                 crispr.AddRepeat(kmer);
-                index = kmer.Start + k + spacer_skip;
+                index = kmer.Start + k + SPACER_SKIP;
                 countdown = reset;
             }
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            Console.WriteLine("Index was out of bounds. Continuing...");
-            break;
-        }
+        //}
+        //catch (ArgumentOutOfRangeException)
+        //{
+            //cout << "index was out of bounds, continuing..." << endl;
+            //break;
+        //}
 
     }
 
     // Downstream scan
-    index = consensus.Start - k - spacer_skip;
+    index = consensus.Start - k - SPACER_SKIP;
     countdown = reset;
     while (countdown-- > 0)
     {
-        try
+        //try
+        //{
+        Sequence kmer = genome.Substring(index--, k);
+        if (Sequence.Mutant(consensus, kmer))
         {
-            Sequence kmer = genome.Substring(index--, k);
-            if (Sequence.Mutant(consensus, kmer))
-            {
-                crispr.AddRepeat(kmer);
-                index = kmer.Start - k - spacer_skip;
-                countdown = reset;
-            }
+            crispr.AddRepeat(kmer);
+            index = kmer.Start - k - SPACER_SKIP;
+            countdown = reset;
         }
-        catch (ArgumentOutOfRangeException)
-        {
-            Console.WriteLine("Index was out of bounds. Continuing...");
-            break;
-        }
+        //}
+        //catch (ArgumentOutOfRangeException)
+        //{
+            //Console.WriteLine("Index was out of bounds. Continuing...");
+            //break;
+        //}
     }
 
     return crispr.Repeats.Count >= REPEATS_MIN ? crispr : null;
 }
 
-
-
-}
 
 int main()
 {

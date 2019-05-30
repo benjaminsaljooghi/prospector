@@ -87,7 +87,6 @@ namespace Parser
         }
     }
 
-
     public partial class Sequence
     {
         const int DYAD_MIN = 5;
