@@ -8,16 +8,6 @@ using namespace std;
 
 #define DYAD_MIN 5
 
-//const map<char, char> complements =
-//{
-//    { 'A', 'T' },
-//    { 'T', 'A' },
-//    { 'C', 'G' },
-//    { 'G', 'C' },
-//    { 'N', 'N' },
-//    { 'n', 'n' },
-//};
-
 const map<char, char> complements =
 {
     { 'A', 'T' },
@@ -85,17 +75,16 @@ string parse_single_seq(string file_path)
     return seq;
 }
 
-vector<string> generate_kmers(string sequence, int k)
+vector<string> get_kmers(string sequence, int k)
 {
     vector<string> seqs;
-
     for (size_t i = 0; i < sequence.length() - k + 1; i++)
     {
         seqs.push_back(sequence.substr(i, k));
     }
-
     return seqs;
 }
+
 
 bool is_dyad(string seq)
 {
@@ -113,6 +102,20 @@ bool is_dyad(string seq)
     return true;
 }
 
+vector<string> get_dyads(string sequence, int k)
+{
+    vector<string> seqs;
+    for (size_t i = 0; i < sequence.length() - k + 1; i++)
+    {
+        string seq = sequence.substr(i, k);
+        if (is_dyad(seq))
+        {
+            seqs.push_back(seq);
+        }        
+    }
+    return seqs;
+}
+
 void discover_crisprs(string genome, vector<string> kmers)
 {
 
@@ -127,7 +130,7 @@ int main()
     string aureus = parse_single_seq(aureus_path);
     cout << aureus.length() << endl;
 
-    vector<string> kmers = generate_kmers(aureus, 6);
+    vector<string> kmers = get_kmers(aureus, 6);
     cout << kmers.size() << endl;
 
     return 0;
