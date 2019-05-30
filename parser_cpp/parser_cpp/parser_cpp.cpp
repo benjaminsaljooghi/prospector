@@ -6,6 +6,8 @@ using namespace std;
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <optional>
+#include <functional>
 
 #pragma region consts
 
@@ -102,51 +104,17 @@ vector<string> get_kmers(string sequence, int k)
     return seqs;
 }
 
-bool is_dyad(string seq)
-{
-    int len = seq.length();
-    for (int i = 0; i < DYAD_MIN; i++)
-    {
-        char beginning_upstream = seq[i];
-        char end_downstream = seq[len - i - 1];
-        char end_downstream_comp = complements.at(end_downstream);
-        if (beginning_upstream != end_downstream_comp)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-vector<string> get_dyads(string sequence, int k)
-{
-    vector<string> seqs;
-    for (size_t i = 0; i < sequence.length() - k + 1; i++)
-    {
-        string seq = sequence.substr(i, k);
-        if (is_dyad(seq))
-        {
-            seqs.push_back(seq);
-        }
-    }
-    return seqs;
-}
-
-
-
 class Sequence
 {
-    private:
-
     string seq;
-    int start;
+    int start_pos;
 
     public:
 
     Sequence(string seq, int start)
     {
         this->seq = seq;
-        this->start = start;
+        this->start_pos = start;
     }
 
     int length()
@@ -156,15 +124,15 @@ class Sequence
 
     int start()
     {
-        return start;
+        return start_pos;
     }
 
     int end()
     {
-        return start + length() - 1;
+        return start_pos + length() - 1;
     }
 
-    Sequence substring(int start, int length)
+    Sequence subseq(int start, int length)
     {
         return Sequence(this->seq.substr(start, length), this->start + start);
     }
@@ -173,6 +141,37 @@ class Sequence
     {
         return seq[i];
     }
+
+    bool is_dyad()
+    {
+        int len = seq.length();
+        for (int i = 0; i < DYAD_MIN; i++)
+        {
+            char beginning_upstream = seq[i];
+            char end_downstream = seq[len - i - 1];
+            char end_downstream_comp = complements.at(end_downstream);
+            if (beginning_upstream != end_downstream_comp)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    vector<Sequence> dyads(int k)
+    {
+        vector<Sequence> seqs;
+        for (size_t i = 0; i < seq.length() - k + 1; i++)
+        {
+            Sequence seq = seq.subseq(i, k);
+            if (seq.is_dyad())
+            {
+                seqs.push_back(seq);
+            }
+        }
+        return seqs;
+    }
+
 
 };
 
@@ -201,6 +200,7 @@ bool mutant(Sequence a, Sequence b)
 class Crispr
 {
     public:
+
     vector<Sequence> repeats;
 
     void add_repeat(Sequence repeat)
@@ -210,7 +210,7 @@ class Crispr
 
 };
 
-Crispr discover_crispr(Sequence genome, Sequence consensus)
+optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
 {
     Crispr crispr;
     crispr.add_repeat(consensus);
@@ -226,11 +226,11 @@ Crispr discover_crispr(Sequence genome, Sequence consensus)
     {
         //try
         //{
-            Sequence kmer = genome.substring(index++, k);
-            if (Sequence.Mutant(consensus, kmer))
+            Sequence kmer = genome.subseq(index++, k);
+            if (mutant(consensus, kmer))
             {
-                crispr.AddRepeat(kmer);
-                index = kmer.Start + k + SPACER_SKIP;
+                crispr.add_repeat(kmer);
+                index = kmer.start() + k + SPACER_SKIP;
                 countdown = reset;
             }
         //}
@@ -243,17 +243,17 @@ Crispr discover_crispr(Sequence genome, Sequence consensus)
     }
 
     // Downstream scan
-    index = consensus.Start - k - SPACER_SKIP;
+    index = consensus.start() - k - SPACER_SKIP;
     countdown = reset;
     while (countdown-- > 0)
     {
         //try
         //{
-        Sequence kmer = genome.Substring(index--, k);
-        if (Sequence.Mutant(consensus, kmer))
+        Sequence kmer = genome.subseq(index--, k);
+        if (mutant(consensus, kmer))
         {
-            crispr.AddRepeat(kmer);
-            index = kmer.Start - k - SPACER_SKIP;
+            crispr.add_repeat(kmer);
+            index = kmer.start() - k - SPACER_SKIP;
             countdown = reset;
         }
         //}
@@ -264,7 +264,22 @@ Crispr discover_crispr(Sequence genome, Sequence consensus)
         //}
     }
 
-    return crispr.Repeats.Count >= REPEATS_MIN ? crispr : null;
+    if (crispr.repeats.size() >= REPEATS_MIN)
+    {
+        return optional<Crispr>{crispr};
+    }
+    else
+    {
+        nullopt;
+    }
+}
+
+vector<Crispr> discover_crisprs(Sequence genome, int k)
+{
+    vector<Crispr> crisprs;
+    vector<Sequence> dyads = genome.dyads(k);
+
+
 }
 
 
@@ -276,9 +291,6 @@ int main()
 
     string aureus = parse_single_seq(aureus_path);
     cout << aureus.length() << endl;
-
-    vector<string> dyads = get_dyads(aureus, 6);
-    cout << dyads.size() << endl;
 
     return 0;
 }
