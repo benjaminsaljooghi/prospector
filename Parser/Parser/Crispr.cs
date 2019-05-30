@@ -50,7 +50,7 @@ namespace Parser
             {
                 Repeats.Sort(Sequence.CompareStart);
                 return Repeats[Repeats.Count - 1];
-            }                
+            }
         }
 
         public void AddRepeat(Sequence repeat)
@@ -114,7 +114,7 @@ namespace Parser
             }
             else
             {
-                return a_start- b_end;
+                return a_start - b_end;
             }
         }
 
@@ -293,7 +293,7 @@ namespace Parser
             Crisprs crisprs = new Crisprs();
             for (int k = k_begin; k <= k_end; k++)
             {
-                crisprs.RegisterCrisprs(DiscoverCrisprs(genome, k));   
+                crisprs.RegisterCrisprs(DiscoverCrisprs(genome, k));
             }
             return crisprs;
         }
