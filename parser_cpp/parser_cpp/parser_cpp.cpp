@@ -12,6 +12,7 @@ using namespace std;
 #include "consts.h"
 #include "Sequence.h"
 #include "Crispr.h"
+#include <set>
 
 
 map<string, string> parse_fasta(string file_path)
@@ -151,20 +152,18 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence dyad)
 
     if (crispr.repeats.size() >= REPEATS_MIN)
     {
+        crispr.sort_repeats();
         return optional<Crispr>{crispr};
     }
 
     return nullopt;
 }
 
-vector<Crispr> discover_crisprs(Sequence genome, int k)
+set<Crispr> discover_crisprs(Sequence genome, int k)
 {
     cout << "discovering crisprs for k: " << k << endl;
-
-    vector<Crispr> crisprs;
-
+    set<Crispr> crisprs;
     vector<Sequence> dyads = genome.dyads(k);
-
     for (int i = 0; i < dyads.size(); i++)
     {
         Sequence dyad = dyads[i];
@@ -173,41 +172,37 @@ vector<Crispr> discover_crisprs(Sequence genome, int k)
         if (crispr.has_value())
         {
             cout << " -> CRISPR discovered at consensus start " << dyad.start() << endl;
-            crisprs.push_back(*crispr);
+            crisprs.insert(*crispr);
         }
     }
     cout << endl;
     return crisprs;
 }
 
-vector<Crispr> discover_crisprs(Sequence genome, int k_start, int k_end)
+set<Crispr> discover_crisprs(Sequence genome, int k_start, int k_end)
 {
-
-    vector<Crispr> all_crisprs;
-
+    set<Crispr> all_crisprs;
     for (int k = k_start; k < k_end; k++)
     {
-        vector<Crispr> crisprs = discover_crisprs(genome, k);
-        all_crisprs.insert(all_crisprs.end(), crisprs.begin(), crisprs.end());
+        set<Crispr> crisprs = discover_crisprs(genome, k);
+        all_crisprs.insert(crisprs.begin(), crisprs.end());
     }
-
     return all_crisprs;
 }
 
 
 int main()
 {
-
     string test_path = R"(P:\CRISPR\test_data\test.fasta)";
     string aureus_path = R"(P:\CRISPR\bacteria\aureus.fasta)";
     string pyogenes_path = R"(P:\CRISPR\bacteria\pyogenes.fasta)";
 
     Sequence pyogenes = parse_single_seq(pyogenes_path);
 
-    vector<Crispr> crisprs = discover_crisprs(pyogenes, 36);
-    for (int i = 0; i < crisprs.size(); i++)
+    set<Crispr> crisprs = discover_crisprs(pyogenes, 36);
+    for (auto c : crisprs)
     {
-        cout << crisprs[i].stringification() << endl;
+        cout << c.stringification() << endl;
     }
 
     return 0;

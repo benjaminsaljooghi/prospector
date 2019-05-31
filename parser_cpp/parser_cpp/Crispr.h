@@ -18,4 +18,7 @@ class Crispr
     void sort_repeats();
 
     std::string stringification();
+
+    bool operator<(const Crispr& rhs) const;
+
 };

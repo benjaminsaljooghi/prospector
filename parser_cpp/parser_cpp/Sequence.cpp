@@ -76,8 +76,27 @@ vector<Sequence> Sequence::dyads(int k)
     return seqs;
 }
 
-bool Sequence::compare_start(Sequence a, Sequence b)
+bool Sequence::operator<(const Sequence rhs) const
 {
-    return a.start() < b.start();
+    bool comes_before = start_pos < rhs.start_pos;
+    if (comes_before)
+    {
+        return true;
+    }
+
+    // sequences start at the same index, so compare based on size
+    bool smaller = seq.length() < rhs.seq.length();
+    if (smaller)
+    {
+        return true;
+    }
+
+    // sequences start at the same index and have the same size, so they must be equal
+    return false;
 }
+
+//bool Sequence::compare_start(Sequence a, Sequence b)
+//{
+//    return a.start() < b.start();
+//}
 

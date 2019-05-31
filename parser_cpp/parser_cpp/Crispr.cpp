@@ -17,7 +17,7 @@ Sequence Crispr::last()
 
 void Crispr::sort_repeats()
 {
-    std::sort(repeats.begin(), repeats.end(), Sequence::compare_start);
+    std::sort(repeats.begin(), repeats.end());
 }
 
 string Crispr::stringification()
@@ -31,4 +31,36 @@ string Crispr::stringification()
         str += repeat_str + " ";
     }
     return str;
+}
+
+bool Crispr::operator<(const Crispr& rhs) const
+{
+    Sequence this_start = repeats.front();
+    Sequence rhs_start = rhs.repeats.front();
+    bool index_before = this_start.start() < rhs_start.start();
+    if (index_before)
+    {
+        return true;
+    }
+    
+    bool count_lower = repeats.size() < rhs.repeats.size();
+    if (count_lower)
+    {
+        return true;
+    }
+
+    // crisprs start at the same position, and have the same repeat count. Therefore, let's compare based on sequences
+    for (int i = 0; i < repeats.size(); i++)
+    {
+        Sequence this_repeat = repeats[i];
+        Sequence other_repeat = rhs.repeats[i];
+        if (this_repeat < other_repeat)
+        {
+            return true;
+        }
+    }
+
+    // this crispr is not < rhs
+    return false;
+
 }

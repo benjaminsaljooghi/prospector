@@ -28,7 +28,6 @@ class Sequence
 
     std::vector<Sequence> dyads(int k);
 
-    static bool compare_start(Sequence a, Sequence b);
-
+    bool operator<(const Sequence rhs) const;
 };
 
