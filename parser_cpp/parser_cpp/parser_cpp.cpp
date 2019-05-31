@@ -170,6 +170,8 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
 
 vector<Crispr> discover_crisprs(Sequence genome, int k)
 {
+    cout << "discovering crisprs for k: " << k << endl;
+
     vector<Crispr> crisprs;
     vector<Sequence> dyads = genome.dyads(k);
 
@@ -189,6 +191,7 @@ vector<Crispr> discover_crisprs(Sequence genome, int k)
 
 vector<Crispr> discover_crisprs(Sequence genome, int k_start, int k_end)
 {
+
     vector<Crispr> all_crisprs;
 
     for (int k = k_start; k < k_end; k++)

@@ -64,10 +64,10 @@ vector<Sequence> Sequence::dyads(int k)
     vector<Sequence> seqs;
     for (size_t i = 0; i < seq.length() - k + 1; i++)
     {
-        Sequence seq = seq.subseq(i, k);
-        if (seq.is_dyad())
+        Sequence kmer = subseq(i, k);
+        if (kmer.is_dyad())
         {
-            seqs.push_back(seq);
+            seqs.push_back(kmer);
         }
     }
     return seqs;
