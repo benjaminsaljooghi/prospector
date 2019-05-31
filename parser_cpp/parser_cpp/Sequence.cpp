@@ -94,9 +94,3 @@ bool Sequence::operator<(const Sequence rhs) const
     // sequences start at the same index and have the same size, so they must be equal
     return false;
 }
-
-//bool Sequence::compare_start(Sequence a, Sequence b)
-//{
-//    return a.start() < b.start();
-//}
-

@@ -167,7 +167,7 @@ set<Crispr> discover_crisprs(Sequence genome, int k)
     for (int i = 0; i < dyads.size(); i++)
     {
         Sequence dyad = dyads[i];
-        cout << "\rexamining dyad " << i << "/" << dyads.size() << " with start " << dyad.start() << "/" << genome.length();
+        cout << "\rexamining dyad " << i << "/" << dyads.size()-1 << " with start " << dyad.start() << "/" << genome.length();
         optional<Crispr> crispr = discover_crispr(genome, dyad);
         if (crispr.has_value())
         {
@@ -200,6 +200,9 @@ int main()
     Sequence pyogenes = parse_single_seq(pyogenes_path);
 
     set<Crispr> crisprs = discover_crisprs(pyogenes, 36);
+    
+
+    cout << "discovered CRISPRs: " << endl;
     for (auto c : crisprs)
     {
         cout << c.stringification() << endl;
