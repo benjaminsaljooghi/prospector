@@ -152,7 +152,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Crispr.cpp" />
     <ClCompile Include="parser_cpp.cpp" />
+    <ClCompile Include="Sequence.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="consts.h" />
+    <ClInclude Include="Crispr.h" />
+    <ClInclude Include="Sequence.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
