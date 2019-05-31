@@ -119,16 +119,16 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence dyad)
     int countdown = reset;
     while (countdown-- > 0)
     {
+        if (index + k > genome.end())
+        {
+            break;
+        }
         Sequence kmer = genome.subseq(index++, k);
         if (mutant(dyad, kmer))
         {
             crispr.add_repeat(kmer);
             index = kmer.start() + k + SPACER_SKIP;
             countdown = reset;
-        }
-        if (index + k > genome.end())
-        {
-            break;
         }
     }
 
@@ -137,6 +137,10 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence dyad)
     countdown = reset;
     while (countdown-- > 0)
     {
+        if (index < genome.start())
+        {
+            break;
+        }
         Sequence kmer = genome.subseq(index--, k);
         if (mutant(dyad, kmer))
         {
@@ -144,10 +148,7 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence dyad)
             index = kmer.start() - k - SPACER_SKIP;   
             countdown = reset;
         }
-        if (index < genome.start())
-        {
-            break;
-        }
+
     }
 
     if (crispr.repeats.size() >= REPEATS_MIN)
@@ -199,7 +200,7 @@ int main()
 
     Sequence pyogenes = parse_single_seq(pyogenes_path);
 
-    set<Crispr> crisprs = discover_crisprs(pyogenes, 36);
+    set<Crispr> crisprs = discover_crisprs(pyogenes, 30, 40);
     
 
     cout << "discovered CRISPRs: " << endl;
