@@ -62,7 +62,7 @@ bool Sequence::is_dyad()
 
 vector<Sequence> Sequence::dyads(int k)
 {
-    cout << "generating dyads for k: " << k << endl;
+    cout << "generating dyads for k: " << k << "... ";
     vector<Sequence> seqs;
     for (size_t i = 0; i < seq.length() - k + 1; i++)
     {
@@ -72,6 +72,7 @@ vector<Sequence> Sequence::dyads(int k)
             seqs.push_back(kmer);
         }
     }
+    cout << "complete." << endl;
     return seqs;
 }
 
