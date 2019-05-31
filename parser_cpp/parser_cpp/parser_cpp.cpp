@@ -118,8 +118,6 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
     int countdown = reset;
     while (countdown-- > 0)
     {
-        //try
-        //{
         Sequence kmer = genome.subseq(index++, k);
         if (mutant(consensus, kmer))
         {
@@ -127,13 +125,10 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
             index = kmer.start() + k + SPACER_SKIP;
             countdown = reset;
         }
-        //}
-        //catch (ArgumentOutOfRangeException)
-        //{
-            //cout << "index was out of bounds, continuing..." << endl;
-            //break;
-        //}
-
+        if (index + k > genome.end())
+        {
+            break;
+        }
     }
 
     // Downstream scan
@@ -141,30 +136,28 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
     countdown = reset;
     while (countdown-- > 0)
     {
-        //try
-        //{
         Sequence kmer = genome.subseq(index--, k);
         if (mutant(consensus, kmer))
         {
             crispr.add_repeat(kmer);
-            index = kmer.start() - k - SPACER_SKIP;
+            index = kmer.start() - k - SPACER_SKIP;   
             countdown = reset;
         }
-        //}
-        //catch (ArgumentOutOfRangeException)
-        //{
-            //Console.WriteLine("Index was out of bounds. Continuing...");
-            //break;
-        //}
+        if (index < genome.start())
+        {
+            break;
+        }
     }
 
-    if (crispr.repeats.size() >= REPEATS_MIN)
+    if (crispr.repeats.size() >= 3)
     {
+        cout << "CRISPR discovered" << endl;
         return optional<Crispr>{crispr};
     }
     else
     {
-        nullopt;
+        cout << "nullopt discovered" << endl;
+        return nullopt;
     }
 }
 
@@ -179,7 +172,7 @@ vector<Crispr> discover_crisprs(Sequence genome, int k)
     {
         Sequence dyad = dyads[i];
         optional<Crispr> crispr = discover_crispr(genome, dyad);
-        if (crispr)
+        if (crispr.has_value())
         {
             cout << "registering crispr..." << endl;
             crisprs.push_back(*crispr);
@@ -209,10 +202,12 @@ int main()
 
     string test_path = R"(P:\CRISPR\test_data\test.fasta)";
     string aureus_path = R"(P:\CRISPR\bacteria\aureus.fasta)";
+    string pyogenes_path = R"(P:\CRISPR\bacteria\pyogenes.fasta)";
 
-    Sequence aureus = parse_single_seq(aureus_path);
+    Sequence pyogenes = parse_single_seq(pyogenes_path);
 
-    vector<Crispr> crisprs = discover_crisprs(aureus, REPEAT_MIN, REPEAT_MAX);
+    //vector<Crispr> crisprs = discover_crisprs(pyogenes, REPEAT_MIN, REPEAT_MAX);
+    vector<Crispr> crisprs = discover_crisprs(pyogenes, 36);
 
     for (int i = 0; i < crisprs.size(); i++)
     {
