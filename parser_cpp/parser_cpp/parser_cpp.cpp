@@ -168,14 +168,15 @@ vector<Crispr> discover_crisprs(Sequence genome, int k)
     for (int i = 0; i < dyads.size(); i++)
     {
         Sequence dyad = dyads[i];
-        cout << "examining dyad " << i << "/" << dyads.size() << " with start " << dyad.start() << "/" << genome.length() << endl;
+        cout << "\rexamining dyad " << i << "/" << dyads.size() << " with start " << dyad.start() << "/" << genome.length();
         optional<Crispr> crispr = discover_crispr(genome, dyad);
         if (crispr.has_value())
         {
-            cout << "CRISPR discovered at consensus start " << dyad.start() << endl;
+            cout << " -> CRISPR discovered at consensus start " << dyad.start() << endl;
             crisprs.push_back(*crispr);
         }
     }
+    cout << endl;
     return crisprs;
 }
 
@@ -203,12 +204,10 @@ int main()
 
     Sequence pyogenes = parse_single_seq(pyogenes_path);
 
-    //vector<Crispr> crisprs = discover_crisprs(pyogenes, REPEAT_MIN, REPEAT_MAX);
     vector<Crispr> crisprs = discover_crisprs(pyogenes, 36);
-
     for (int i = 0; i < crisprs.size(); i++)
     {
-        cout << crisprs[i].to_string() << endl;
+        cout << crisprs[i].stringification() << endl;
     }
 
     return 0;

@@ -17,5 +17,5 @@ class Crispr
 
     void sort_repeats();
 
-    std::string to_string();
+    std::string stringification();
 };

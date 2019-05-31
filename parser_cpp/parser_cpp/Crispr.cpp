@@ -20,14 +20,15 @@ void Crispr::sort_repeats()
     std::sort(repeats.begin(), repeats.end(), Sequence::compare_start);
 }
 
-string Crispr::to_string()
+string Crispr::stringification()
 {
     sort_repeats();
-    string str = "";
+    string str = repeats[0].sequence() + ": ";
     for (int i = 0; i < repeats.size(); i++)
     {
-        Sequence seq = repeats[i];
-        str += seq.sequence() + " ";
+        int repeat_start = repeats[i].start();
+        string repeat_str = to_string(repeat_start);
+        str += repeat_str + " ";
     }
     return str;
 }
