@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <iostream>
 
 using namespace std;
 
@@ -61,6 +62,7 @@ bool Sequence::is_dyad()
 
 vector<Sequence> Sequence::dyads(int k)
 {
+    cout << "generating dyads for k: " << k << endl;
     vector<Sequence> seqs;
     for (size_t i = 0; i < seq.length() - k + 1; i++)
     {

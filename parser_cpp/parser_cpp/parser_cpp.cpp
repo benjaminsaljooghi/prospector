@@ -104,22 +104,22 @@ bool mutant(Sequence a, Sequence b)
     return true;
 }
 
-optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
+optional<Crispr> discover_crispr(Sequence genome, Sequence dyad)
 {
-    Crispr crispr;
-    crispr.add_repeat(consensus);
 
-    int k = consensus.length();
+    Crispr crispr;
+    crispr.add_repeat(dyad);
+
+    int k = dyad.length();
 
     // Upstream scan
-
-    int index = consensus.start() + k + SPACER_SKIP;
+    int index = dyad.start() + k + SPACER_SKIP;
     const int reset = SCAN_DOMAIN;
     int countdown = reset;
     while (countdown-- > 0)
     {
         Sequence kmer = genome.subseq(index++, k);
-        if (mutant(consensus, kmer))
+        if (mutant(dyad, kmer))
         {
             crispr.add_repeat(kmer);
             index = kmer.start() + k + SPACER_SKIP;
@@ -132,12 +132,12 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
     }
 
     // Downstream scan
-    index = consensus.start() - k - SPACER_SKIP;
+    index = dyad.start() - k - SPACER_SKIP;
     countdown = reset;
     while (countdown-- > 0)
     {
         Sequence kmer = genome.subseq(index--, k);
-        if (mutant(consensus, kmer))
+        if (mutant(dyad, kmer))
         {
             crispr.add_repeat(kmer);
             index = kmer.start() - k - SPACER_SKIP;   
@@ -149,16 +149,12 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence consensus)
         }
     }
 
-    if (crispr.repeats.size() >= 3)
+    if (crispr.repeats.size() >= REPEATS_MIN)
     {
-        cout << "CRISPR discovered" << endl;
         return optional<Crispr>{crispr};
     }
-    else
-    {
-        cout << "nullopt discovered" << endl;
-        return nullopt;
-    }
+
+    return nullopt;
 }
 
 vector<Crispr> discover_crisprs(Sequence genome, int k)
@@ -166,17 +162,18 @@ vector<Crispr> discover_crisprs(Sequence genome, int k)
     cout << "discovering crisprs for k: " << k << endl;
 
     vector<Crispr> crisprs;
+
     vector<Sequence> dyads = genome.dyads(k);
 
     for (int i = 0; i < dyads.size(); i++)
     {
         Sequence dyad = dyads[i];
+        cout << "examining dyad " << i << "/" << dyads.size() << " with start " << dyad.start() << "/" << genome.length() << endl;
         optional<Crispr> crispr = discover_crispr(genome, dyad);
         if (crispr.has_value())
         {
-            cout << "registering crispr..." << endl;
+            cout << "CRISPR discovered at consensus start " << dyad.start() << endl;
             crisprs.push_back(*crispr);
-            i = (*crispr).last().end() + 1;
         }
     }
     return crisprs;
