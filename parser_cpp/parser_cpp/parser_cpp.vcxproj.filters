@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="parser_cpp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Sequence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Crispr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parser_cpp.cu">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

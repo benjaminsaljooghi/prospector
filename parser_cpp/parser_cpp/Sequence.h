@@ -28,6 +28,8 @@ class Sequence
 
     std::vector<Sequence> dyads(int k);
 
+    std::vector<Sequence> dyads(int k_start, int k_end);
+
     bool operator<(const Sequence rhs) const;
 };
 

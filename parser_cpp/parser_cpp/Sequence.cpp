@@ -76,6 +76,17 @@ vector<Sequence> Sequence::dyads(int k)
     return seqs;
 }
 
+vector<Sequence> Sequence::dyads(int k_start, int k_end)
+{
+    vector<Sequence> seqs;
+    for (int k = k_start; k < k_end; k++)
+    {
+        vector<Sequence> dyad_seqs = dyads(k);
+        seqs.insert(seqs.end(), dyad_seqs.begin(), dyad_seqs.end());
+    }
+    return seqs;
+}
+
 bool Sequence::operator<(const Sequence rhs) const
 {
     bool comes_before = start_pos < rhs.start_pos;
@@ -85,11 +96,11 @@ bool Sequence::operator<(const Sequence rhs) const
     }
 
     // sequences start at the same index, so compare based on size
-    bool smaller = seq.length() < rhs.seq.length();
-    if (smaller)
-    {
-        return true;
-    }
+    //bool smaller = seq.length() < rhs.seq.length();
+    //if (smaller)
+    //{
+    //    return true;
+    //}
 
     // sequences start at the same index and have the same size, so they must be equal
     return false;

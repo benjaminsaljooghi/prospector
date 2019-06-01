@@ -1,5 +1,24 @@
 using namespace std;
 
+
+// For the CUDA runtime routines (prefixed with "cuda_")
+#include <cuda_runtime.h>
+
+#include "device_launch_parameters.h"
+
+#ifdef __CUDACC__
+#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
+#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
+#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
+#define CUDA_CALLABLE_MEMBER __host__ __device__
+#else
+#define KERNEL_ARGS2(grid, block)
+#define KERNEL_ARGS3(grid, block, sh_mem)
+#define KERNEL_ARGS4(grid, block, sh_mem, stream)
+#define CUDA_CALLABLE_MEMBER
+#endif
+
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -81,8 +100,6 @@ vector<string> get_kmers(string sequence, int k)
     return seqs;
 }
 
-
-
 bool mutant(Sequence a, Sequence b)
 {
     if (!ALLOW_DISCREPANT_LENGTHS && a.length() != b.length())
@@ -160,15 +177,20 @@ optional<Crispr> discover_crispr(Sequence genome, Sequence dyad)
     return nullopt;
 }
 
-set<Crispr> discover_crisprs(Sequence genome, int k)
+set<Crispr> discover_crisprs_sequential(Sequence genome, vector<Sequence> dyads)
 {
-    cout << "discovering crisprs for k: " << k << endl;
     set<Crispr> crisprs;
-    vector<Sequence> dyads = genome.dyads(k);
+
+    size_t num_bytes = sizeof(vector<Sequence>);
+    for (int i = 0; i < dyads.size(); i++)
+        num_bytes += sizeof(dyads[i]);
+    cout << "dyads total " << num_bytes << " bytes" << endl;
+
+    cout << "discovering CRISPRs from " << dyads.size() << " dyads." << endl;
     for (int i = 0; i < dyads.size(); i++)
     {
         Sequence dyad = dyads[i];
-        cout << "\rexamining dyad " << i << "/" << dyads.size()-1 << " with start " << dyad.start() << "/" << genome.length();
+        cout << "\rexamining dyad " << i << "/" << dyads.size() - 1 << " with start " << dyad.start() << "/" << genome.length();
         optional<Crispr> crispr = discover_crispr(genome, dyad);
         if (crispr.has_value())
         {
@@ -180,15 +202,16 @@ set<Crispr> discover_crisprs(Sequence genome, int k)
     return crisprs;
 }
 
-set<Crispr> discover_crisprs(Sequence genome, int k_start, int k_end)
+
+__global__ void discover_crisprs_parallel(int n, Sequence genome, const Sequence* dyads)
 {
-    set<Crispr> all_crisprs;
-    for (int k = k_start; k < k_end; k++)
+    int i = threadIdx.x;
+    Sequence dyad = dyads[i];
+    Crispr crispr = discover_crispr(genome, dyad);
+    if (crispr.has_value())
     {
-        set<Crispr> crisprs = discover_crisprs(genome, k);
-        all_crisprs.insert(crisprs.begin(), crisprs.end());
+        result[i] = crispr;
     }
-    return all_crisprs;
 }
 
 
@@ -200,9 +223,9 @@ int main()
 
     Sequence pyogenes = parse_single_seq(pyogenes_path);
 
-    set<Crispr> crisprs = discover_crisprs(pyogenes, 30, 40);
-    
-
+    vector<Sequence> dyads = pyogenes.dyads(30, 40);
+    set<Crispr> crisprs = discover_crisprs(pyogenes, dyads);
+   
     cout << "discovered CRISPRs: " << endl;
     for (auto c : crisprs)
     {

@@ -2,6 +2,7 @@
 #include "Crispr.h"
 
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -35,10 +36,14 @@ string Crispr::stringification()
 
 bool Crispr::operator<(const Crispr& rhs) const
 {
+
     Sequence this_start = repeats.front();
     Sequence rhs_start = rhs.repeats.front();
-    bool index_before = this_start.start() < rhs_start.start();
-    if (index_before)
+    //bool index_before = this_start.start() < rhs_start.start();
+    int this_start_pos = this_start.start();
+    int rhs_start_pos = rhs_start.start();
+
+    if (this_start_pos < rhs_start_pos)
     {
         return true;
     }
@@ -50,7 +55,7 @@ bool Crispr::operator<(const Crispr& rhs) const
     }
 
     // crisprs start at the same position, and have the same repeat count. Therefore, let's compare based on sequences
-    for (int i = 0; i < repeats.size(); i++)
+    for (int i = 0; i < rhs.repeats.size(); i++)
     {
         Sequence this_repeat = repeats[i];
         Sequence other_repeat = rhs.repeats[i];
