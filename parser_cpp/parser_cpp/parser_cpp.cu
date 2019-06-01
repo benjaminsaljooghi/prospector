@@ -16,15 +16,14 @@ using namespace std;
 #define KERNEL_ARGS3(grid, block, sh_mem)
 #define KERNEL_ARGS4(grid, block, sh_mem, stream)
 #endif
-//
-//
-//
+
 #include <iostream>
 #include <stdio.h>
+//#include <cuda_fp16.h>
 //#include <fstream>
 //#include <string>
 //#include <map>
-//#include <vector>
+#include <vector>
 //#include <algorithm>
 //#include <optional>
 //#include <functional>
@@ -250,17 +249,56 @@ using namespace std;
 //}
 
 #define N 100
+typedef struct
+{
+    int A, B, C;
+} Match;
+
+__device__ Match dev_data[N];
+__device__ int dev_count = 0;
+
+__device__ int my_push_back(Match& mt)
+{
+    int insert_pt = atomicAdd(&dev_count, 1);
+    if (insert_pt < N)
+    {
+        dev_data[insert_pt] = mt;
+        return insert_pt;
+    }
+    else return -1;
+}
 
 __global__ void kernel()
 {
-    printf("block %d, thread %d\n", blockIdx.x, threadIdx.x);
-}
 
+    if (threadIdx.x < 15) //Simulate a found occurrence
+    {
+        Match a = { 1, 2, 3 };
+        my_push_back(a);
+    }
+}
 
 int main()
 {
-    kernel KERNEL_ARGS2(2, 10) ();
-    cudaDeviceSynchronize();
+    kernel KERNEL_ARGS2(2, 256) ();
+
+    int dsize;
+    cudaMemcpyFromSymbol(&dsize, dev_count, sizeof(int));
+    if (dsize >= N)
+    {
+        printf("overflow error\n");
+        return 1;
+    }
+
+    vector<Match> results(dsize);
+    cudaMemcpyFromSymbol(&(results[0]), dev_data, dsize * sizeof(Match));
+    cout << "number of matches = " << dsize << endl;
+    cout << "A  =  " << results[dsize - 1].A << endl;
+    cout << "B  =  " << results[dsize - 1].B << endl;
+    cout << "C  =  " << results[dsize - 1].C << endl;
+}
+
+
     //string test_path = R"(P:\CRISPR\test_data\test.fasta)";
     //string aureus_path = R"(P:\CRISPR\bacteria\aureus.fasta)";
     //string pyogenes_path = R"(P:\CRISPR\bacteria\pyogenes.fasta)";
@@ -277,4 +315,4 @@ int main()
     //}
 
     //return 0;
-}
+
