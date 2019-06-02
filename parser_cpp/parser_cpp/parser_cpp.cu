@@ -276,13 +276,24 @@ Sequence parse_single_seq(string file_path)
 //}
 
 
+#define K 4
+#define BUFFER 20
 
-__global__ void kernel(int n, char* genome)
+__device__ char* kmer(const char* seq, int start)
+{
+    char subbuff[K + 1];
+    memcpy(subbuff, &seq[start], K);
+    subbuff[K] = '\0';
+    return subbuff;
+}
+
+__global__ void kernel(int n, const char* genome)
 {
     printf("threadIdx.x %d\n", threadIdx.x);
-    char s = genome[threadIdx.x];
-    printf("char: %c\n", s);
+    char* my_subseq = kmer(genome, threadIdx.x);
+    printf("seq: %s\n", my_subseq);
 }
+
 
 int main()
 {
@@ -300,37 +311,21 @@ int main()
 
     //return 0;
 
+    const char* genome = "abcdefghijklmnopqrstuvwxyz";
+    int genome_len = strlen(genome);
 
-    //int num_elems = 5;
-    //size_t size = num_elems * sizeof(char);
-    //char* str = (char*)malloc(size);
+    char* device_genome = NULL;
+    cudaMalloc((void**)& device_genome, genome_len);
+    cudaMemcpy(device_genome, genome, genome_len, cudaMemcpyHostToDevice);
 
-    //str[0] = 'a';
-    //str[1] = 'b';
-    //str[2] = 'c';
-    //str[3] = 'd';
-    //str[4] = '\0';
-
-    const char* genome = "I am a genome";
-    int len = strlen(genome);
-
-    char* d_str = NULL;
-    cudaMalloc((void**)& d_str, len);
-    cudaMemcpy(d_str, genome, len, cudaMemcpyHostToDevice);
-
-    kernel KERNEL_ARGS2(1, 3) (len, d_str);
-    //kernel KERNEL_ARGS2(2, 10) ();
-
+    kernel KERNEL_ARGS2(1, 4) (genome_len, device_genome);
 
     cudaError err = cudaDeviceSynchronize();
-
-    /*  Check for and display Error  */
     if (cudaSuccess != err)
     {
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",
             __FILE__, __LINE__, cudaGetErrorString(err));
     }
-
 
     //int dsize;
     //cudaMemcpyFromSymbol(&dsize, dev_count, sizeof(int));
