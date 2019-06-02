@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef __CUDACC__
 #define CUDA_CALLABLE_MEMBER __host__ __device__
 #define KERNEL_ARGS2(grid, block) <<< grid, block >>>

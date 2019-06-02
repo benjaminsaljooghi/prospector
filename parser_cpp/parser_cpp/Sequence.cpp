@@ -8,7 +8,13 @@
 
 using namespace std;
 
-Sequence::Sequence(string seq, int start)
+CUDA_CALLABLE_MEMBER Sequence::Sequence()
+{
+    //this->seq = "";
+    //this->start_pos = 0;
+}
+
+CUDA_CALLABLE_MEMBER Sequence::Sequence(string seq, int start)
 {
     this->seq = seq;
     this->start_pos = start;

@@ -11,7 +11,9 @@ class Sequence
 
     public:
 
-    Sequence(std::string seq, int start);
+    CUDA_CALLABLE_MEMBER Sequence();
+
+    CUDA_CALLABLE_MEMBER Sequence(std::string seq, int start);
 
     CUDA_CALLABLE_MEMBER int length();
 
