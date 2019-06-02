@@ -83,6 +83,9 @@ Sequence parse_single_seq(string file_path)
     string seq = seqs.begin()->second;
     return Sequence(seq, 0);
 }
+
+
+
 //
 //vector<string> get_kmers(string sequence, int k)
 //{
@@ -202,20 +205,7 @@ Sequence parse_single_seq(string file_path)
 // CUDA BEGIN
 
 //
-//__device__ bool mutant(Sequence a, Sequence b)
-//{ 
-//    int len = min(a.length(), b.length());
-//    int allowed_point_mutations = a.length() / 10;
-//    int point_mutations = 0;
-//    for (int i = 0; i < len; i++)
-//    {
-//        if (a[i] != b[i] && ++point_mutations > allowed_point_mutations)
-//        {
-//            return false;
-//        }
-//    }
-//    return true;
-//}
+
 //
 //__device__ int my_push_back(Sequence& seq)
 //{
@@ -276,27 +266,130 @@ Sequence parse_single_seq(string file_path)
 //}
 
 
-#define K 4
-#define BUFFER 20
+constexpr auto K = 34;
+constexpr auto BUFFER = 20;
+constexpr auto ALLOWED_POINT_MUTATIONS = K / 10;
 
-__device__ char* kmer(const char* seq, int start)
-{
-    char subbuff[K + 1];
-    memcpy(subbuff, &seq[start], K);
-    subbuff[K] = '\0';
-    return subbuff;
+
+//__device__ char* kmer(const char* seq, int start)
+//{
+//    char subbuff[K + 1];
+//    memcpy(subbuff, &seq[start], K);
+//    subbuff[K] = '\0';
+//    return subbuff;
+//}
+
+__device__ bool mutant(const char* genome, int start_a, int start_b)
+{ 
+    int point_mutations = 0;
+    for (int i = 0; i < K; i++)
+    {
+        if (genome[start_a + i] != genome[start_b + i] && ++point_mutations > ALLOWED_POINT_MUTATIONS)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
-__global__ void kernel(int n, const char* genome)
+
+__device__ char complement(char nuc)
+{
+    switch (nuc)
+    {
+        case 'A':
+            return 'T';
+        case 'T':
+            return 'A';
+        case 'C':
+            return 'G';
+        case 'G':
+            return 'C';
+        case 'N':
+            return 'N';
+        case 'n':
+            return 'n';
+    }
+}
+
+
+__device__ bool dyad(const char* genome, int start)
+{
+    for (int i = 0; i < DYAD_MIN; i++)
+    {
+        char beginning_upstream = genome[start + i];
+        char end_downstream = genome[start + K - i - 1];
+        if (beginning_upstream != complement(end_downstream))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+__global__ void kernel(int n, const char* genome, int* crisprs)
 {
     printf("threadIdx.x %d\n", threadIdx.x);
-    char* my_subseq = kmer(genome, threadIdx.x);
-    printf("seq: %s\n", my_subseq);
+
+    int k_index = threadIdx.x;
+    int result_index = 0;
+
+    // Is this kmer a dyad?
+    if (dyad(genome, k_index))
+    {
+        // Save this kmer (dyad) as the beginning of a CRISPR
+        crisprs[k_index * BUFFER + result_index] = k_index;
+
+        // Search for repeats of this dyad
+        int candidate_start = k_index + K + SPACER_SKIP;
+        int countdown = SCAN_DOMAIN;
+        while (countdown-- > 0)
+        {
+            // Guard against overflow
+            if (candidate_start + K >= n)
+                break;
+
+            // Is this candidate a repeat?
+            if (mutant(genome, k_index, candidate_start))
+            {
+                // Save repeat
+                crisprs[k_index * BUFFER + result_index] = candidate_start;
+
+                // Look for the next candidate
+                candidate_start += K + SPACER_SKIP;
+                countdown = SCAN_DOMAIN;
+            }
+        }
+    }
 }
+
+
+
+string crispr_from_array_index(string genome, int* crisprs, int index)
+{
+    string crispr = "";
+    for (int i = 0; i < BUFFER; i++)
+    {
+        int val = crisprs[index * BUFFER + i];
+        if (val == -1)
+        {
+            break;
+        }
+        crispr += genome.substr(val, K);
+        genome += " ";
+    }
+    return crispr;
+}
+
+
 
 
 int main()
 {
+    string cas9_path = R"(P:\CRISPR\bacteria\SpyCas9.fasta)";
+    Sequence cas9 = parse_single_seq(cas9_path);
+
     //string pyogenes_path = R"(P:\CRISPR\bacteria\pyogenes.fasta)";
     //Sequence pyogenes = parse_single_seq(pyogenes_path);
 
@@ -311,14 +404,37 @@ int main()
 
     //return 0;
 
-    const char* genome = "abcdefghijklmnopqrstuvwxyz";
+
+    //const char* genome = "abcdefghijklmnopqrstuvwxyz";
+
+    string actual_genome = cas9.sequence();
+    const char* genome = actual_genome.c_str();
+
+    cout << "received genome as: " << genome << endl;
+    
+
+    
     int genome_len = strlen(genome);
+
+
 
     char* device_genome = NULL;
     cudaMalloc((void**)& device_genome, genome_len);
     cudaMemcpy(device_genome, genome, genome_len, cudaMemcpyHostToDevice);
 
-    kernel KERNEL_ARGS2(1, 4) (genome_len, device_genome);
+    // crispr array
+    int* crisprs;
+    
+    cudaMallocManaged(&crisprs, genome_len * BUFFER * sizeof(float));
+
+    for (int i = 0; i < genome_len * BUFFER; i++)
+    {
+        crisprs[i] = -1;
+    }
+
+    // kernel invoke
+    int num_threads = genome_len - K + 1;
+    kernel KERNEL_ARGS2(1, 512) (genome_len, device_genome, crisprs);
 
     cudaError err = cudaDeviceSynchronize();
     if (cudaSuccess != err)
@@ -327,21 +443,23 @@ int main()
             __FILE__, __LINE__, cudaGetErrorString(err));
     }
 
-    //int dsize;
-    //cudaMemcpyFromSymbol(&dsize, dev_count, sizeof(int));
-    //if (dsize >= N)
-    //{
-    //    printf("overflow error\n");
-    //    return 1;
-    //}
 
-    //vector<Match> results(dsize);
-    //cudaMemcpyFromSymbol(&(results[0]), dev_data, dsize * sizeof(Match));
-    //cout << "number of matches = " << dsize << endl;
-    //cout << "A  =  " << results[dsize - 1].A << endl;
-    //cout << "B  =  " << results[dsize - 1].B << endl;
-    //cout << "C  =  " << results[dsize - 1].C << endl;
+
+    for (int k_index = 0; k_index < genome_len; k_index++)
+    {
+        if (crisprs[k_index * BUFFER] == -1)
+        {
+            continue;
+        }
+
+        cout << "for k: " << k_index << " crispr array is: ";
+
+        string crispr = crispr_from_array_index(actual_genome, crisprs, k_index);
+        cout << crispr << endl;
+    }
+
+    cudaFree(crisprs);
+
+    return 0;
 }
-
-
 
