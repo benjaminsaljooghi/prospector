@@ -289,13 +289,9 @@ __device__ void discover_crispr_cuda(Sequence genome, Sequence dyad)
     //return crispr;
 }
 
-__global__ void kernel()
+__global__ void kernel(Sequence genome)
 {
-    if (threadIdx.x < 15) //Simulate a found occurrence
-    {
-        Match a = { 1, 2, 3 };
-        my_push_back(a);
-    }
+    printf(genome[threadIdx.x])
 }
 
 int main()
