@@ -277,12 +277,11 @@ Sequence parse_single_seq(string file_path)
 
 
 
-__global__ void kernel(int n, char* str)
+__global__ void kernel(int n, char* genome)
 {
-    ////char a = genome[threadIdx.x];
     printf("threadIdx.x %d\n", threadIdx.x);
-    char b = str[threadIdx.x];
-    printf("char: %c\n", b);
+    char s = genome[threadIdx.x];
+    printf("char: %c\n", s);
 }
 
 int main()
@@ -302,21 +301,24 @@ int main()
     //return 0;
 
 
-    int num_elems = 5;
-    size_t size = num_elems * sizeof(char);
-    char* str = (char*)malloc(size);
+    //int num_elems = 5;
+    //size_t size = num_elems * sizeof(char);
+    //char* str = (char*)malloc(size);
 
-    str[0] = 'a';
-    str[1] = 'b';
-    str[2] = 'c';
-    str[3] = 'd';
-    str[4] = '\0';
+    //str[0] = 'a';
+    //str[1] = 'b';
+    //str[2] = 'c';
+    //str[3] = 'd';
+    //str[4] = '\0';
+
+    const char* genome = "I am a genome";
+    int len = strlen(genome);
 
     char* d_str = NULL;
-    cudaMalloc((void**)& d_str, size);
-    cudaMemcpy(d_str, str, size, cudaMemcpyHostToDevice);
+    cudaMalloc((void**)& d_str, len);
+    cudaMemcpy(d_str, genome, len, cudaMemcpyHostToDevice);
 
-    kernel KERNEL_ARGS2(1, 3) (num_elems, d_str);
+    kernel KERNEL_ARGS2(1, 3) (len, d_str);
     //kernel KERNEL_ARGS2(2, 10) ();
 
 
