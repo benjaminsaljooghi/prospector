@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include "consts.h"
 
 class Sequence
 {
@@ -12,24 +13,24 @@ class Sequence
 
     Sequence(std::string seq, int start);
 
-    int length();
+    CUDA_CALLABLE_MEMBER int length();
 
-    int start();
+    CUDA_CALLABLE_MEMBER int start();
 
-    int end();
+    CUDA_CALLABLE_MEMBER int end();
 
-    Sequence subseq(int start, int length);
+    CUDA_CALLABLE_MEMBER Sequence subseq(int start, int length);
 
-    std::string sequence();
+    CUDA_CALLABLE_MEMBER std::string sequence();
 
-    char operator[](int i);
+    CUDA_CALLABLE_MEMBER char operator[](int i);
 
-    bool is_dyad();
+    CUDA_CALLABLE_MEMBER bool is_dyad();
 
-    std::vector<Sequence> dyads(int k);
+    CUDA_CALLABLE_MEMBER std::vector<Sequence> dyads(int k);
 
-    std::vector<Sequence> dyads(int k_start, int k_end);
+    CUDA_CALLABLE_MEMBER std::vector<Sequence> dyads(int k_start, int k_end);
 
-    bool operator<(const Sequence rhs) const;
+    CUDA_CALLABLE_MEMBER bool operator<(const Sequence rhs) const;
 };
 

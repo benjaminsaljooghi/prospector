@@ -7,29 +7,25 @@ using namespace std;
 #include "device_launch_parameters.h"
 //#include <helper_cuda.h>
 
-#ifdef __CUDACC__
-#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
-#else
-#define KERNEL_ARGS2(grid, block)
-#define KERNEL_ARGS3(grid, block, sh_mem)
-#define KERNEL_ARGS4(grid, block, sh_mem, stream)
-#endif
+#include "device_functions.h"
 
 #include <iostream>
 #include <stdio.h>
+
 //#include <cuda_fp16.h>
 //#include <fstream>
 //#include <string>
 //#include <map>
+
 #include <vector>
+
 //#include <algorithm>
 //#include <optional>
 //#include <functional>
 //
-//#include "consts.h"
-//#include "Sequence.h"
+#include "consts.h"
+#include "Sequence.h"
+#include <algorithm>
 //#include "Crispr.h"
 //#include <set>
 //
@@ -201,76 +197,100 @@ using namespace std;
 //    return crisprs;
 //}
 
-//__device__ thrust::device_vector<Sequence> discover_crispr_cuda(Sequence genome, Sequence dyad)
-//{
-//    thrust::device_vector<Sequence> crispr;
-//
-//    crispr.push_back(dyad);
-//    int k = dyad.length();
-//
-//    // Upstream scan
-//    int index = dyad.start() + k + SPACER_SKIP;
-//    const int reset = SCAN_DOMAIN;
-//    int countdown = reset;
-//    while (countdown-- > 0)
-//    {
-//        if (index + k > genome.end())
-//        {
-//            break;
-//        }
-//        Sequence kmer = genome.subseq(index++, k);
-//        if (mutant(dyad, kmer))
-//        {
-//            crispr.push_back(kmer);
-//            index = kmer.start() + k + SPACER_SKIP;
-//            countdown = reset;
-//        }
-//    }
-//
-//    // Downstream scan
-//    index = dyad.start() - k - SPACER_SKIP;
-//    countdown = reset;
-//    while (countdown-- > 0)
-//    {
-//        if (index < genome.start())
-//        {
-//            break;
-//        }
-//        Sequence kmer = genome.subseq(index--, k);
-//        if (mutant(dyad, kmer))
-//        {
-//            crispr.push_back(kmer);
-//            index = kmer.start() - k - SPACER_SKIP;
-//            countdown = reset;
-//        }
-//    }
-//
-//    return crispr;
-//}
 
-#define N 100
-typedef struct
+
+
+// CUDA BEGIN
+
+
+__device__ bool mutant(Sequence a, Sequence b)
 {
-    int A, B, C;
-} Match;
+    //if (!ALLOW_DISCREPANT_LENGTHS && a.length() != b.length())
+    //{
+    //    throw exception();
+    //}
 
-__device__ Match dev_data[N];
-__device__ int dev_count = 0;
+    int len = min(a.length(), b.length());
 
-__device__ int my_push_back(Match& mt)
-{
-    int insert_pt = atomicAdd(&dev_count, 1);
-    if (insert_pt < N)
+    int allowed_point_mutations = a.length() / 10;
+    int point_mutations = 0;
+
+    for (int i = 0; i < len; i++)
     {
-        dev_data[insert_pt] = mt;
-        return insert_pt;
+        if (a[i] != b[i] && ++point_mutations > allowed_point_mutations)
+        {
+            return false;
+        }
     }
-    else return -1;
+    return true;
+}
+
+
+#define N 1000
+
+__device__ Sequence crispr_dyads[N];
+__device__ int crispr_dyad_count = 0;
+
+__device__ int my_push_back(Sequence& seq)
+{
+    int insert_pt = atomicAdd(&crispr_dyad_count, 1);
+    if (insert_pt >= N)
+    {
+        return -1;
+    }
+    crispr_dyads[insert_pt] = seq;
+    return insert_pt;
+}
+
+__device__ void discover_crispr_cuda(Sequence genome, Sequence dyad)
+{
+    my_push_back(dyad);
+
+    int k = dyad.length();
+
+    // Upstream scan
+    int index = dyad.start() + k + SPACER_SKIP;
+    const int reset = SCAN_DOMAIN;
+    int countdown = reset;
+    while (countdown-- > 0)
+    {
+        if (index + k > genome.end())
+        {
+            break;
+        }
+        Sequence kmer = genome.subseq(index++, k);
+        if (mutant(dyad, kmer))
+        {
+            //crispr.push_back(kmer);
+            my_push_back(kmer);
+            index = kmer.start() + k + SPACER_SKIP;
+            countdown = reset;
+        }
+    }
+
+    // Downstream scan
+    index = dyad.start() - k - SPACER_SKIP;
+    countdown = reset;
+    while (countdown-- > 0)
+    {
+        if (index < genome.start())
+        {
+            break;
+        }
+        Sequence kmer = genome.subseq(index--, k);
+        if (mutant(dyad, kmer))
+        {
+            my_push_back(kmer);
+            index = kmer.start() - k - SPACER_SKIP;
+            countdown = reset;
+        }
+    }
+
+    //return crispr;
 }
 
 __global__ void kernel()
 {
-
     if (threadIdx.x < 15) //Simulate a found occurrence
     {
         Match a = { 1, 2, 3 };
