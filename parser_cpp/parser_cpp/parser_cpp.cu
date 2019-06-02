@@ -12,6 +12,8 @@ using namespace std;
 #include <iostream>
 #include <stdio.h>
 
+#include <windows.h>
+
 #include <cuda_fp16.h>
 #include <fstream>
 #include <string>
@@ -27,6 +29,7 @@ using namespace std;
 #include <algorithm>
 //#include "Crispr.h"
 #include <set>
+#include <ctime>
 //
 map<string, string> parse_fasta(string file_path)
 {
@@ -422,9 +425,13 @@ bool vec_contains(vector<int> a, vector<int> b)
 
 void for_k(int genome_len, string actual_genome, const char* genome, char* device_genome, int k_size)
 {
-    int* crisprs;
+    cout << "for k = " << k_size << endl;
 
+
+    cout << "allocating results matrix... " ;
+    int* crisprs;
     cudaMallocManaged(&crisprs, genome_len * BUFFER * sizeof(float));
+    cout << "complete." << endl;
 
     for (int i = 0; i < genome_len * BUFFER; i++)
     {
@@ -434,15 +441,15 @@ void for_k(int genome_len, string actual_genome, const char* genome, char* devic
     // kernel invoke
     int num_threads = genome_len - k_size + 1;
 
-    cout << "starting kernel..." << endl;
-    kernel KERNEL_ARGS2(4, 1024) (genome_len, device_genome, crisprs, k_size);
+    cout << "executing kernel... ";
+    kernel KERNEL_ARGS2(16, 1024) (genome_len, device_genome, crisprs, k_size);
     cudaError err = cudaDeviceSynchronize();
     if (cudaSuccess != err)
     {
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",
             __FILE__, __LINE__, cudaGetErrorString(err));
     }
-    cout << "kernel execution complete." << endl << endl;
+    cout << "complete." << endl;
 
 
     vector<vector<int>> vec_crisprs;
@@ -469,10 +476,10 @@ void for_k(int genome_len, string actual_genome, const char* genome, char* devic
         }
         vec_crisprs.push_back(this_crispr);
     }
-    cout << "complete." << endl << endl;
+    //cout << "complete." << endl;
 
 
-    cout << "pruning subset crisprs... ";
+    //cout << "pruning subset crisprs... ";
     for (int i = 0; i < vec_crisprs.size(); i++)
     {
         for (int j = 0; j < vec_crisprs.size(); j++)
@@ -486,46 +493,59 @@ void for_k(int genome_len, string actual_genome, const char* genome, char* devic
             }
         }
     }
-    cout << "complete." << endl << endl;
+    cout << "complete." << endl;
 
 
-    cout << "results:" << endl << endl;
+    //cout << "results:" << endl;
     for (auto vec : vec_crisprs)
     {
         if (vec[0] == -1)
             continue;
 
-        cout << "have crispr start pos: " << vec[0] << endl;
+        cout << "crispr at: " << vec[0] << endl;
 
         for (auto val : vec)
         {
             cout << actual_genome.substr(val, k_size) << " ";
         }
 
-        cout << endl << endl;
+        cout << endl;
     }
 
     cudaFree(crisprs);
+
+    cout << endl;
 }
 
 
 int main()
 {
+
+    Sleep(10000);
+
     string path = R"(P:\CRISPR\bacteria\pyogenes.fasta)";
     Sequence seq = parse_single_seq(path);
     string actual_genome = seq.sequence();
     const char* genome = actual_genome.c_str();
-
     int genome_len = strlen(genome);
 
+    clock_t start;
+    double duration;
+    start = clock();
+
+    cout << endl << "allocating memory for the genome... ";
     char* device_genome = NULL;
     cudaMalloc((void**)& device_genome, genome_len);
     cudaMemcpy(device_genome, genome, genome_len, cudaMemcpyHostToDevice);
+    cout << "complete." << endl << endl;
 
-    for (int k = 30; k < 40; k++)
+    for (int k = 35; k < 40; k++)
     {
         for_k(genome_len, actual_genome, genome, device_genome, k);
     }
+
+    duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    std::cout << "printf: " << duration << '\n';
   
 
     return 0;
