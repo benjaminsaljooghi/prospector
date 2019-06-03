@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28714.193
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "visual", "Prospector\visual.csproj", "{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Mono|Any CPU = Mono|Any CPU
+		Mono|x64 = Mono|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Debug|x64.ActiveCfg = Debug|x64
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Debug|x64.Build.0 = Debug|x64
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Mono|Any CPU.ActiveCfg = Release|Any CPU
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Mono|Any CPU.Build.0 = Release|Any CPU
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Mono|x64.ActiveCfg = Release|x64
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Mono|x64.Build.0 = Release|x64
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Release|x64.ActiveCfg = Release|x64
+		{1DA1ABA5-0F85-4783-9F84-30479CF96A8F}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D260EF0-5606-4567-8870-BB8B3663C0D4}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
+EndGlobal
