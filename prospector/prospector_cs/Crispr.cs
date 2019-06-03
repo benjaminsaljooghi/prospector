@@ -156,7 +156,7 @@ namespace Prospector
                 }
                 catch (ArgumentOutOfRangeException)
                 {
-                    Console.WriteLine("Index was out of bounds. Continuing...");
+                    //Console.WriteLine("index out of bounds, continuing...");
                     break;
                 }
 
@@ -179,7 +179,7 @@ namespace Prospector
                 }
                 catch (ArgumentOutOfRangeException)
                 {
-                    Console.WriteLine("Index was out of bounds. Continuing...");
+                    //Console.WriteLine("index out of bounds, continuing...");
                     break;
                 }
             }
@@ -262,20 +262,16 @@ namespace Prospector
 
         public static Crisprs DiscoverCrisprs(Sequence genome, int k)
         {
+            Console.WriteLine($"discovering CRISPRs for k {k}");
             Crisprs crisprs = new Crisprs();
             int num_kmers = genome.Length - k + 1;
             for (int i = 0; i < num_kmers; i++)
             {
-                //Console.WriteLine($"{i} at entry");
-
                 Sequence kmer = genome.Substring(i, k);
-
                 if (!Sequence.Dyad(kmer))
                 {
                     continue;
                 }
-
-                //Console.WriteLine($"found dyad at {i} of genome len {genome.Length}");
 
                 Crispr crispr = Crispr.DiscoverCrispr(genome, kmer);
                 if (crispr != null)
@@ -285,6 +281,7 @@ namespace Prospector
                     i = crispr.Last.End + 1;
                 }
             }
+            Console.WriteLine("returning CRISPRs.\n");
             return crisprs;
         }
 

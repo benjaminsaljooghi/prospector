@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -22,11 +23,15 @@ namespace Prospector
             return JsonConvert.DeserializeObject<T>(ReadAllText (path));
         }
 
-        public static void Execution(Sequence bacterium)
+        public static void Main()
         {
-            Crisprs crisprs = Crisprs.DiscoverCrisprs(bacterium, Crispr.REPEAT_MIN, Crispr.REPEAT_MAX);
-            Serialize(Path.Combine(DIR, "aureus_crisprs.json"), crisprs);
-            //Crisprs crisprs = Deserialize<Crisprs>(Path.Combine(DIR, "aureus_crisprs.json"));
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            string fasta = @"P:\CRISPR\data\pyogenes.fasta";
+            Sequence genome = new Sequence(fasta);
+
+            Crisprs crisprs = Crisprs.DiscoverCrisprs(genome, 35, 39);
 
             Console.WriteLine("Before merging crisprs:");
             crisprs.SortByStartPos();
@@ -35,16 +40,10 @@ namespace Prospector
             Console.WriteLine("After merging crisprs:");
             crisprs.MergeCrisprs();
             crisprs.SortByStartPos();
-            Console.WriteLine(crisprs); ;
-        }
+            Console.WriteLine(crisprs);
 
-        public static void Main()
-        {
-            const string BACTERIA = @"P:\CRISPR\bacteria";
-            const string PHAGES = @"P:\CRISPR\phage";
-            string bacterium_fasta = Combine(BACTERIA, "pyogenes.fasta");
-            string phages_fasta = Combine(PHAGES, "phages.fasta");
-            string spacers_fasta = Combine(PHAGES, "pyogenes_spacers.fa");
+            stopwatch.Stop();
+            Console.WriteLine($"Completed in {stopwatch.ElapsedMilliseconds / 1000.0} seconds");
 
             Console.WriteLine("Press any key to quit.");
             Console.ReadKey();
