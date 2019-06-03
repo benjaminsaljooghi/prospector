@@ -9,16 +9,13 @@ class Crispr
 {
     public:
 
-    std::vector<Sequence> repeats;
+    int k;
+    std::vector<int> repeats;
 
-    void add_repeat(Sequence repeat);
-
-    Sequence last();
-
+    Crispr(int k);
+    void add_repeat(int repeat);
+    int last();
     void sort_repeats();
-
-    std::string stringification();
-
+    std::string stringification(Sequence genome);
     bool operator<(const Crispr& rhs) const;
-
 };

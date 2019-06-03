@@ -8,43 +8,49 @@
 
 using namespace std;
 
-Sequence::Sequence(string seq, int start)
+CUDA_CALLABLE_MEMBER Sequence::Sequence()
+{
+    //this->seq = "";
+    //this->start_pos = 0;
+}
+
+CUDA_CALLABLE_MEMBER Sequence::Sequence(string seq, int start)
 {
     this->seq = seq;
     this->start_pos = start;
 }
 
-int Sequence::length()
+CUDA_CALLABLE_MEMBER int Sequence::length()
 {
     return seq.length();
 }
 
-int Sequence::start()
+CUDA_CALLABLE_MEMBER int Sequence::start()
 {
     return start_pos;
 }
 
-int Sequence::end()
+CUDA_CALLABLE_MEMBER int Sequence::end()
 {
     return start_pos + length() - 1;
 }
 
-Sequence Sequence::subseq(int start, int length)
+CUDA_CALLABLE_MEMBER Sequence Sequence::subseq(int start, int length)
 {
     return Sequence(seq.substr(start, length), start_pos + start);
 }
 
-string Sequence::sequence()
+CUDA_CALLABLE_MEMBER string Sequence::sequence()
 {
     return seq;
 }
 
-char Sequence::operator[](int i)
+CUDA_CALLABLE_MEMBER char Sequence::operator[](int i)
 {
     return seq[i];
 }
 
-bool Sequence::is_dyad()
+CUDA_CALLABLE_MEMBER bool Sequence::is_dyad()
 {
     int len = seq.length();
     for (int i = 0; i < DYAD_MIN; i++)
@@ -60,7 +66,7 @@ bool Sequence::is_dyad()
     return true;
 }
 
-vector<Sequence> Sequence::dyads(int k)
+CUDA_CALLABLE_MEMBER vector<Sequence> Sequence::dyads(int k)
 {
     cout << "generating dyads for k: " << k << "... ";
     vector<Sequence> seqs;
@@ -76,7 +82,18 @@ vector<Sequence> Sequence::dyads(int k)
     return seqs;
 }
 
-bool Sequence::operator<(const Sequence rhs) const
+CUDA_CALLABLE_MEMBER vector<Sequence> Sequence::dyads(int k_start, int k_end)
+{
+    vector<Sequence> seqs;
+    for (int k = k_start; k < k_end; k++)
+    {
+        vector<Sequence> dyad_seqs = dyads(k);
+        seqs.insert(seqs.end(), dyad_seqs.begin(), dyad_seqs.end());
+    }
+    return seqs;
+}
+
+CUDA_CALLABLE_MEMBER bool Sequence::operator<(const Sequence rhs) const
 {
     bool comes_before = start_pos < rhs.start_pos;
     if (comes_before)
@@ -85,11 +102,11 @@ bool Sequence::operator<(const Sequence rhs) const
     }
 
     // sequences start at the same index, so compare based on size
-    bool smaller = seq.length() < rhs.seq.length();
-    if (smaller)
-    {
-        return true;
-    }
+    //bool smaller = seq.length() < rhs.seq.length();
+    //if (smaller)
+    //{
+    //    return true;
+    //}
 
     // sequences start at the same index and have the same size, so they must be equal
     return false;
