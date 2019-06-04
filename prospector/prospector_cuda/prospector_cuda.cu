@@ -294,8 +294,6 @@ __device__ bool mutant(const char* genome, int start_a, int start_b, int k_size)
 }
 
 
-
-
 __device__ char complement(char nuc)
 {
     switch (nuc)
@@ -370,11 +368,6 @@ __device__ void run_analysis(int k_index, int n, const char* genome, int* crispr
         }
     }
 }
-
-
-
-
-
 
 
 

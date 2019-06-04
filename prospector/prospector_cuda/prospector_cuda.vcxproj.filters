@@ -28,8 +28,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="prospector_cpp.cu">
+    <None Include="prospector_cuda.cu">
       <Filter>Source Files</Filter>
-    </CudaCompile>
+    </None>
   </ItemGroup>
 </Project>

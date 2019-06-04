@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.28917.182
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prospector_cpp", "prospector_cpp\prospector_cpp.vcxproj", "{A7C01E11-4D25-491F-A346-04E0E31F392D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "prospector_cuda", "prospector_cuda\prospector_cuda.vcxproj", "{C93DE17E-6832-4790-9842-6BF2336F71DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{A7C01E11-4D25-491F-A346-04E0E31F392D}.Release|x64.Build.0 = Release|x64
 		{A7C01E11-4D25-491F-A346-04E0E31F392D}.Release|x86.ActiveCfg = Release|Win32
 		{A7C01E11-4D25-491F-A346-04E0E31F392D}.Release|x86.Build.0 = Release|Win32
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Debug|x64.ActiveCfg = Debug|x64
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Debug|x64.Build.0 = Debug|x64
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Debug|x86.ActiveCfg = Debug|Win32
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Debug|x86.Build.0 = Debug|Win32
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Release|x64.ActiveCfg = Release|x64
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Release|x64.Build.0 = Release|x64
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Release|x86.ActiveCfg = Release|Win32
+		{C93DE17E-6832-4790-9842-6BF2336F71DC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
