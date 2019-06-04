@@ -106,13 +106,13 @@ vector<string> get_kmers(string sequence, int k)
 //    return true;
 //}
 
-bool mutant(int a, int b, int k, Sequence genome)
+bool mutant(int a, int b, int k, string* genome)
 {
     int allowed_point_mutations = k / 10;
     int point_mutations = 0;
     for (int i = 0; i < k; i++)
     {
-        if (genome[a + i] != genome[b + i] && ++point_mutations > allowed_point_mutations)
+        if ((*genome)[a + i] != (*genome)[b + i] && ++point_mutations > allowed_point_mutations)
         {
             return false;
         }
@@ -120,7 +120,7 @@ bool mutant(int a, int b, int k, Sequence genome)
     return true;
 }
 
-optional<Crispr> discover_crispr(Sequence genome, int i, int k)
+optional<Crispr> discover_crispr(string genome, int i, int k, int start, int end)
 {
 
     Crispr crispr = Crispr(k);
@@ -130,13 +130,15 @@ optional<Crispr> discover_crispr(Sequence genome, int i, int k)
     int index = i + k + SPACER_SKIP;
     const int reset = SCAN_DOMAIN;
     int countdown = reset;
+
+   
     while (countdown-- > 0)
     {
-        if (index + k > genome.end())
+        if (index + k > end)
         {
             break;
         }
-        if (mutant(i, index, k, genome))
+        if (mutant(i, index, k, &genome))
         {
             crispr.add_repeat(index);
             index += k + SPACER_SKIP;
@@ -153,11 +155,11 @@ optional<Crispr> discover_crispr(Sequence genome, int i, int k)
     countdown = SCAN_DOMAIN;
     while (countdown-- > 0)
     {
-        if (index < genome.start())
+        if (index < start)
         {
             break;
         }
-        if (mutant(i, index, k, genome))
+        if (mutant(i, index, k, &genome))
         {
             crispr.add_repeat(index);
             index -= k + SPACER_SKIP;
@@ -183,15 +185,19 @@ set<Crispr> discover_crisprs(Sequence genome, int k)
     cout << "discovering crisprs for k: " << k << endl;
     set<Crispr> crisprs;
     //vector<Sequence> dyads = genome.dyads(k);
+    int start = genome.start();
+    int end = genome.end();
+    string seq = genome.seq;
     for (int i = 0; i < genome.length() - k + 1; i++)
     {
+        //cout << i;
         //Sequence dyad = dyads[i];
         //cout << "\rexamining dyad " << i << "/" << dyads.size()-1 << " with start " << dyad.start() << "/" << genome.length();
         
         if (!genome.dyad(i, k))
             continue;
         
-        optional<Crispr> crispr = discover_crispr(genome, i, k);
+        optional<Crispr> crispr = discover_crispr(seq, i, k, start, end);
         if (crispr.has_value())
         {
             //cout << " -> CRISPR discovered at consensus start " << dyad.start() << endl;
@@ -216,6 +222,30 @@ set<Crispr> discover_crisprs(Sequence genome, int k_start, int k_end)
 
 int main()
 {
+
+
+    //Crispr a = Crispr(35);
+    //Crispr b = Crispr(35);
+
+
+    //a.add_repeat(1684293);
+    //a.add_repeat(1684293);
+    //a.add_repeat(1684419);
+
+    //b.add_repeat(1684245);
+    //b.add_repeat(1684245);
+    //b.add_repeat(1684371);
+    //b.add_repeat(1684497);
+
+
+    //cout << (a < b) << endl;
+    //cout << (b < a) << endl;
+
+
+    //return 0;
+
+
+
     clock_t start;
     double duration;
     start = clock();
@@ -224,7 +254,7 @@ int main()
     string aureus_path = R"(P:\CRISPR\data\aureus.fasta)";
     string pyogenes_path = R"(P:\CRISPR\data\pyogenes.fasta)";
     Sequence pyogenes = parse_single_seq(pyogenes_path);
-    set<Crispr> crisprs = discover_crisprs(pyogenes, 35, 40);
+    set<Crispr> crisprs = discover_crisprs(pyogenes, 35, 36);
 
     cout << "discovered CRISPRs: " << endl;
     for (auto c : crisprs)

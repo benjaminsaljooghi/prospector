@@ -31,29 +31,35 @@ string Crispr::stringification(Sequence genome)
     string str = genome.subseq(repeats[0], k).seq + ": ";
     for (int i = 0; i < repeats.size(); i++)
     {
-        str += repeats[i] + " ";
+        str += to_string(repeats[i]) + " ";
     }
     return str;
 }
 
 bool Crispr::operator<(const Crispr& rhs) const
 {
-    int this_start = repeats.front();
-    int rhs_start = rhs.repeats.front();
-    bool index_before = this_start < rhs_start;
-    if (index_before)
-    {
-        return true;
-    }
+    //int this_start = repeats.front();
+    //int rhs_start = rhs.repeats.front();
+    //bool index_before = this_start < rhs_start;
+    //if (index_before)
+    //{
+        //return true;
+    //}
     
-    bool count_lower = repeats.size() < rhs.repeats.size();
-    if (count_lower)
-    {
-        return true;
-    }
+    //bool count_lower = repeats.size() < rhs.repeats.size();
+    //if (count_lower)
+    //{
+    //    return true;
+    //}
+
+
+    return repeats.front() < rhs.repeats.front();
+
+
+    int min_repeat_count = min(repeats.size(), rhs.repeats.size());
 
     // crisprs start at the same position, and have the same repeat count. Therefore, let's compare based on sequences
-    for (int i = 0; i < repeats.size(); i++)
+    for (int i = 0; i < min_repeat_count; i++)
     {
         int this_repeat = repeats[i];
         int other_repeat = rhs.repeats[i];
@@ -63,10 +69,10 @@ bool Crispr::operator<(const Crispr& rhs) const
         }
     }
 
-    if (k < rhs.k)
-    {
-        return true;
-    }
+    //if (k < rhs.k)
+    //{
+        //return true;
+    //}
 
     // this crispr is not < rhs
     return false;
