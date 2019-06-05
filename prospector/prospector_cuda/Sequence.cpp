@@ -8,49 +8,44 @@
 
 using namespace std;
 
-CUDA_CALLABLE_MEMBER Sequence::Sequence()
+Sequence::Sequence()
 {
     //this->seq = "";
     //this->start_pos = 0;
 }
 
-CUDA_CALLABLE_MEMBER Sequence::Sequence(string seq, int start)
+Sequence::Sequence(string seq, int start)
 {
     this->seq = seq;
     this->start_pos = start;
 }
 
-CUDA_CALLABLE_MEMBER int Sequence::length()
+int Sequence::length()
 {
     return seq.length();
 }
 
-CUDA_CALLABLE_MEMBER int Sequence::start()
+int Sequence::start()
 {
     return start_pos;
 }
 
-CUDA_CALLABLE_MEMBER int Sequence::end()
+int Sequence::end()
 {
     return start_pos + length() - 1;
 }
 
-CUDA_CALLABLE_MEMBER Sequence Sequence::subseq(int start, int length)
+Sequence Sequence::subseq(int start, int length)
 {
     return Sequence(seq.substr(start, length), start_pos + start);
 }
 
-CUDA_CALLABLE_MEMBER string Sequence::sequence()
-{
-    return seq;
-}
-
-CUDA_CALLABLE_MEMBER char Sequence::operator[](int i)
+char Sequence::operator[](int i)
 {
     return seq[i];
 }
 
-CUDA_CALLABLE_MEMBER bool Sequence::is_dyad()
+bool Sequence::is_dyad()
 {
     int len = seq.length();
     for (int i = 0; i < DYAD_MIN; i++)
@@ -66,7 +61,7 @@ CUDA_CALLABLE_MEMBER bool Sequence::is_dyad()
     return true;
 }
 
-CUDA_CALLABLE_MEMBER vector<Sequence> Sequence::dyads(int k)
+vector<Sequence> Sequence::dyads(int k)
 {
     cout << "generating dyads for k: " << k << "... ";
     vector<Sequence> seqs;
@@ -82,7 +77,7 @@ CUDA_CALLABLE_MEMBER vector<Sequence> Sequence::dyads(int k)
     return seqs;
 }
 
-CUDA_CALLABLE_MEMBER vector<Sequence> Sequence::dyads(int k_start, int k_end)
+vector<Sequence> Sequence::dyads(int k_start, int k_end)
 {
     vector<Sequence> seqs;
     for (int k = k_start; k < k_end; k++)
@@ -93,7 +88,7 @@ CUDA_CALLABLE_MEMBER vector<Sequence> Sequence::dyads(int k_start, int k_end)
     return seqs;
 }
 
-CUDA_CALLABLE_MEMBER bool Sequence::operator<(const Sequence rhs) const
+bool Sequence::operator<(const Sequence rhs) const
 {
     bool comes_before = start_pos < rhs.start_pos;
     if (comes_before)
