@@ -128,7 +128,7 @@ __device__ __host__ char complement(char nuc)
     }
 }
 
-__device__ void run_analysis(int k_index, int n, const char* genome, int* buffer, int k_size)
+__device__ void run_analysis(const char* genome, int genome_len, int dyad, int buffer_start, int* buffer, int k)
 {
     int result_index = 0;
 
@@ -136,23 +136,23 @@ __device__ void run_analysis(int k_index, int n, const char* genome, int* buffer
     buffer[k_index * BUFFER + result_index] = k_index;
 
     // Search for repeats of this dyad
-    int candidate_start = k_index + k_size + SPACER_SKIP;
+    int candidate_start = k_index + k + SPACER_SKIP;
     int countdown = SCAN_DOMAIN;
     while (countdown-- > 0)
     {
         // Guard against overflow
-        if (candidate_start + k_size >= n)
+        if (candidate_start + k >= genome_len)
             break;
 
         // Is this candidate a repeat?
-        if (mutant(genome, k_index, candidate_start, k_size))
+        if (mutant(genome, k_index, candidate_start, k))
         {
             // Save repeat
             result_index++;
             buffer[k_index * BUFFER + result_index] = candidate_start;
 
             // Look for the next candidate
-            candidate_start = candidate_start + k_size + SPACER_SKIP;
+            candidate_start = candidate_start + k + SPACER_SKIP;
             countdown = SCAN_DOMAIN;
         }
         else
@@ -162,18 +162,14 @@ __device__ void run_analysis(int k_index, int n, const char* genome, int* buffer
     }
 }
 
-__global__ void kernel( int total_dyad_count,
-                        const char* genome,
-                        int* dyads,
-                        int* buffer,
-                        int* k_map)
+__global__ void kernel(int total_dyad_count, const char* genome, int genome_len, int* dyads, int* buffer, int* k_map)
 {
     for (int d_index = blockIdx.x * blockDim.x + threadIdx.x; d_index < total_dyad_count; d_index += blockDim.x * gridDim.x)
     {
         int k = k_map[d_index];
         int dyad = dyads[d_index];
         int buffer_start = dyad_index * BUFFER;
-        run_analysis(genome, dyad, buffer_start, buffer, k);
+        run_analysis(genome, genome_len, dyad, buffer_start, buffer, k);
     }
 }
 
