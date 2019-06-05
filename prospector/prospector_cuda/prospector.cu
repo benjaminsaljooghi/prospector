@@ -7,7 +7,7 @@ using namespace std;
 #include "device_launch_parameters.h"
 //#include <helper_cuda.h>
 
-#include "device_functions.h"
+//#include "device_functions.h"
 
 #include <iostream>
 #include <stdio.h>
@@ -24,13 +24,15 @@ using namespace std;
 
 #include <optional>
 #include <functional>
-//
+
 #include "consts.h"
 #include "Sequence.h"
 #include <algorithm>
-//#include "Crispr.h"
 #include <set>
 #include <ctime>
+
+#include <assert.h>
+
 //
 map<string, string> parse_fasta(string file_path)
 {
@@ -95,20 +97,6 @@ string parse_genome(string file_path)
 
 constexpr int BUFFER = 20;
 
-__device__ bool mutant(const char* genome, int start_a, int start_b, int k_size)
-{ 
-    int point_mutations = 0;
-    int allowed = k_size / 10;
-    for (int i = 0; i < k_size; i++)
-    {
-        if (genome[start_a + i] != genome[start_b + i] && ++point_mutations > allowed)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 __device__ __host__ char complement(char nuc)
 {
     switch (nuc)
@@ -125,74 +113,84 @@ __device__ __host__ char complement(char nuc)
             return 'N';
         case 'n':
             return 'n';
+        default:
+            return 'n';
     }
 }
 
-__device__ void run_analysis(const char* genome, int genome_len, int dyad, int buffer_start, int* buffer, int k)
+__device__ bool mutant(const char* genome, int start_a, int start_b, int k)
 {
-    int result_index = 0;
-
-    // Save this dyad as the beginning of a CRISPR
-    buffer[k_index * BUFFER + result_index] = k_index;
-
-    // Search for repeats of this dyad
-    int candidate_start = k_index + k + SPACER_SKIP;
-    int countdown = SCAN_DOMAIN;
-    while (countdown-- > 0)
+    int mutations = 0;
+    int allowed_mutations = k / 10;
+    for (int i = 0; i < k; i++)
     {
-        // Guard against overflow
-        if (candidate_start + k >= genome_len)
-            break;
-
-        // Is this candidate a repeat?
-        if (mutant(genome, k_index, candidate_start, k))
+        if (genome[start_a + i] != genome[start_b + i] && ++mutations > allowed_mutations)
         {
-            // Save repeat
-            result_index++;
-            buffer[k_index * BUFFER + result_index] = candidate_start;
-
-            // Look for the next candidate
-            candidate_start = candidate_start + k + SPACER_SKIP;
-            countdown = SCAN_DOMAIN;
-        }
-        else
-        {
-            candidate_start++;
+            return false;
         }
     }
+    return true;
 }
 
-__global__ void kernel(int total_dyad_count, const char* genome, int genome_len, int* dyads, int* buffer, int* k_map)
+__global__ void kernel(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map)
 {
     for (int d_index = blockIdx.x * blockDim.x + threadIdx.x; d_index < total_dyad_count; d_index += blockDim.x * gridDim.x)
     {
         int k = k_map[d_index];
         int dyad = dyads[d_index];
-        int buffer_start = dyad_index * BUFFER;
-        run_analysis(genome, genome_len, dyad, buffer_start, buffer, k);
+        int buffer_start = d_index * BUFFER;
+
+
+
+        int repeat_index = 0;
+
+        // Save this dyad as the beginning of a CRISPR
+        buffer[buffer_start] = dyad;
+
+        // Search for repeats of this dyad
+        int candidate = dyad + k + SPACER_SKIP;
+        int countdown = SCAN_DOMAIN;
+        while (countdown-- > 0 && candidate + k < genome_len)
+        {
+            // Is this candidate a repeat?
+            if (mutant(genome, dyad, candidate, k))
+            {
+                // Save repeat
+                repeat_index++;
+                buffer[buffer_start + repeat_index] = candidate;
+
+                // Look for the next candidate
+                candidate += k + SPACER_SKIP;
+                countdown = SCAN_DOMAIN;
+            }
+            else
+            {
+                candidate++;
+            }
+        }
+
+
+
     }
 }
 
+string crispr_from_buffer(string genome, int* buffer, int d_index, int k)
+{
+    string crispr = "";
+    for (int i = 0; i < BUFFER; i++)
+    {
+        int val = buffer[d_index * BUFFER + i];
+        if (val == -1)
+        {
+            break;
+        }
+        crispr += genome.substr(val, k);
+        crispr += " ";
+    }
+    return crispr;
+}
 
-//
-//
-//string crispr_from_array_index(string genome, int* crisprs, int index, int k_size)
-//{
-//    string crispr = "";
-//    for (int i = 0; i < BUFFER; i++)
-//    {
-//        int val = crisprs[index * BUFFER + i];
-//        if (val == -1)
-//        {
-//            break;
-//        }
-//        crispr += genome.substr(val, k_size);
-//        crispr += " ";
-//    }
-//    return crispr;
-//}
-//
-//
+
 //bool vec_contains(vector<int> a, vector<int> b)
 //{
 //    for (auto a_elt : a)
@@ -204,9 +202,7 @@ __global__ void kernel(int total_dyad_count, const char* genome, int genome_len,
 //    }
 //    return true;
 //}
-//
-//
-//
+
 
 bool dyad(const char* genome, int start, int k_size)
 {
@@ -222,7 +218,7 @@ bool dyad(const char* genome, int start, int k_size)
     return true;
 }
 
-vector<int> dyad_seqs(int genome_len, const char* genome, int k)
+vector<int> dyad_seqs(size_t genome_len, const char* genome, int k)
 {
     vector<int> seqs;
     for (int i = 0; i < genome_len; i++)
@@ -235,7 +231,7 @@ vector<int> dyad_seqs(int genome_len, const char* genome, int k)
     return seqs;
 }
 
-vector<vector<int>> dyad_seqs(int genome_len, const char* genome, int k_start, int k_end)
+vector<vector<int>> dyad_seqs(size_t genome_len, const char* genome, int k_start, int k_end)
 {
     vector<vector<int>> all_seqs;
     for (int k = k_start; k < k_end; k++)
@@ -251,12 +247,12 @@ vector<int> dyad_lens(vector<vector<int>> all_dyads)
     vector<int> lens;
     for (auto vec : all_dyads)
     {
-        lens.push_back(vec.size());
+        lens.push_back((int) vec.size());
     }
     return lens;
 }
 
-int* dyads_vec_to_arr(vector<vector<int>> all_dyads)
+vector<int> dyads_vec_to_arr(vector<vector<int>> all_dyads)
 {
     vector<int> flattened_dyads;
     for (auto vec : all_dyads)
@@ -266,20 +262,24 @@ int* dyads_vec_to_arr(vector<vector<int>> all_dyads)
             flattened_dyads.push_back(dyad);
         }
     }
-    return &flattened_dyads[0];
+    return flattened_dyads;
 }
 
 int* crispr_buffer(int total_dyad_count)
 {
     size_t neg_count = total_dyad_count * BUFFER;
-    int* buffer = (int*) cudaMallocManaged(neg_count * sizeof(int));
+    int* buffer;
+    cudaMallocManaged(&buffer, neg_count * sizeof(int));
     for (int i = 0; i < neg_count; i++)
+    {
         buffer[i] = -1;
+    }
+
     return buffer;
 }
 
-#define K_START 35
-#define K_END 40
+#define K_START 36
+#define K_END 37
 
 int run()
 {
@@ -294,29 +294,25 @@ int run()
     vector<int> lens = dyad_lens(all_dyads);
     int total_dyad_count = accumulate(lens.begin(), lens.end(), 0);
 
-    int* dyads = dyads_vec_to_arr(all_dyads);
-    // NOTE, THIS ALLOCATES UNIFIED MEMORY FOR BUFFER
-    int* buffer = crispr_buffer(total_dyad_count);
+    vector<int> dyads = dyads_vec_to_arr(all_dyads);
+    int* buffer = crispr_buffer(total_dyad_count); // UNIFIED MEMORY
 
-
-    int* k_map = new int[total_dyad_count]
+    vector<int> k_map;
     int dyad_index = 0;
     for (int k_index = 0; k_index < lens.size(); k_index++)
     {
         int k = K_START + k_index;
-        for (int dyad_index_within_len = 0; dyad_index_within_len < lens[len_index]; dyad_index_within_len++)
+        for (int dyad_index_within_len = 0; dyad_index_within_len < lens[k_index]; dyad_index_within_len++)
         {
-            k_map[dyad_index++] = k;
+            k_map.push_back(k);
         }
     }
-
 
     size_t size_genome = genome_len * sizeof(char);
     size_t size_dyads = total_dyad_count * sizeof(int);
     size_t size_k_map = total_dyad_count * sizeof(int);
 
     // DEVICE
-
 
     // genome
     char* device_genome = NULL;
@@ -325,51 +321,69 @@ int run()
 
     // dyads
     int* device_dyads = NULL;
-    cudaMalloc((void**)&device_dyads, size_dyads)
-    cudaMemcpy(device_dyad, dyads, size_dyads, cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&device_dyads, size_dyads);
+    cudaMemcpy(device_dyads, &dyads[0], size_dyads, cudaMemcpyHostToDevice);
 
     // k_map
     int* device_k_map = NULL;
     cudaMalloc((void**)&device_k_map, size_k_map);
-    cudaMemcpy(device_k_map, k_map, size_k_map, cudaMemcpyHostToDevice);
+    cudaMemcpy(device_k_map, &k_map[0], size_k_map, cudaMemcpyHostToDevice);
 
 
     cout << "executing kernel... ";
-    kernel KERNEL_ARGS2(1, 1) (genome_len, device_genome, buffer, K_START, K_END);
+    clock_t start;
+    double duration;
+    start = clock();
+
+    kernel KERNEL_ARGS2(8, 512) (total_dyad_count, device_genome, genome_len, device_dyads, buffer, device_k_map);
     cudaError err = cudaDeviceSynchronize();
-    if (cudaSuccess != err)
+    if (err != cudaSuccess)
     {
-        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",
-            __FILE__, __LINE__, cudaGetErrorString(err));
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
+        return err;
     }
-    cout << "complete." << endl;
+        
+    cout << "complete in " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " seconds." << endl;
 
 
-    vector<vector<int>> vec_crisprs;
 
 
-    cout << "extracting results... ";
-    for (int k_index = 0; k_index < genome_len; k_index++)
+    // extract results
+    for (int d_index = 0; d_index < total_dyad_count; d_index++)
     {
-        if (buffer[k_index * BUFFER + 1] == -1)
+        int buffer_start = d_index * BUFFER;
+        if (buffer[buffer_start + 1] == -1)
             continue;
-
-        // construct vec of this crispr
-        vector<int> this_crispr;
-        for (int i = 0; i < BUFFER; i++)
-        {
-            if (buffer[k_index * BUFFER + i] == -1)
-            {
-                break;
-            }
-            else
-            {
-                this_crispr.push_back(buffer[k_index * BUFFER + i]);
-            }
-        }
-        vec_crisprs.push_back(this_crispr);
+        int k = k_map[d_index];
+        string crispr = crispr_from_buffer(genome, buffer, d_index, k);
+        cout << "crispr: " << crispr << endl << endl;
     }
-    cout << "complete." << endl;
+
+
+    //vector<vector<int>> vec_crisprs;
+
+    //cout << "extracting results... ";
+    //for (int k_index = 0; k_index < genome_len; k_index++)
+    //{
+    //    if (buffer[k_index * BUFFER + 1] == -1)
+    //        continue;
+
+    //    // construct vec of this crispr
+    //    vector<int> this_crispr;
+    //    for (int i = 0; i < BUFFER; i++)
+    //    {
+    //        if (buffer[k_index * BUFFER + i] == -1)
+    //        {
+    //            break;
+    //        }
+    //        else
+    //        {
+    //            this_crispr.push_back(buffer[k_index * BUFFER + i]);
+    //        }
+    //    }
+    //    vec_crisprs.push_back(this_crispr);
+    //}
+    //cout << "complete." << endl;
 
 
     //cout << "pruning subset crisprs... ";
@@ -389,26 +403,24 @@ int run()
     //cout << "complete." << endl;
 
 
-    cout << "results:" << endl;
-    for (auto vec : vec_crisprs)
-    {
-        if (vec[0] == -1)
-            continue;
+    //cout << "results:" << endl;
+    //for (auto vec : vec_crisprs)
+    //{
+    //    if (vec[0] == -1)
+    //        continue;
 
-        cout << "crispr at: " << vec[0] << endl;
+    //    cout << "crispr at: " << vec[0] << endl;
 
-        for (auto val : vec)
-        {
-            cout << actual_genome.substr(val, k_size) << " ";
-        }
+    //    for (auto val : vec)
+    //    {
+    //        cout << actual_genome.substr(val, k_size) << " ";
+    //    }
 
-        cout << endl;
-    }
+    //    cout << endl;
+    //}
 
-    cudaFree(crisprs);
 
-    cout << endl;
-
+    return 0;
 }
 
 int main()
@@ -425,4 +437,3 @@ int main()
 
     return status;
 }
-
