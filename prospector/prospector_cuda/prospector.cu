@@ -33,7 +33,17 @@ using namespace std;
 
 #include <assert.h>
 
-//
+
+double duration(clock_t start)
+{
+    return (clock() - start) / (double) CLOCKS_PER_SEC;
+}
+
+void dur_format(clock_t start)
+{
+    cout << "completed in " << duration(start) << " seconds" << endl;
+}
+
 map<string, string> parse_fasta(string file_path)
 {
     cout << "reading: " << file_path << endl;
@@ -92,12 +102,12 @@ Sequence parse_single_seq(string file_path)
 
 string parse_genome(string file_path)
 {
-    return parse_single_seq(file_path).seq;
+    cout << "parsing genome... ";
+    clock_t start = clock();
+    string genome = parse_single_seq(file_path).seq;
+    dur_format(start);
+    return genome;
 }
-
-constexpr int BUFFER = 20;
-constexpr int K_START = 35;
-constexpr int K_END = 40;
 
 __device__ __host__ char complement(char nuc)
 {
@@ -134,15 +144,13 @@ __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
     return true;
 }
 
-__global__ void kernel(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map)
+__global__ void kernel(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map, int buffer_size)
 {
     for (int d_index = blockIdx.x * blockDim.x + threadIdx.x; d_index < total_dyad_count; d_index += blockDim.x * gridDim.x)
     {
         int k = k_map[d_index];
         int dyad = dyads[d_index];
-        int buffer_start = d_index * BUFFER;
-
-
+        int buffer_start = d_index * buffer_size;
 
         int repeat_index = 0;
 
@@ -173,7 +181,6 @@ __global__ void kernel(int total_dyad_count, const char* genome, size_t genome_l
     }
 }
 
-
 bool dyad(const char* genome, int start, int k_size)
 {
     for (int i = 0; i < DYAD_MIN; i++)
@@ -199,17 +206,23 @@ vector<int> dyad_seqs(size_t genome_len, const char* genome, int k)
 
 vector<vector<int>> dyad_seqs(size_t genome_len, const char* genome, int k_start, int k_end)
 {
+    cout << "computing dyads... ";
+    clock_t start = clock();
     vector<vector<int>> all_seqs;
     for (int k = k_start; k < k_end; k++)
         all_seqs.push_back(dyad_seqs(genome_len, genome, k));
+    dur_format(start);
     return all_seqs;
 }
 
 vector<int> dyad_lengths(vector<vector<int>> all_dyads)
 {
+    cout << "computing dyad lengths... ";
+    clock_t start = clock();
     vector<int> lengths;
     for (auto vec : all_dyads)
         lengths.push_back((int) vec.size());
+    dur_format(start);
     return lengths;
 }
 
@@ -221,9 +234,9 @@ vector<int> flatten(vector<vector<int>> all_dyads)
     return flattened;
 }
 
-int* crispr_buffer(int total_dyad_count)
+int* crispr_buffer(int total_dyad_count, int buffer_size)
 {
-    size_t neg_count = total_dyad_count * BUFFER;
+    size_t neg_count = total_dyad_count * buffer_size;
     int* buffer;
     cudaMallocManaged(&buffer, neg_count * sizeof(int));
     for (int i = 0; i < neg_count; i++)
@@ -231,15 +244,12 @@ int* crispr_buffer(int total_dyad_count)
     return buffer;
 }
 
-
 bool vec_contains(vector<int> a, vector<int> b)
 {
     for (auto a_elt : a)
     {
         if (find(b.begin(), b.end(), a_elt) == b.end())
-        {
             return false;
-        }
     }
     return true;
 }
@@ -252,31 +262,29 @@ T* push(const T* src, size_t bytes)
     T* ptr = NULL;
     cudaMalloc((void**)&ptr, bytes);
     cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
-    std::cout << "completed in: " << (clock() - start) / (double)CLOCKS_PER_SEC << " seconds" << endl;
+    dur_format(start);
     return (T*) ptr;
 }
 
-int run()
+int run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
 {
     // HOST
 
-    string path = R"(P:\CRISPR\data\pyogenes.fasta)";
-    string actual_genome = parse_genome(path);
+    string actual_genome = parse_genome(genome_path);
     const char* genome = actual_genome.c_str();
     size_t genome_len = strlen(genome);
 
-    vector<vector<int>> all_dyads = dyad_seqs(genome_len, genome, K_START, K_END);
+    vector<vector<int>> all_dyads = dyad_seqs(genome_len, genome, k_start, k_end);
     vector<int> lens = dyad_lengths(all_dyads);
     int total_dyad_count = accumulate(lens.begin(), lens.end(), 0);
 
     vector<int> dyads = flatten(all_dyads);
-    int* buffer = crispr_buffer(total_dyad_count); // UNIFIED MEMORY
+    int* buffer = crispr_buffer(total_dyad_count, buffer_size); // UNIFIED MEMORY
 
     vector<int> k_map;
-    int dyad_index = 0;
     for (int k_index = 0; k_index < lens.size(); k_index++)
     {
-        int k = K_START + k_index;
+        int k = k_start + k_index;
         for (int dyad_index_within_len = 0; dyad_index_within_len < lens[k_index]; dyad_index_within_len++)
         {
             k_map.push_back(k);
@@ -295,16 +303,14 @@ int run()
 
     cout << "executing kernel... ";
     clock_t start = clock();
-
-    kernel KERNEL_ARGS2(16, 1024) (total_dyad_count, device_genome, genome_len, device_dyads, buffer, device_k_map);
+    kernel KERNEL_ARGS2(16, 1024) (total_dyad_count, device_genome, genome_len, device_dyads, buffer, device_k_map, buffer_size);
     cudaError err = cudaDeviceSynchronize();
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
         return err;
     }
-        
-    cout << "complete in " << (clock() - start) / (double) CLOCKS_PER_SEC << " seconds." << endl;
+    dur_format(start);
 
     // HOST
 
@@ -312,17 +318,17 @@ int run()
 
     // extract results
     cout << "extracting results...";
+    start = clock();
     for (int d_index = 0; d_index < total_dyad_count; d_index++)
     {
-        int buffer_start = d_index * BUFFER;
-        if (buffer[buffer_start + 1] == -1)
+        int buffer_start = d_index * buffer_size;
+        if (buffer[buffer_start + min_repeats - 1] == -1)
             continue;
         int k = k_map[d_index];
 
-
         vector<int> crispr;
         crispr.push_back(k);
-        for (int i = 0; i < BUFFER; i++)
+        for (int i = 0; i < buffer_size; i++)
         {
             int val = buffer[buffer_start + i];
             if (val == -1)
@@ -331,10 +337,11 @@ int run()
         }
         vec_crisprs.push_back(crispr);
     }
-    cout << "complete." << endl;
+    dur_format(start);
 
 
     cout << "pruning subset crisprs... ";
+    start = clock();
     for (int i = 0; i < vec_crisprs.size(); i++)
     {
         for (int j = 0; j < vec_crisprs.size(); j++)
@@ -343,13 +350,10 @@ int run()
                 continue;
 
             if (vec_contains(vec_crisprs[i], vec_crisprs[j]))
-            {
                 vec_crisprs[i][0] = -1;
-            }
         }
     }
-    cout << "complete." << endl;
-
+    dur_format(start);
 
     cout << "results:" << endl;
     for (auto vec : vec_crisprs)
@@ -360,7 +364,7 @@ int run()
             continue;
 
         string crispr_str = "";
-        crispr_str += to_string(vec[0]) + " " + to_string(vec[1]) + ":";
+        crispr_str += to_string(vec[0]) + " " + to_string(vec[1]) + ":\t";
         for (auto val : vec)
             crispr_str += actual_genome.substr(val, vec[0]) + " ";
 
@@ -370,11 +374,19 @@ int run()
     return 0;
 }
 
+
 int main()
 {
     clock_t start = clock();
-    int status = run();
-    std::cout << "completed in: " << (clock() - start) / (double) CLOCKS_PER_SEC << " seconds" << endl;
+    
+    string genome_path = R"(P:\CRISPR\data\pyogenes.fasta)";
+    int min_repeats = 3;
+    int k_start = 30;
+    int k_end = 50;
+    int buffer = 10;
+    int status = run(genome_path, min_repeats, k_start, k_end, buffer);
+    
+    dur_format(start);
 
     return status;
 }
