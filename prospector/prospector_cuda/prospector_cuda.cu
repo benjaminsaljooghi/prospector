@@ -189,20 +189,6 @@ __device__ char complement(char nuc)
 }
 
 
-__device__ bool dyad(const char* genome, int start, int k_size)
-{
-    for (int i = 0; i < DYAD_MIN; i++)
-    {
-        char beginning_upstream = genome[start + i];
-        char end_downstream = genome[start + k_size - i - 1];
-        if (beginning_upstream != complement(end_downstream))
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 
 __device__ void save_repeat(int location, int repeat_index, int* crisprs)
 {
@@ -384,6 +370,34 @@ void for_k(int genome_len, string actual_genome, const char* genome, char* devic
     cout << endl;
 }
 
+
+
+bool dyad(const char* genome, int start, int k_size)
+{
+    for (int i = 0; i < DYAD_MIN; i++)
+    {
+        char beginning_upstream = genome[start + i];
+        char end_downstream = genome[start + k_size - i - 1];
+        if (beginning_upstream != complement(end_downstream))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+vector<int> dyads(int genome_len, const char* genome, int k)
+{
+    vector<int> dyads;
+    for (int i = 0; i < genome_len; i++)
+    {
+        if (dyad(genome, i, k))
+        {
+            dyads.push_back(i);
+        }
+    }
+    return dyads;
+}
 
 int main()
 {
