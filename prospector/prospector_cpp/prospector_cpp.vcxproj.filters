@@ -18,10 +18,10 @@
     <ClCompile Include="Crispr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="prospector_cpp.cpp">
+    <ClCompile Include="Sequence.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Sequence.cpp">
+    <ClCompile Include="prospector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -166,7 +166,9 @@
     <ClInclude Include="Sequence.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="prospector_cuda.cu" />
+    <CudaCompile Include="prospector.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
