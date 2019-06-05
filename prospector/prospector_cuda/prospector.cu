@@ -162,11 +162,18 @@ __device__ void run_analysis(int k_index, int n, const char* genome, int* buffer
     }
 }
 
-__global__ void kernel(int n, const char* genome, int* buffer, int k_start, int k_end)
+__global__ void kernel( int total_dyad_count,
+                        const char* genome,
+                        int* dyads,
+                        int* buffer,
+                        int* k_map)
 {
-    for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
+    for (int d_index = blockIdx.x * blockDim.x + threadIdx.x; d_index < total_dyad_count; d_index += blockDim.x * gridDim.x)
     {
-        run_analysis(i, n, genome, buffer, k_size);
+        int k = k_map[d_index];
+        int dyad = dyads[d_index];
+        int buffer_start = dyad_index * BUFFER;
+        run_analysis(genome, dyad, buffer_start, buffer, k);
     }
 }
 
@@ -280,7 +287,7 @@ int* crispr_buffer(int total_dyad_count)
 
 int run()
 {
-    // host preprocess
+    // HOST
 
     string path = R"(P:\CRISPR\data\pyogenes.fasta)";
     string actual_genome = parse_genome(path);
@@ -292,25 +299,47 @@ int run()
     int total_dyad_count = accumulate(lens.begin(), lens.end(), 0);
 
     int* dyads = dyads_vec_to_arr(all_dyads);
+    // NOTE, THIS ALLOCATES UNIFIED MEMORY FOR BUFFER
     int* buffer = crispr_buffer(total_dyad_count);
 
-    // device
+
+    int* k_map = new int[total_dyad_count]
+    int dyad_index = 0;
+    for (int k_index = 0; k_index < lens.size(); k_index++)
+    {
+        int k = K_START + k_index;
+        for (int dyad_index_within_len = 0; dyad_index_within_len < lens[len_index]; dyad_index_within_len++)
+        {
+            k_map[dyad_index++] = k;
+        }
+    }
+
+
+    size_t size_genome = genome_len * sizeof(char);
+    size_t size_dyads = total_dyad_count * sizeof(int);
+    size_t size_k_map = total_dyad_count * sizeof(int);
+
+    // DEVICE
+
 
     // genome
     char* device_genome = NULL;
-    cudaMalloc((void**)& device_genome, genome_len);
-    cudaMemcpy(device_genome, genome, genome_len, cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&device_genome, size_genome);
+    cudaMemcpy(device_genome, genome, size_genome, cudaMemcpyHostToDevice);
 
     // dyads
     int* device_dyads = NULL;
-    cudaMalloc()
+    cudaMalloc((void**)&device_dyads, size_dyads)
+    cudaMemcpy(device_dyad, dyads, size_dyads, cudaMemcpyHostToDevice);
 
-    // buffer
-    cudaMallocManaged(&buffer, genome_len * BUFFER * sizeof(int));
+    // k_map
+    int* device_k_map = NULL;
+    cudaMalloc((void**)&device_k_map, size_k_map);
+    cudaMemcpy(device_k_map, k_map, size_k_map, cudaMemcpyHostToDevice);
 
 
     cout << "executing kernel... ";
-    kernel KERNEL_ARGS2(1, 1) (genome_len, device_genome, buffer, k_size);
+    kernel KERNEL_ARGS2(1, 1) (genome_len, device_genome, buffer, K_START, K_END);
     cudaError err = cudaDeviceSynchronize();
     if (cudaSuccess != err)
     {
