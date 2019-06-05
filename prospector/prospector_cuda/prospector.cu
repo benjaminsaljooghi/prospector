@@ -247,9 +247,12 @@ bool vec_contains(vector<int> a, vector<int> b)
 template <typename T>
 T* push(const T* src, size_t bytes)
 {
+    cout << "allocating " << bytes << " bytes... ";
+    clock_t start = clock();
     T* ptr = NULL;
     cudaMalloc((void**)&ptr, bytes);
     cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
+    std::cout << "completed in: " << (clock() - start) / (double)CLOCKS_PER_SEC << " seconds" << endl;
     return (T*) ptr;
 }
 
@@ -286,19 +289,12 @@ int run()
 
     // DEVICE
 
-    // genome
     char* device_genome = push(genome, size_genome);
-
-    // dyads
     int* device_dyads = push(&dyads[0], size_dyads);
-
-    // k_map
     int* device_k_map = push(&k_map[0], size_k_map);
 
     cout << "executing kernel... ";
-    clock_t start;
-    double duration;
-    start = clock();
+    clock_t start = clock();
 
     kernel KERNEL_ARGS2(16, 1024) (total_dyad_count, device_genome, genome_len, device_dyads, buffer, device_k_map);
     cudaError err = cudaDeviceSynchronize();
@@ -308,7 +304,7 @@ int run()
         return err;
     }
         
-    cout << "complete in " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " seconds." << endl;
+    cout << "complete in " << (clock() - start) / (double) CLOCKS_PER_SEC << " seconds." << endl;
 
     // HOST
 
@@ -376,15 +372,9 @@ int run()
 
 int main()
 {
-
-    clock_t start;
-    double duration;
-    start = clock();
-      
+    clock_t start = clock();
     int status = run();
-
-    duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-    std::cout << "completed in: " << duration << " seconds" << endl;
+    std::cout << "completed in: " << (clock() - start) / (double) CLOCKS_PER_SEC << " seconds" << endl;
 
     return status;
 }
