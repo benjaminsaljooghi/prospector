@@ -244,6 +244,15 @@ bool vec_contains(vector<int> a, vector<int> b)
     return true;
 }
 
+template <typename T>
+T* push(const T* src, size_t bytes)
+{
+    T* ptr = NULL;
+    cudaMalloc((void**)&ptr, bytes);
+    cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
+    return (T*) ptr;
+}
+
 int run()
 {
     // HOST
@@ -278,20 +287,13 @@ int run()
     // DEVICE
 
     // genome
-    char* device_genome = NULL;
-    cudaMalloc((void**)&device_genome, size_genome);
-    cudaMemcpy(device_genome, genome, size_genome, cudaMemcpyHostToDevice);
+    char* device_genome = push(genome, size_genome);
 
     // dyads
-    int* device_dyads = NULL;
-    cudaMalloc((void**)&device_dyads, size_dyads);
-    cudaMemcpy(device_dyads, &dyads[0], size_dyads, cudaMemcpyHostToDevice);
+    int* device_dyads = push(&dyads[0], size_dyads);
 
     // k_map
-    int* device_k_map = NULL;
-    cudaMalloc((void**)&device_k_map, size_k_map);
-    cudaMemcpy(device_k_map, &k_map[0], size_k_map, cudaMemcpyHostToDevice);
-
+    int* device_k_map = push(&k_map[0], size_k_map);
 
     cout << "executing kernel... ";
     clock_t start;
@@ -308,10 +310,12 @@ int run()
         
     cout << "complete in " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " seconds." << endl;
 
+    // HOST
 
     vector<vector<int>> vec_crisprs;
 
     // extract results
+    cout << "extracting results...";
     for (int d_index = 0; d_index < total_dyad_count; d_index++)
     {
         int buffer_start = d_index * BUFFER;
@@ -331,6 +335,7 @@ int run()
         }
         vec_crisprs.push_back(crispr);
     }
+    cout << "complete." << endl;
 
 
     cout << "pruning subset crisprs... ";
