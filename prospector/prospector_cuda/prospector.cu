@@ -96,6 +96,8 @@ string parse_genome(string file_path)
 }
 
 constexpr int BUFFER = 20;
+constexpr int K_START = 35;
+constexpr int K_END = 40;
 
 __device__ __host__ char complement(char nuc)
 {
@@ -168,40 +170,8 @@ __global__ void kernel(int total_dyad_count, const char* genome, size_t genome_l
                 candidate++;
             }
         }
-
-
-
     }
 }
-
-string crispr_from_buffer(string genome, int* buffer, int d_index, int k)
-{
-    string crispr = "";
-    for (int i = 0; i < BUFFER; i++)
-    {
-        int val = buffer[d_index * BUFFER + i];
-        if (val == -1)
-        {
-            break;
-        }
-        crispr += genome.substr(val, k);
-        crispr += " ";
-    }
-    return crispr;
-}
-
-
-//bool vec_contains(vector<int> a, vector<int> b)
-//{
-//    for (auto a_elt : a)
-//    {
-//        if (std::find(b.begin(), b.end(), a_elt) == b.end())
-//        {
-//            return false;
-//        }
-//    }
-//    return true;
-//}
 
 
 bool dyad(const char* genome, int start, int k_size)
@@ -211,9 +181,7 @@ bool dyad(const char* genome, int start, int k_size)
         char beginning_upstream = genome[start + i];
         char end_downstream = genome[start + k_size - i - 1];
         if (beginning_upstream != complement(end_downstream))
-        {
             return false;
-        }
     }
     return true;
 }
@@ -224,9 +192,7 @@ vector<int> dyad_seqs(size_t genome_len, const char* genome, int k)
     for (int i = 0; i < genome_len; i++)
     {
         if (dyad(genome, i, k))
-        {
             seqs.push_back(i);
-        }
     }
     return seqs;
 }
@@ -235,34 +201,24 @@ vector<vector<int>> dyad_seqs(size_t genome_len, const char* genome, int k_start
 {
     vector<vector<int>> all_seqs;
     for (int k = k_start; k < k_end; k++)
-    {
-        vector<int> seqs = dyad_seqs(genome_len, genome, k);
-        all_seqs.push_back(seqs);
-    }
+        all_seqs.push_back(dyad_seqs(genome_len, genome, k));
     return all_seqs;
 }
 
-vector<int> dyad_lens(vector<vector<int>> all_dyads)
+vector<int> dyad_lengths(vector<vector<int>> all_dyads)
 {
-    vector<int> lens;
+    vector<int> lengths;
     for (auto vec : all_dyads)
-    {
-        lens.push_back((int) vec.size());
-    }
-    return lens;
+        lengths.push_back((int) vec.size());
+    return lengths;
 }
 
-vector<int> dyads_vec_to_arr(vector<vector<int>> all_dyads)
+vector<int> flatten(vector<vector<int>> all_dyads)
 {
-    vector<int> flattened_dyads;
-    for (auto vec : all_dyads)
-    {
-        for (auto dyad : vec)
-        {
-            flattened_dyads.push_back(dyad);
-        }
-    }
-    return flattened_dyads;
+    vector<int> flattened;
+    for (auto v : all_dyads)
+        flattened.insert(flattened.end(), v.begin(), v.end());
+    return flattened;
 }
 
 int* crispr_buffer(int total_dyad_count)
@@ -271,15 +227,22 @@ int* crispr_buffer(int total_dyad_count)
     int* buffer;
     cudaMallocManaged(&buffer, neg_count * sizeof(int));
     for (int i = 0; i < neg_count; i++)
-    {
         buffer[i] = -1;
-    }
-
     return buffer;
 }
 
-#define K_START 36
-#define K_END 37
+
+bool vec_contains(vector<int> a, vector<int> b)
+{
+    for (auto a_elt : a)
+    {
+        if (find(b.begin(), b.end(), a_elt) == b.end())
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 int run()
 {
@@ -291,10 +254,10 @@ int run()
     size_t genome_len = strlen(genome);
 
     vector<vector<int>> all_dyads = dyad_seqs(genome_len, genome, K_START, K_END);
-    vector<int> lens = dyad_lens(all_dyads);
+    vector<int> lens = dyad_lengths(all_dyads);
     int total_dyad_count = accumulate(lens.begin(), lens.end(), 0);
 
-    vector<int> dyads = dyads_vec_to_arr(all_dyads);
+    vector<int> dyads = flatten(all_dyads);
     int* buffer = crispr_buffer(total_dyad_count); // UNIFIED MEMORY
 
     vector<int> k_map;
@@ -335,7 +298,7 @@ int run()
     double duration;
     start = clock();
 
-    kernel KERNEL_ARGS2(8, 512) (total_dyad_count, device_genome, genome_len, device_dyads, buffer, device_k_map);
+    kernel KERNEL_ARGS2(16, 1024) (total_dyad_count, device_genome, genome_len, device_dyads, buffer, device_k_map);
     cudaError err = cudaDeviceSynchronize();
     if (err != cudaSuccess)
     {
@@ -346,7 +309,7 @@ int run()
     cout << "complete in " << (std::clock() - start) / (double)CLOCKS_PER_SEC << " seconds." << endl;
 
 
-
+    vector<vector<int>> vec_crisprs;
 
     // extract results
     for (int d_index = 0; d_index < total_dyad_count; d_index++)
@@ -355,70 +318,53 @@ int run()
         if (buffer[buffer_start + 1] == -1)
             continue;
         int k = k_map[d_index];
-        string crispr = crispr_from_buffer(genome, buffer, d_index, k);
-        cout << "crispr: " << crispr << endl << endl;
+
+
+        vector<int> crispr;
+        crispr.push_back(k);
+        for (int i = 0; i < BUFFER; i++)
+        {
+            int val = buffer[buffer_start + i];
+            if (val == -1)
+                break;
+            crispr.push_back(val);
+        }
+        vec_crisprs.push_back(crispr);
     }
 
 
-    //vector<vector<int>> vec_crisprs;
+    cout << "pruning subset crisprs... ";
+    for (int i = 0; i < vec_crisprs.size(); i++)
+    {
+        for (int j = 0; j < vec_crisprs.size(); j++)
+        {
+            if (i == j)
+                continue;
 
-    //cout << "extracting results... ";
-    //for (int k_index = 0; k_index < genome_len; k_index++)
-    //{
-    //    if (buffer[k_index * BUFFER + 1] == -1)
-    //        continue;
-
-    //    // construct vec of this crispr
-    //    vector<int> this_crispr;
-    //    for (int i = 0; i < BUFFER; i++)
-    //    {
-    //        if (buffer[k_index * BUFFER + i] == -1)
-    //        {
-    //            break;
-    //        }
-    //        else
-    //        {
-    //            this_crispr.push_back(buffer[k_index * BUFFER + i]);
-    //        }
-    //    }
-    //    vec_crisprs.push_back(this_crispr);
-    //}
-    //cout << "complete." << endl;
+            if (vec_contains(vec_crisprs[i], vec_crisprs[j]))
+            {
+                vec_crisprs[i][0] = -1;
+            }
+        }
+    }
+    cout << "complete." << endl;
 
 
-    //cout << "pruning subset crisprs... ";
-    //for (int i = 0; i < vec_crisprs.size(); i++)
-    //{
-    //    for (int j = 0; j < vec_crisprs.size(); j++)
-    //    {
-    //        if (i == j)
-    //            continue;
+    cout << "results:" << endl;
+    for (auto vec : vec_crisprs)
+    {
+        int k = vec[0];
 
-    //        if (vec_contains(vec_crisprs[i], vec_crisprs[j]))
-    //        {
-    //            vec_crisprs[i][0] = -1;
-    //        }
-    //    }
-    //}
-    //cout << "complete." << endl;
+        if (k == -1)
+            continue;
 
+        string crispr_str = "";
+        crispr_str += to_string(vec[0]) + " " + to_string(vec[1]) + ":";
+        for (auto val : vec)
+            crispr_str += actual_genome.substr(val, vec[0]) + " ";
 
-    //cout << "results:" << endl;
-    //for (auto vec : vec_crisprs)
-    //{
-    //    if (vec[0] == -1)
-    //        continue;
-
-    //    cout << "crispr at: " << vec[0] << endl;
-
-    //    for (auto val : vec)
-    //    {
-    //        cout << actual_genome.substr(val, k_size) << " ";
-    //    }
-
-    //    cout << endl;
-    //}
-
+        cout << crispr_str << endl;
+    }
 
     return 0;
 }
