@@ -248,6 +248,17 @@ bool vec_contains(vector<int> a, vector<int> b)
     return true;
 }
 
+void cfree(void* device_ptr)
+{
+    printf("executing cudafree\n");
+    cudaError err = cudaFree(device_ptr);
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "failed to free device ptr (error code %s)!\n", cudaGetErrorString(err));
+        exit(err);
+    }
+}
+
 template <typename T> void pull(T* h, const T* d, int count)
 {
     size_t bytes = count * sizeof(T);
@@ -292,7 +303,10 @@ template <typename T> T* push(const T* src, int count)
 
 void wait_cuda()
 {
+    printf("waiting for kernel... ");
+    BEGIN;
     cudaError err = cudaDeviceSynchronize();
+    END;
     if (err != cudaSuccess)
     {
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
@@ -300,17 +314,19 @@ void wait_cuda()
     }
 }
 
+
 vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start, int k_end)
 {
     size_t buffer_count = genome_len * (k_end - k_start);
     int* dyad_buffer = create_buffer(buffer_count);
     
     int* device_dyad_buffer = push(dyad_buffer, buffer_count);
-    printf("execute kernel...\n");
-    dyad_discovery KERNEL_ARGS2(16, 512) (device_genome, genome_len, k_start, k_end, device_dyad_buffer);
+    
+    dyad_discovery KERNEL_ARGS2(16, 128) (device_genome, genome_len, k_start, k_end, device_dyad_buffer);
     wait_cuda();
 
     pull(dyad_buffer, device_dyad_buffer, buffer_count);
+    cfree(device_dyad_buffer);
 
     printf("extract dyads...\n");
     vector<vector<int>> all_dyads;
@@ -331,6 +347,8 @@ vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start
     return all_dyads;
 }
 
+
+
 vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_start, int k_end, int min_repeats, int buffer_size, vector<vector<int>> all_dyads)
 {
     vector<int> lens = dyad_lengths(all_dyads);
@@ -345,18 +363,21 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
             k_map.push_back(k);
     }
 
-    int* device_dyads = push(&dyads[0], total_dyad_count);
-    int* device_k_map = push(&k_map[0], total_dyad_count);
 
     int crispr_buffer_count = total_dyad_count * buffer_size;
     int* crispr_buffer = create_buffer(crispr_buffer_count);
     int* device_crispr_buffer = push(crispr_buffer, crispr_buffer_count);
+    int* device_dyads = push(&dyads[0], total_dyad_count);
+    int* device_k_map = push(&k_map[0], total_dyad_count);
 
-    printf("execute kernel...\n");
-    kernel KERNEL_ARGS2(16, 512) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
+    kernel KERNEL_ARGS2(16, 128) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
     wait_cuda();
     
     pull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
+
+    cfree(device_crispr_buffer);
+    cfree(device_dyads);
+    cfree(device_k_map);
 
     vector<vector<int>> vec_crisprs;
     printf("extract results...\n");
@@ -396,7 +417,7 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 }
 
 
-int run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
+void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
 {
     string actual_genome = parse_genome(genome_path);
     const char* genome = actual_genome.c_str();
@@ -405,6 +426,8 @@ int run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_
 
     vector<vector<int>> all_dyads = dyad_gen(device_genome, genome_len, k_start, k_end);
     vector<vector<int>> crisps = crispr_gen(device_genome, genome_len, k_start, k_end, min_repeats, buffer_size, all_dyads);
+
+    cfree(device_genome);
 
     printf("results:\n");
     for (auto vec : crisps)
@@ -421,20 +444,21 @@ int run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_
         printf("%d %d:\t%s\n", k, vec[1], crispr_str.c_str());
     }
 
-    return 0;
 }
 
 
 int main()
 {
     clock_t start = clock();
-    string genome_path = R"(P:\CRISPR\data\pyogenes.fasta)";
-    int min_repeats = 3;
-    int k_start = 20;
-    int k_end = 60;
-    int buffer = 10;
-    int status = run(genome_path, min_repeats, k_start, k_end, buffer);
+    for (int i = 0; i < 1; i++)
+    {
+        string genome_path = R"(P:\CRISPR\data\pyogenes.fasta)";
+        int min_repeats = 3;
+        int k_start = 20;
+        int k_end = 60;
+        int buffer = 10;
+        run(genome_path, min_repeats, k_start, k_end, buffer);
+    }
     printf("main completed in %.3f seconds.", duration(start));
-
-    return status;
+    return 0;
 }
