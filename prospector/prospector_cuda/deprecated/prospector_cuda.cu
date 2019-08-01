@@ -401,7 +401,6 @@ vector<int> dyads(int genome_len, const char* genome, int k)
 
 int main()
 {
-
     Sleep(10000);
 
     string path = R"(P:\CRISPR\bacteria\pyogenes.fasta)";
@@ -420,7 +419,6 @@ int main()
     cudaMemcpy(device_genome, genome, genome_len,
         cudaMemcpyHostToDevice);
 
-
     cout << "complete." << endl << endl;
 
     for (int k = 35; k < 40; k++)
@@ -431,7 +429,6 @@ int main()
     duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     std::cout << "printf: " << duration << '\n';
   
-
     return 0;
 }
 
