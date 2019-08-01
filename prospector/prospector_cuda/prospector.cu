@@ -40,12 +40,14 @@ clock_t start;
 #define END printf("done in %.3f seconds\n", duration(start));
 #define BYTE_FORMAT_ALIGN 10
 
+// CPP SAFE EXTRACT
 double duration(clock_t begin)
 {
     return (clock() - begin) / (double)CLOCKS_PER_SEC;
 }
 
 
+// CPP SAFE EXTRACT
 map<string, string> parse_fasta(string file_path)
 {
     //cout << "reading: " << file_path << endl;
@@ -95,6 +97,8 @@ map<string, string> parse_fasta(string file_path)
     return seqs;
 }
 
+
+// CPP SAFE EXTRACT
 Sequence parse_single_seq(string file_path)
 {
     map<string, string> seqs = parse_fasta(file_path);
@@ -102,6 +106,8 @@ Sequence parse_single_seq(string file_path)
     return Sequence(seq, 0);
 }
 
+
+// CPP SAFE EXTRACT
 string parse_genome(string file_path)
 {
     printf("parse genome...\n");
@@ -109,7 +115,8 @@ string parse_genome(string file_path)
     return genome;
 }
 
-__device__ __host__ char complement(char nuc)
+
+__device__ char complement(char nuc)
 {
     switch (nuc)
     {
