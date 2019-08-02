@@ -2,7 +2,8 @@ using namespace std;
 
 
 // For the CUDA runtime routines (prefixed with "cuda_")
-#include <cuda_runtime.h>
+#include "cuda.h"
+#include "cuda_runtime.h"
 //#include <thrust/device_vector.h>
 #include "device_launch_parameters.h"
 //#include <helper_cuda.h>
@@ -11,8 +12,9 @@ using namespace std;
 
 #include <iostream>
 #include <stdio.h>
+#include <stdlib.h>
 
-#include <windows.h>
+//#include <windows.h>
 
 #include <cuda_fp16.h>
 #include <fstream>
@@ -22,7 +24,6 @@ using namespace std;
 #include <vector>
 #include <numeric>
 
-#include <optional>
 #include <functional>
 
 #include "consts.h"
@@ -34,11 +35,19 @@ using namespace std;
 #include <assert.h>
 
 
+// Timing
 clock_t start; 
-
 #define BEGIN start = clock();
 #define END printf("done in %.3f seconds\n", duration(start));
-#define BYTE_FORMAT_ALIGN 10
+
+// Print formatting
+#define PRINTF_BYTE_FORMAT_ALIGN 10
+
+// Args
+#define MIN_REPEATS 3
+#define K_START 20
+#define K_END 60
+#define BUFFER 10
 
 // CPP SAFE EXTRACT
 double duration(clock_t begin)
@@ -272,7 +281,7 @@ template <typename T> void pull(T* h, const T* d, int count)
 
     cudaError err;
 
-    printf("memcpy %*d bytes from device...\n", BYTE_FORMAT_ALIGN, bytes);
+    printf("memcpy %*d bytes from device...\n", PRINTF_BYTE_FORMAT_ALIGN, bytes);
     err = cudaMemcpy(h, d, bytes, cudaMemcpyDeviceToHost);
     if (err != cudaSuccess)
     {
@@ -289,7 +298,7 @@ template <typename T> T* push(const T* src, int count)
     cudaError err;
     T* ptr = NULL;
     
-    printf("malloc %*d bytes on device...\n", BYTE_FORMAT_ALIGN, bytes);
+    printf("malloc %*d bytes on device...\n", PRINTF_BYTE_FORMAT_ALIGN, bytes);
     err = cudaMalloc((void**)& ptr, bytes);
     if (err != cudaSuccess)
     {
@@ -297,7 +306,7 @@ template <typename T> T* push(const T* src, int count)
         exit(err);
     }
 
-    printf("memcpy %*d bytes to device...\n", BYTE_FORMAT_ALIGN, bytes);
+    printf("memcpy %*d bytes to device...\n", PRINTF_BYTE_FORMAT_ALIGN, bytes);
     err = cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
     if (err != cudaSuccess)
     {
@@ -453,19 +462,19 @@ void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer
 
 }
 
-
-int main()
+string get_genome_path(char** argv)
 {
-    clock_t start = clock();
-    for (int i = 0; i < 1; i++)
-    {
-        string genome_path = R"(P:\CRISPR\data\pyogenes.fasta)";
-        int min_repeats = 3;
-        int k_start = 20;
-        int k_end = 60;
-        int buffer = 10;
-        run(genome_path, min_repeats, k_start, k_end, buffer);
-    }
-    printf("main completed in %.3f seconds.", duration(start));
-    return 0;
+	string executed_program(argv[0]);
+	string executed_dir = executed_program.substr(0, executed_program.find_last_of("\\/"));
+	string genome_path = executed_dir + "/data/pyogenes.fasta";
+	return genome_path;
+}
+
+int main(int argc, char** argv)
+{
+	string genome_path = get_genome_path(argv);
+	clock_t start = clock();
+	run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER);
+	printf("main completed in %.3f seconds.", duration(start));
+	return 0;
 }
