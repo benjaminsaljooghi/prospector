@@ -50,11 +50,11 @@ double duration(clock_t begin)
 // CPP SAFE EXTRACT
 map<string, string> parse_fasta(string file_path)
 {
-    //cout << "reading: " << file_path << endl;
+    cout << "reading: " << file_path << endl;
     ifstream input(file_path);
     if (!input.good())
     {
-        throw "Error opening " + file_path;
+		throw runtime_error(strerror(errno));
     }
 
     map<string, string> seqs;
