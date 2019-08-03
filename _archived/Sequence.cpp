@@ -1,5 +1,4 @@
 #include "Sequence.h"
-#include "consts.h"
 
 #include <string>
 #include <vector>

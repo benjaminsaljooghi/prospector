@@ -1,132 +1,43 @@
 using namespace std;
 
-
-// For the CUDA runtime routines (prefixed with "cuda_")
+// CUDA
 #include "cuda.h"
 #include "cuda_runtime.h"
-//#include <thrust/device_vector.h>
 #include "device_launch_parameters.h"
-//#include <helper_cuda.h>
+#include "cuda_fp16.h"
 
-//#include "device_functions.h"
+#ifdef __CUDACC__
+#define CUDA_CALLABLE_MEMBER __host__ __device__
+#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
+#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
+#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
+#else
+#define CUDA_CALLABLE_MEMBER
+#define KERNEL_ARGS2(grid, block)
+#define KERNEL_ARGS3(grid, block, sh_mem)
+#define KERNEL_ARGS4(grid, block, sh_mem, stream)
+#endif
 
-#include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-
-//#include <windows.h>
-
-#include <cuda_fp16.h>
-#include <fstream>
-#include <string>
-#include <map>
-
-#include <vector>
-#include <numeric>
-
-#include <functional>
-
-#include "consts.h"
-#include "Sequence.h"
-#include <algorithm>
-#include <set>
-#include <ctime>
-
-#include <assert.h>
-
-
-// Timing
-clock_t start; 
-#define BEGIN start = clock();
-#define END printf("done in %.3f seconds\n", duration(start));
-
-// Print formatting
+#define DYAD_MIN 5
+#define REPEAT_MIN 20
+#define REPEAT_MAX 60
+#define SPACER_MIN 21
+#define SPACER_MAX 72
+#define SPACER_SKIP 10
+#define REPEATS_MIN 3
+#define SCAN_DOMAIN 1000
+#define ALLOW_DISCREPANT_LENGTHS false
 #define PRINTF_BYTE_FORMAT_ALIGN 10
-
-// Args
 #define MIN_REPEATS 3
 #define K_START 20
 #define K_END 60
 #define BUFFER 10
 
-// CPP SAFE EXTRACT
-double duration(clock_t begin)
-{
-    return (clock() - begin) / (double)CLOCKS_PER_SEC;
-}
-
-
-// CPP SAFE EXTRACT
-map<string, string> parse_fasta(string file_path)
-{
-    cout << "reading: " << file_path << endl;
-    ifstream input(file_path);
-    if (!input.good())
-    {
-		throw runtime_error(strerror(errno));
-    }
-
-    map<string, string> seqs;
-    string line, name, content;
-    while (getline(input, line))
-    {
-        if (line.empty() || line[0] == '>') // Identifier marker
-        {
-            if (!name.empty())
-            {
-                // Get what we read from the last entry
-                seqs[name] = content;
-                name.clear();
-            }
-            if (!line.empty())
-            {
-                name = line.substr(1);
-            }
-            content.clear();
-        }
-        else if (!name.empty())
-        {
-            if (line.find(' ') != string::npos) // Invalid sequence--no spaces allowed
-            {
-                name.clear();
-                content.clear();
-            }
-            else
-            {
-                content += line;
-            }
-        }
-    }
-    if (!name.empty())
-    {
-        // Get what we read from the last 
-        seqs[name] = content;
-    }
-
-    return seqs;
-}
-
-
-// CPP SAFE EXTRACT
-Sequence parse_single_seq(string file_path)
-{
-    map<string, string> seqs = parse_fasta(file_path);
-    string seq = seqs.begin()->second;
-    return Sequence(seq, 0);
-}
-
-
-// CPP SAFE EXTRACT
-string parse_genome(string file_path)
-{
-    printf("parse genome...\n");
-    string genome = parse_single_seq(file_path).seq;
-    return genome;
-}
-
+#include "util.h"
 
 __device__ char complement(char nuc)
 {
+
     switch (nuc)
     {
         case 'A':
@@ -379,7 +290,6 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
             k_map.push_back(k);
     }
 
-
     int crispr_buffer_count = total_dyad_count * buffer_size;
     int* crispr_buffer = create_buffer(crispr_buffer_count);
     int* device_crispr_buffer = push(crispr_buffer, crispr_buffer_count);
@@ -435,8 +345,8 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 
 void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
 {
-    string actual_genome = parse_genome(genome_path);
-    const char* genome = actual_genome.c_str();
+    string genome_str = parse_genome(genome_path);
+    const char* genome = genome_str.c_str();
     size_t genome_len = strlen(genome);
     char* device_genome = push(genome, genome_len);
 
@@ -455,7 +365,7 @@ void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer
         string crispr_str = "";
         for (int i = 1; i < vec.size(); i++)
         {
-            crispr_str += actual_genome.substr(vec[i], k) + " ";
+            crispr_str += genome_str.substr(vec[i], k) + " ";
         }
         printf("%d %d:\t%s\n", k, vec[1], crispr_str.c_str());
     }
