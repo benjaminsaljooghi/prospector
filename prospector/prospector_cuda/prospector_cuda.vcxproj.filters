@@ -2,11 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Makefile" />
-    <ClCompile Include="Sequence.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="consts.h" />
-    <ClInclude Include="Sequence.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="prospector.cu" />
@@ -36,5 +31,8 @@
     <Filter Include="data">
       <UniqueIdentifier>{916bd2ed-fa8d-4f61-9633-7dd4686a5a68}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="util.h" />
   </ItemGroup>
 </Project>
