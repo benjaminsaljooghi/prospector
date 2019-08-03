@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1a8757a2-fec5-43dc-a8aa-8427896fdb7b}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>prospector_cuda</RootNamespace>
+    <RootNamespace>prospector</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
@@ -83,7 +83,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>P:\cuda-samples\Common;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -92,7 +92,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -101,7 +101,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -110,7 +110,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -119,7 +119,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/prospector.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/prospector.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -128,7 +128,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -137,7 +137,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
@@ -146,7 +146,7 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector_cuda/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
