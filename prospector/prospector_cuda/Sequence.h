@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include "consts.h"
 
 class Sequence
 {
@@ -18,9 +17,9 @@ class Sequence
     int end();
     Sequence subseq(int start, int length);
     char operator[](int i);
-    bool is_dyad();
-    std::vector<Sequence> dyads(int k);
-    std::vector<Sequence> dyads(int k_start, int k_end);
+    bool is_dyad(int dyad_min);
+    std::vector<Sequence> dyads(int dyad_min, int k);
+    std::vector<Sequence> dyads(int dyad_min, int k_start, int k_end);
     bool operator<(const Sequence rhs) const;
 };
 

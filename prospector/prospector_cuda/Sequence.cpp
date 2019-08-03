@@ -8,6 +8,17 @@
 
 using namespace std;
 
+const map<char, char> complements =
+{
+	{ 'A', 'T' },
+	{ 'T', 'A' },
+	{ 'C', 'G' },
+	{ 'G', 'C' },
+	{ 'N', 'N' },
+	{ 'n', 'n' },
+};
+
+
 Sequence::Sequence()
 {
     //this->seq = "";
@@ -45,10 +56,10 @@ char Sequence::operator[](int i)
     return seq[i];
 }
 
-bool Sequence::is_dyad()
+bool Sequence::is_dyad(int dyad_min)
 {
     int len = seq.length();
-    for (int i = 0; i < DYAD_MIN; i++)
+    for (int i = 0; i < dyad_min; i++)
     {
         char beginning_upstream = seq[i];
         char end_downstream = seq[len - i - 1];
@@ -61,14 +72,14 @@ bool Sequence::is_dyad()
     return true;
 }
 
-vector<Sequence> Sequence::dyads(int k)
+vector<Sequence> Sequence::dyads(int dyad_min, int k)
 {
     cout << "generating dyads for k: " << k << "... ";
     vector<Sequence> seqs;
     for (size_t i = 0; i < seq.length() - k + 1; i++)
     {
         Sequence kmer = subseq(i, k);
-        if (kmer.is_dyad())
+        if (kmer.is_dyad(dyad_min))
         {
             seqs.push_back(kmer);
         }
@@ -77,12 +88,12 @@ vector<Sequence> Sequence::dyads(int k)
     return seqs;
 }
 
-vector<Sequence> Sequence::dyads(int k_start, int k_end)
+vector<Sequence> Sequence::dyads(int dyad_min, int k_start, int k_end)
 {
     vector<Sequence> seqs;
     for (int k = k_start; k < k_end; k++)
     {
-        vector<Sequence> dyad_seqs = dyads(k);
+        vector<Sequence> dyad_seqs = dyads(dyad_min, k);
         seqs.insert(seqs.end(), dyad_seqs.begin(), dyad_seqs.end());
     }
     return seqs;
