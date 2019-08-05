@@ -78,7 +78,7 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, int k_star
 
 int* create_buffer(int count)
 {
-	int* buffer = (int*)malloc(count * sizeof(int));
+	int* buffer = new int[count];
 	fill_n(buffer, count, -1);
 	return buffer;
 }
