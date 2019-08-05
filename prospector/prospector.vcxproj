@@ -173,6 +173,7 @@
       <FileType>CppCode</FileType>
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="util.inl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -180,6 +181,7 @@
     </ClInclude>
     <ClInclude Include="util.cu">
       <DeploymentContent>true</DeploymentContent>
+      <FileType>CppCode</FileType>
     </ClInclude>
     <ClInclude Include="util.h">
       <DeploymentContent>true</DeploymentContent>

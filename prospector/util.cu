@@ -83,3 +83,16 @@ void Util::cfree(void* device_ptr)
 		exit(err);
 	}
 }
+
+void Util::cwait()
+{
+	printf("waiting for kernel... ");
+	clock_t start = clock();
+	cudaError err = cudaDeviceSynchronize();
+	printf("done in %.3f seconds\n", Util::duration(start));
+	if (err != cudaSuccess)
+	{
+		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
+		exit(err);
+	}
+}

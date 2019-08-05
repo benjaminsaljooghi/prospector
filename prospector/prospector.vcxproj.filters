@@ -26,6 +26,7 @@
     <None Include="data\test.fasta">
       <Filter>data</Filter>
     </None>
+    <None Include="util.inl" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="data">
