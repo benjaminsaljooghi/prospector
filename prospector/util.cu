@@ -117,3 +117,29 @@ __device__ char Util::complement(char nuc)
 		return 'n';
 	}
 }
+
+
+__device__ bool Util::mutant(const char* genome, int start_a, int start_b, int k)
+{
+	int mutations = 0;
+	int allowed_mutations = k / 10;
+	for (int i = 0; i < k; i++)
+	{
+		if (genome[start_a + i] != genome[start_b + i] && ++mutations > allowed_mutations)
+			return false;
+	}
+	return true;
+}
+
+
+__device__ bool Util::dyad(int dyad_min, const char* genome, int start, int k_size)
+{
+	for (int i = 0; i < dyad_min; i++)
+	{
+		char beginning_upstream = genome[start + i];
+		char end_downstream = genome[start + k_size - i - 1];
+		if (beginning_upstream != Util::complement(end_downstream))
+			return false;
+	}
+	return true;
+}

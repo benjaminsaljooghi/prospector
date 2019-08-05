@@ -35,6 +35,10 @@ namespace Util
 	void cwait();
 
 	__device__ char complement(char nuc);
+
+	__device__ bool mutant(const char* genome, int start_a, int start_b, int k);
+
+	__device__ bool dyad(int dyad_min, const char* genome, int start, int k_size);
 }
 
 #include "util.inl"

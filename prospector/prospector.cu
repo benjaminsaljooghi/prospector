@@ -16,19 +16,6 @@
 #define BUFFER 10
 
 
-
-__device__ bool mutant(const char* genome, int start_a, int start_b, int k)
-{
-    int mutations = 0;
-    int allowed_mutations = k / 10;
-    for (int i = 0; i < k; i++)
-    {
-        if (genome[start_a + i] != genome[start_b + i] && ++mutations > allowed_mutations)
-            return false;
-    }
-    return true;
-}
-
 __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map, int buffer_size)
 {
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -50,7 +37,7 @@ __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_
         while (countdown-- > 0 && candidate + k < genome_len)
         {
             // Is this candidate a repeat?
-            if (mutant(genome, dyad, candidate, k))
+            if (Util::mutant(genome, dyad, candidate, k))
             {
                 // Save repeat
                 repeat_index++;
@@ -66,23 +53,12 @@ __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_
     }
 }
 
-__device__ bool dyad(const char* genome, int start, int k_size)
-{
-    for (int i = 0; i < DYAD_MIN; i++)
-    {
-        char beginning_upstream = genome[start + i];
-        char end_downstream = genome[start + k_size - i - 1];
-        if (beginning_upstream != Util::complement(end_downstream))
-            return false;
-    }
-    return true;
-}
 
 __device__ void dyad_discovery_single_index(const char* genome, size_t genome_len, int d_index, int k_start, int k_end, int* dyad_buffer)
 {
     for (int k = k_start; k < k_end; k++)
     {
-        if (dyad(genome, d_index, k))
+        if (Util::dyad(DYAD_MIN, genome, d_index, k))
         {
             int k_jump = genome_len;
             int k_index = k - k_start;
