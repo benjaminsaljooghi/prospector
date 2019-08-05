@@ -75,15 +75,6 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, int k_star
         dyad_discovery_single_index(genome, genome_len, d_index, k_start, k_end, dyad_buffer);
 }
 
-
-int* create_buffer(int count)
-{
-	int* buffer = new int[count];
-	fill_n(buffer, count, -1);
-	return buffer;
-}
-
-
 vector<int> dyad_lengths(vector<vector<int>> all_dyads)
 {
 	printf("compute dyad lengths...\n");
@@ -96,8 +87,9 @@ vector<int> dyad_lengths(vector<vector<int>> all_dyads)
 vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start, int k_end)
 {
     size_t buffer_count = genome_len * (k_end - k_start);
-    int* dyad_buffer = create_buffer(buffer_count);
-    
+    int* dyad_buffer = new int[buffer_count];
+	fill_n(dyad_buffer, buffer_count, -1);
+
     int* device_dyad_buffer = Util::cpush(dyad_buffer, buffer_count);
     
     dyad_discovery KERNEL_ARGS2(16, 128) (device_genome, genome_len, k_start, k_end, device_dyad_buffer);
@@ -139,8 +131,10 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
             k_map.push_back(k);
     }
 
-    int crispr_buffer_count = total_dyad_count * buffer_size;
-    int* crispr_buffer = create_buffer(crispr_buffer_count);
+	int crispr_buffer_count = total_dyad_count * buffer_size;
+	int* crispr_buffer = new int[crispr_buffer_count];
+	fill_n(crispr_buffer, crispr_buffer_count, -1);
+
     int* device_crispr_buffer = Util::cpush(crispr_buffer, crispr_buffer_count);
     int* device_dyads = Util::cpush(&dyads[0], total_dyad_count);
     int* device_k_map = Util::cpush(&k_map[0], total_dyad_count);
