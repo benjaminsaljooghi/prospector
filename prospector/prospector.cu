@@ -16,29 +16,6 @@
 #define K_END 60
 #define BUFFER 10
 
-
-__device__ char complement(char nuc)
-{
-	// Replace with thrust map?
-    switch (nuc)
-    {
-        case 'A':
-            return 'T';
-        case 'T':
-            return 'A';
-        case 'C':
-            return 'G';
-        case 'G':
-            return 'C';
-        case 'N':
-            return 'N';
-        case 'n':
-            return 'n';
-        default:
-            return 'n';
-    }
-}
-
 __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
 {
     int mutations = 0;
@@ -50,11 +27,6 @@ __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
     }
     return true;
 }
-
-
-
-
-
 
 __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map, int buffer_size)
 {
@@ -99,7 +71,7 @@ __device__ bool dyad(const char* genome, int start, int k_size)
     {
         char beginning_upstream = genome[start + i];
         char end_downstream = genome[start + k_size - i - 1];
-        if (beginning_upstream != complement(end_downstream))
+        if (beginning_upstream != Util::complement(end_downstream))
             return false;
     }
     return true;
@@ -125,9 +97,6 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, int k_star
     for (int d_index = thread_id; d_index < genome_len; d_index += stride)
         dyad_discovery_single_index(genome, genome_len, d_index, k_start, k_end, dyad_buffer);
 }
-
-
-
 
 
 int* create_buffer(int count)
