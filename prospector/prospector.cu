@@ -235,30 +235,36 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
     return vec_crisprs;
 }
 
+void print_crisprs(string genome, vector<vector<int>> crisprs)
+{
+	printf("crisprs:\n");
+	for (auto vec : crisprs)
+	{
+		int k = vec[0];
+		if (k == -1)
+			continue;
+
+		printf("\n%d %d:\n", k, vec[1]);
+
+		for (int i = 1; i < vec.size(); i++)
+		{
+			printf("\t%s\n", genome.substr(vec[i], k).c_str());
+		}
+		printf("\n");
+	}
+}
+
 void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
 {
     string genome = Util::parse_fasta(genome_path).begin()->second;
     char* device_genome = Util::cpush(genome.c_str(), genome.length());
 
     vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length(), k_start, k_end);
-    vector<vector<int>> crisps = crispr_gen(device_genome, genome.length(), k_start, k_end, min_repeats, buffer_size, all_dyads);
+    vector<vector<int>> crisprs = crispr_gen(device_genome, genome.length(), k_start, k_end, min_repeats, buffer_size, all_dyads);
 
     Util::cfree(device_genome);
 
-    printf("results:\n");
-    for (auto vec : crisps)
-    {
-        int k = vec[0];
-        if (k == -1)
-            continue;
-
-        string crispr_str = "";
-        for (int i = 1; i < vec.size(); i++)
-        {
-            crispr_str += genome.substr(vec[i], k) + " ";
-        }
-        printf("%d %d:\t%s\n", k, vec[1], crispr_str.c_str());
-    }
+	print_crisprs(genome, crisprs);
 }
 
 string get_genome_path(char** argv)
