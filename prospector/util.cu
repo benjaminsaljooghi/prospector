@@ -97,23 +97,3 @@ void Util::cwait()
 	}
 }
 
-__device__ char Util::complement(char nuc)
-{
-	switch (nuc)
-	{
-	case 'A':
-		return 'T';
-	case 'T':
-		return 'A';
-	case 'C':
-		return 'G';
-	case 'G':
-		return 'C';
-	case 'N':
-		return 'N';
-	case 'n':
-		return 'n';
-	default:
-		return 'n';
-	}
-}

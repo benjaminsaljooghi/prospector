@@ -1,3 +1,6 @@
+#pragma once
+
+#include "stdafx.h"
 #include "util.h"
 
 template <typename T> void Util::cpull(T* h, const T* d, int count)
@@ -6,7 +9,7 @@ template <typename T> void Util::cpull(T* h, const T* d, int count)
 
 	cudaError err;
 
-	printf("memcpy %*d bytes from device...\n", PRINTF_BYTE_FORMAT_ALIGN, (int) bytes);
+	printf("memcpy %*d bytes from device...\n", PRINTF_BYTE_FORMAT_ALIGN, (int)bytes);
 	err = cudaMemcpy(h, d, bytes, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess)
 	{

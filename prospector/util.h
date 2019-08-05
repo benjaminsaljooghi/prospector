@@ -1,3 +1,5 @@
+#pragma once
+
 #include "stdafx.h"
 
 #ifdef __CUDACC__
@@ -31,8 +33,6 @@ namespace Util
 	template <typename T> T* cpush(const T* src, int count);
 
 	void cwait();
-
-	__global__ char complement(char nuc);
 }
 
-
+#include "util.inl"
