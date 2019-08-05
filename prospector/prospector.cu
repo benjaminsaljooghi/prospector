@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "util.h"
 
 #define DYAD_MIN 5
@@ -9,11 +10,72 @@
 #define REPEATS_MIN 3
 #define SCAN_DOMAIN 1000
 #define ALLOW_DISCREPANT_LENGTHS false
-#define PRINTF_BYTE_FORMAT_ALIGN 10
 #define MIN_REPEATS 3
 #define K_START 20
 #define K_END 60
 #define BUFFER 10
+
+template <typename T> void Util::cpull(T* h, const T* d, int count)
+{
+	size_t bytes = count * sizeof(T);
+
+	cudaError err;
+
+	printf("memcpy %*d bytes from device...\n", PRINTF_BYTE_FORMAT_ALIGN, bytes);
+	err = cudaMemcpy(h, d, bytes, cudaMemcpyDeviceToHost);
+	if (err != cudaSuccess)
+	{
+		fprintf(stderr, "failed to copy from device to host (error code %s)!\n", cudaGetErrorString(err));
+		exit(err);
+	}
+}
+
+template <typename T> T* cpush(const T* src, int count)
+{
+
+	size_t bytes = count * sizeof(T);
+
+	cudaError err;
+	T* ptr = NULL;
+
+	printf("malloc %*d bytes on device...\n", PRINTF_BYTE_FORMAT_ALIGN, bytes);
+	err = cudaMalloc((void**)& ptr, bytes);
+	if (err != cudaSuccess)
+	{
+		fprintf(stderr, "failed to malloc device (error code %s)!\n", cudaGetErrorString(err));
+		exit(err);
+	}
+
+	printf("memcpy %*d bytes to device...\n", PRINTF_BYTE_FORMAT_ALIGN, bytes);
+	err = cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess)
+	{
+		fprintf(stderr, "failed to copy from host to device (error code %s)!\n", cudaGetErrorString(err));
+		exit(err);
+	}
+
+	return (T*)ptr;
+}
+
+void Util::cwait()
+{
+	printf("waiting for kernel... ");
+	clock_t start = clock();
+	cudaError err = cudaDeviceSynchronize();
+	printf("done in %.3f seconds\n", Util::duration(start));
+	if (err != cudaSuccess)
+	{
+		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
+		exit(err);
+	}
+}
+
+
+
+
+
+
+
 
 __device__ char complement(char nuc)
 {
@@ -49,7 +111,12 @@ __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
     return true;
 }
 
-__global__ void kernel(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map, int buffer_size)
+
+
+
+
+
+__global__ void discover_crisprs(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map, int buffer_size)
 {
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
@@ -119,14 +186,9 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, int k_star
         dyad_discovery_single_index(genome, genome_len, d_index, k_start, k_end, dyad_buffer);
 }
 
-vector<int> dyad_lengths(vector<vector<int>> all_dyads)
-{
-    printf("compute dyad lengths...\n");
-    vector<int> lengths;
-    for (auto vec : all_dyads)
-        lengths.push_back((int)vec.size());
-    return lengths;
-}
+
+
+
 
 int* create_buffer(int count)
 {
@@ -136,18 +198,28 @@ int* create_buffer(int count)
 	return buffer;
 }
 
+
+vector<int> dyad_lengths(vector<vector<int>> all_dyads)
+{
+	printf("compute dyad lengths...\n");
+	vector<int> lengths;
+	for (auto vec : all_dyads)
+		lengths.push_back((int)vec.size());
+	return lengths;
+}
+
 vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start, int k_end)
 {
     size_t buffer_count = genome_len * (k_end - k_start);
     int* dyad_buffer = create_buffer(buffer_count);
     
-    int* device_dyad_buffer = push(dyad_buffer, buffer_count);
+    int* device_dyad_buffer = cpush(dyad_buffer, buffer_count);
     
     dyad_discovery KERNEL_ARGS2(16, 128) (device_genome, genome_len, k_start, k_end, device_dyad_buffer);
-    wait_cuda();
+    Util::cwait();
 
-    pull(dyad_buffer, device_dyad_buffer, buffer_count);
-    cfree(device_dyad_buffer);
+    Util::cpull(dyad_buffer, device_dyad_buffer, buffer_count);
+    Util::cfree(device_dyad_buffer);
 
     printf("extract dyads...\n");
     vector<vector<int>> all_dyads;
@@ -171,7 +243,7 @@ vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start
 vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_start, int k_end, int min_repeats, int buffer_size, vector<vector<int>> all_dyads)
 {
     vector<int> lens = dyad_lengths(all_dyads);
-    vector<int> dyads = flatten(all_dyads);
+    vector<int> dyads = Util::flatten(all_dyads);
     int total_dyad_count = dyads.size();
 
     vector<int> k_map;
@@ -184,18 +256,18 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 
     int crispr_buffer_count = total_dyad_count * buffer_size;
     int* crispr_buffer = create_buffer(crispr_buffer_count);
-    int* device_crispr_buffer = push(crispr_buffer, crispr_buffer_count);
-    int* device_dyads = push(&dyads[0], total_dyad_count);
-    int* device_k_map = push(&k_map[0], total_dyad_count);
+    int* device_crispr_buffer = cpush(crispr_buffer, crispr_buffer_count);
+    int* device_dyads = cpush(&dyads[0], total_dyad_count);
+    int* device_k_map = cpush(&k_map[0], total_dyad_count);
 
-    kernel KERNEL_ARGS2(16, 128) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
-    wait_cuda();
+    discover_crisprs KERNEL_ARGS2(16, 128) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
+    Util::cwait();
     
-    pull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
+    Util::cpull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
 
-    cfree(device_crispr_buffer);
-    cfree(device_dyads);
-    cfree(device_k_map);
+    Util::cfree(device_crispr_buffer);
+	Util::cfree(device_dyads);
+	Util::cfree(device_k_map);
 
     vector<vector<int>> vec_crisprs;
     printf("extract results...\n");
@@ -226,7 +298,7 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
             if (i == j)
                 continue;
 
-            if (vec_contains(vec_crisprs[i], vec_crisprs[j]))
+            if (Util::contains(vec_crisprs[i], vec_crisprs[j]))
                 vec_crisprs[i][0] = -1;
         }
     }
@@ -236,15 +308,13 @@ vector<vector<int>> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 
 void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
 {
-    string genome_str = parse_single_seq(genome_path);
-    const char* genome = genome_str.c_str();
-    size_t genome_len = strlen(genome);
-    char* device_genome = push(genome, genome_len);
+    string genome = Util::parse_fasta(genome_path).begin()->second;
+    char* device_genome = cpush(genome.c_str(), genome.length());
 
-    vector<vector<int>> all_dyads = dyad_gen(device_genome, genome_len, k_start, k_end);
-    vector<vector<int>> crisps = crispr_gen(device_genome, genome_len, k_start, k_end, min_repeats, buffer_size, all_dyads);
+    vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length(), k_start, k_end);
+    vector<vector<int>> crisps = crispr_gen(device_genome, genome.length(), k_start, k_end, min_repeats, buffer_size, all_dyads);
 
-    cfree(device_genome);
+    Util::cfree(device_genome);
 
     printf("results:\n");
     for (auto vec : crisps)
@@ -256,7 +326,7 @@ void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer
         string crispr_str = "";
         for (int i = 1; i < vec.size(); i++)
         {
-            crispr_str += genome_str.substr(vec[i], k) + " ";
+            crispr_str += genome.substr(vec[i], k) + " ";
         }
         printf("%d %d:\t%s\n", k, vec[1], crispr_str.c_str());
     }
@@ -272,9 +342,9 @@ string get_genome_path(char** argv)
 
 int main(int argc, char** argv)
 {
-	string genome_path = get_genome_path(argv);
 	clock_t start = clock();
+	string genome_path = get_genome_path(argv);
 	run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER);
-	printf("main completed in %.3f seconds.", duration(start));
+	printf("main completed in %.3f seconds.", Util::duration(start));
 	return 0;
 }

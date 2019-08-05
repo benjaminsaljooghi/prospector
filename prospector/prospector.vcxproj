@@ -119,13 +119,15 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector/prospector.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/benjamin/projects/prospector/program</RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <BuildCommandLine>
     </BuildCommandLine>
+    <RemoteReBuildCommandLine>make</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>rm -rfv *</RemoteCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
@@ -155,7 +157,9 @@
     </BuildCommandLine>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="Makefile" />
+    <ClCompile Include="Makefile">
+      <DeploymentContent>true</DeploymentContent>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="data\aureus.fasta" />
@@ -167,10 +171,19 @@
     <None Include="data\test.fasta" />
     <None Include="prospector.cu">
       <FileType>CppCode</FileType>
+      <DeploymentContent>true</DeploymentContent>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="util.h" />
+    <ClInclude Include="stdafx.h">
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
+    <ClInclude Include="util.cu">
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
+    <ClInclude Include="util.h">
+      <DeploymentContent>true</DeploymentContent>
+    </ClInclude>
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <CudaCompile>
