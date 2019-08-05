@@ -30,7 +30,7 @@ template <typename T> void Util::cpull(T* h, const T* d, int count)
 	}
 }
 
-template <typename T> T* cpush(const T* src, int count)
+template <typename T> T* Util::cpush(const T* src, int count)
 {
 
 	size_t bytes = count * sizeof(T);
