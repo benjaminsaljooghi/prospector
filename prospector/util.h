@@ -33,6 +33,8 @@ namespace Util
 	template <typename T> T* cpush(const T* src, int count);
 
 	void cwait();
+
+	__device__ char complement(char nuc);
 }
 
 #include "util.inl"

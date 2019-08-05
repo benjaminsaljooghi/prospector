@@ -15,26 +15,7 @@
 #define K_END 60
 #define BUFFER 10
 
-__device__ char complement(char nuc)
-{
-	switch (nuc)
-	{
-	case 'A':
-		return 'T';
-	case 'T':
-		return 'A';
-	case 'C':
-		return 'G';
-	case 'G':
-		return 'C';
-	case 'N':
-		return 'N';
-	case 'n':
-		return 'n';
-	default:
-		return 'n';
-	}
-}
+
 
 __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
 {
@@ -91,7 +72,7 @@ __device__ bool dyad(const char* genome, int start, int k_size)
     {
         char beginning_upstream = genome[start + i];
         char end_downstream = genome[start + k_size - i - 1];
-        if (beginning_upstream != complement(end_downstream))
+        if (beginning_upstream != Util::complement(end_downstream))
             return false;
     }
     return true;
