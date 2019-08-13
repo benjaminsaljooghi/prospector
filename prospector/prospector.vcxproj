@@ -119,24 +119,28 @@
     </BuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector/program</RemoteBuildOutputs>
+    <RemoteBuildOutputs>
+    </RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <BuildCommandLine>
     </BuildCommandLine>
-    <RemoteReBuildCommandLine>make</RemoteReBuildCommandLine>
-    <RemoteCleanCommandLine>rm -rfv *</RemoteCleanCommandLine>
+    <RemoteReBuildCommandLine>
+    </RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
+    <RemoteBuildOutputs>
+    </RemoteBuildOutputs>
     <RemoteBuildCommandLine>make</RemoteBuildCommandLine>
     <NMakeIncludeSearchPath>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.1\include</NMakeIncludeSearchPath>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
     <BuildCommandLine>
     </BuildCommandLine>
+    <RemoteCleanCommandLine>make clean</RemoteCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <RemoteBuildOutputs>/home/benjamin/projects/prospector/main.o</RemoteBuildOutputs>
