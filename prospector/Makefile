@@ -1,4 +1,4 @@
-NVCC = /usr/local/cuda-10.1/bin/nvcc
+NVCC = /usr/local/cuda/bin/nvcc
 CARGS = --std=c++14 -g
 
 .PHONY: version clean
@@ -17,4 +17,4 @@ prospector.o:
 	$(NVCC) $(CARGS) --device-c prospector.cu -o prospector.o
 
 clean:
-	rm -f $(binaries) *.o
+	rm -fv $(binaries) *.o
