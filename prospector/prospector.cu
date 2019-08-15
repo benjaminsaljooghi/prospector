@@ -230,6 +230,6 @@ int main(int argc, char** argv)
 	clock_t start = clock();
 	string genome_path = get_genome_path(argv);
 	run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER);
-	printf("main completed in %.3f seconds.", Util::duration(start));
+	printf("main completed in %.3f seconds.\n", Util::duration(start));
 	return 0;
 }
