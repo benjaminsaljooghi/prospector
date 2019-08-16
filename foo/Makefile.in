@@ -9,7 +9,7 @@
 
 REQUIRES = objects algo
 
-APP_PROJ = foo blast_demo remote_blast_demo vsrun_sample
+APP_PROJ = blast_demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
