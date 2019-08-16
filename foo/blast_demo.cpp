@@ -204,10 +204,6 @@ int CBlastDemoApplication::Run(void)
 
     CLocalBlast blaster(query_factory, opts, target_db);
 
-
-
-
-
     CSearchResultSet results = *blaster.Run();
 
     // Get warning messages.
@@ -229,38 +225,9 @@ int CBlastDemoApplication::Run(void)
     
     CNcbiOstream& out = args["out"].AsOutputFile();
 
-
-
-    cout << "Result size: " << results.GetNumResults() << endl;
-    for (unsigned int i = 0; i < results.GetNumResults(); i++)
-    {
-        CConstRef<CSeq_align_set> sas = results[i].GetSeqAlign();
-        //  out << MSerial_AsnText << *sas;
-        cout << MSerial_AsnText << *sas;
-
-        cout <<  "Size: " << sas->Size() << endl;
-
-        list<CRef<CSeq_align>> data = sas->Get();
-        
-        list<CRef<CSeq_align>>::iterator it;
-        for (it = data.begin(); it != data.end(); ++it){
-            CRef<CSeq_align> a = *it;
-        
-            int score;
-
-            if(!a->GetNamedScore(CSeq_align::eScore_Blast, score))
-            {   
-                cout << "Could not get named score. Continuing..." << endl;
-            }
-            
-            cout << "score: " << score << endl;
-
- 	
-
-
-        }
-
-        cout << endl;
+    for (unsigned int i = 0; i < results.GetNumResults(); i++) {
+         CConstRef<CSeq_align_set> sas = results[i].GetSeqAlign();
+         out << MSerial_AsnText << *sas;
     }
 
     return 0;

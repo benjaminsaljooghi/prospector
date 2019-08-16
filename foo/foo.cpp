@@ -1,4 +1,4 @@
-/*  $Id: blast_demo.cpp 71417 2016-03-03 16:46:54Z gouriano $
+/*  $Id: foo.cpp 568561 2018-08-07 18:29:39Z grichenk $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -23,218 +23,144 @@
  *
  * ===========================================================================
  *
- * Authors:  Tom Madden
+ * Author:  Christiam Camacho
  *
  * File Description:
- *   Sample application for the running a blast search.
+ *   Demo of using the CBl2Seq class to compare two sequences using the BLAST
+ *   algorithm
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 
-#include <objmgr/object_manager.hpp>
+// Objects includes
+#include <objects/seqloc/Seq_loc.hpp>
 
-#include <objects/seqalign/Seq_align_set.hpp>
+// Object Manager includes
+#include <objtools/simple/simple_om.hpp>
 
+// BLAST includes
+#include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/sseqloc.hpp>
-#include <algo/blast/api/local_blast.hpp>
-#include <algo/blast/api/uniform_search.hpp>
-#include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/objmgr_query_data.hpp>
-#include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/blast_nucl_options.hpp>
-#include <algo/blast/api/blast_prot_options.hpp>
-
-#include <algo/blast/blastinput/blast_input.hpp>
-#include <algo/blast/blastinput/blast_fasta_input.hpp>
 
 USING_NCBI_SCOPE;
-USING_SCOPE(blast);
-
+USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
-//  CBlastDemoApplication::
+//  CBlastSampleApplication::
 
 
-class CBlastDemoApplication : public CNcbiApplication
+class CBlastSampleApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
 
-    void ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle);
-
+    enum ESeqType {
+        eQuery,
+        eSubject
+    };
+    blast::SSeqLoc* x_CreateSSeqLoc(ESeqType st);
 };
 
+
+blast::SSeqLoc*
+CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
+{
+    // Get the gi
+    TGi gi;
+    if (st == eQuery) {
+        gi = GetArgs()["query"].AsIntId();
+    } else {
+        gi = GetArgs()["subject"].AsIntId();
+    }
+
+    CRef<CSeq_loc> seqloc(new CSeq_loc);
+    seqloc->SetWhole().SetGi(gi);
+
+    // Setup the scope
+    CRef<CScope> scope(CSimpleOM::NewScope());
+
+    return new blast::SSeqLoc(seqloc, scope);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
 
 
-void CBlastDemoApplication::Init(void)
+void CBlastSampleApplication::Init(void)
 {
+    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideVersion);
+
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "BLAST demo program");
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+      "CBl2Seq demo to compare 2 sequences using BLAST");
 
-    arg_desc->AddKey
-        ("program", "ProgramName",
-         "One of blastn, megablast, dc-megablast, blastp, blastx, tblastn, tblastx, rpsblast",
-         CArgDescriptions::eString);
+    // Program type
+    arg_desc->AddKey("program", "p", "Type of BLAST program",
+            CArgDescriptions::eString);
     arg_desc->SetConstraint
-        ("program", &(*new CArgAllow_Strings,
-                "blastn", "megablast", "dc-megablast", "blastp", "blastx", "tblastn", "tblastx", "rpsblast"));
+        ("program", &(*new CArgAllow_Strings, 
+                "blastp", "blastn", "blastx", "tblastn", "tblastx"));
 
-    arg_desc->AddDefaultKey
-        ("db", "DataBase",
-         "This is the name of the database",
-         CArgDescriptions::eString, "nr");
+    // Identifier for the query sequence
+    arg_desc->AddKey("query", "QuerySequenceID", 
+                     "GI of the query sequence",
+                     CArgDescriptions::eIntId);
 
-    arg_desc->AddDefaultKey("in", "Queryfile",
-                        "A file with the query", CArgDescriptions::eInputFile, "stdin");
+    // Identifier for the subject sequence
+    arg_desc->AddKey("subject", "SubjectSequenceID", 
+                     "GI of the subject sequence",
+                     CArgDescriptions::eIntId);
 
-    arg_desc->AddDefaultKey("out", "Outputfile",
-                        "The output file", CArgDescriptions::eOutputFile, "stdout");
-
-    arg_desc->AddDefaultKey("evalue", "evalue",
-                        "E-value threshold for saving hits", CArgDescriptions::eDouble, "0");
-
-    arg_desc->AddDefaultKey("penalty", "penalty", "Penalty score for a mismatch",
-                            CArgDescriptions::eInteger, "0");
-
-    arg_desc->AddDefaultKey("reward", "reward", "Reward score for a match",
-                            CArgDescriptions::eInteger, "0");
-
-    arg_desc->AddDefaultKey("matrix", "matrix", "Scoring matrix name",
-                            CArgDescriptions::eString, "BLOSUM62");
+    // Output file
+    arg_desc->AddDefaultKey("out", "OutputFile", 
+        "File name for writing the Seq-align results in ASN.1 form",
+        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
 
-/// Modify BLAST options from defaults based upon command-line args.
-///
-/// @param opts_handle already created CBlastOptionsHandle to modify [in]
-void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle)
-
-{
-        const CArgs& args = GetArgs();
-
-        // Expect value is a supported option for all flavors of BLAST.
-        if(args["evalue"].AsDouble())
-          opts_handle->SetEvalueThreshold(args["evalue"].AsDouble());
-        
-        // The first branch is used if the program is blastn or a flavor of megablast
-        // as reward and penalty is a valid option.
-        //
-        // The second branch is used for all other programs except rpsblast as matrix
-        // is a valid option for blastp and other programs that perform protein-protein
-        // comparisons.
-        //
-        if (CBlastNucleotideOptionsHandle* nucl_handle =
-              dynamic_cast<CBlastNucleotideOptionsHandle*>(&*opts_handle)) {
-
-              if (args["reward"].AsInteger())
-                nucl_handle->SetMatchReward(args["reward"].AsInteger());
-            
-              if (args["penalty"].AsInteger())
-                nucl_handle->SetMismatchPenalty(args["penalty"].AsInteger());
-        }
-        else if (CBlastProteinOptionsHandle* prot_handle =
-               dynamic_cast<CBlastProteinOptionsHandle*>(&*opts_handle)) {
-              if (args["matrix"]) 
-                prot_handle->SetMatrixName(args["matrix"].AsString().c_str());
-        }
-
-        return;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  Run test (printout arguments obtained from command-line)
+//  Run demo
 
 
-int CBlastDemoApplication::Run(void)
+int CBlastSampleApplication::Run(void)
 {
-    // Get arguments
-    const CArgs& args = GetArgs();
+    int retval = 0;
 
-    EProgram program = ProgramNameToEnum(args["program"].AsString());
+    try {
 
-    bool db_is_aa = (program == eBlastp || program == eBlastx ||
-                     program == eRPSBlast || program == eRPSTblastn);
+        // Obtain the query, subject, and program from command line
+        // arguments...
+        auto_ptr<blast::SSeqLoc> query(x_CreateSSeqLoc(eQuery));
+        auto_ptr<blast::SSeqLoc> subject(x_CreateSSeqLoc(eSubject));
+        blast::EProgram program =
+            blast::ProgramNameToEnum(GetArgs()["program"].AsString());
 
-    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
+        /// ... and BLAST the sequences!
+        blast::CBl2Seq blaster(*query, *subject, program);
+        blast::TSeqAlignVector alignments = blaster.Run();
 
-    ProcessCommandLineArgs(opts);
+        /// Display the alignments in text ASN.1
+        CNcbiOstream& out = GetArgs()["out"].AsOutputFile();
+        for (int i = 0; i < (int) alignments.size(); ++i)
+            out << MSerial_AsnText << *alignments[i];
 
-    opts->Validate();  // Can throw CBlastException::eInvalidOptions for invalid option.
-
-
-    // This will dump the options to stderr.
-    // opts->GetOptions().DebugDumpText(cerr, "opts", 1);
-
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    if (!objmgr) {
-         throw std::runtime_error("Could not initialize object manager");
+    } catch (const CException& e) {
+        ERR_POST(e);
+        retval = 1;
     }
 
-    const bool is_protein =
-        !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
-    SDataLoaderConfig dlconfig(is_protein);
-    CBlastInputSourceConfig iconfig(dlconfig);
-    CBlastFastaInputSource fasta_input(args["in"].AsInputFile(), iconfig);
-    CScope scope(*objmgr);
-
-    CBlastInput blast_input(&fasta_input);
-
-    TSeqLocVector query_loc = blast_input.GetAllSeqLocs(scope);
-
-    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
-
-    const CSearchDatabase target_db(args["db"].AsString(),
-        db_is_aa ? CSearchDatabase::eBlastDbIsProtein : CSearchDatabase::eBlastDbIsNucleotide);
-
-    CLocalBlast blaster(query_factory, opts, target_db);
-
-    CSearchResultSet results = *blaster.Run();
-
-    // Get warning messages.
-    for (unsigned int i = 0; i < results.GetNumResults(); i++) 
-    {
-        TQueryMessages messages = results[i].GetErrors(eBlastSevWarning);
-        if (messages.size() > 0)
-        {
-            CConstRef<CSeq_id> seq_id = results[i].GetSeqId();
-            if (seq_id.NotEmpty())
-                cerr << "ID: " << seq_id->AsFastaString() << endl;
-            else
-                cerr << "ID: " << "Unknown" << endl;
-
-            ITERATE(vector<CRef<CSearchMessage> >, it, messages)
-                cerr << (*it)->GetMessage() << endl;
-        }
-    }
-    
-    CNcbiOstream& out = args["out"].AsOutputFile();
-
-    for (unsigned int i = 0; i < results.GetNumResults(); i++) {
-        CConstRef<CSeq_align_set> sas = results[i].GetSeqAlign();
-        // out << MSerial_AsnText << *sas;
-
-        cout << sas << endl
-
-        break;
-    }
-
-    return 0;
+    return retval;
 }
 
 
@@ -242,7 +168,7 @@ int CBlastDemoApplication::Run(void)
 //  Cleanup
 
 
-void CBlastDemoApplication::Exit(void)
+void CBlastSampleApplication::Exit(void)
 {
     // Do your after-Run() cleanup here
 }
@@ -256,9 +182,6 @@ void CBlastDemoApplication::Exit(void)
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     // Execute main application function
-    return CBlastDemoApplication().AppMain(argc, argv);
+    return CBlastSampleApplication().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
-[ source navigation ]   [ diff markup ]   [ identifier search ]   [ freetext search ]   [ file search ]  
-This page was automatically generated by the LXR engine. 
-Visit the LXR main site for more information.
