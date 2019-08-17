@@ -8,7 +8,8 @@
 ###  BASIC PROJECT SETTINGS
 APP = blast_demo.out
 SRC = blast_demo
-# OBJ =
+OBJ = ../lib_test/lib_test
+
 
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))

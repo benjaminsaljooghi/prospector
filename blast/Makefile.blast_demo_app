@@ -33,3 +33,10 @@ $(status_dir)/.%.files:;
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
+
+lib_test.o:
+	cd ../lib_test && make
+
+clean:
+	rm -fv *.o 
+	cd ../lib_test && make clean
