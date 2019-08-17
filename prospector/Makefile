@@ -3,17 +3,17 @@ CARGS = --std=c++14 -g
 
 .PHONY: version clean
 
-program: clean version util.o prospector.o
-	$(NVCC) $(CARGS) prospector.o util.o -o program.out
+prospector.out: clean version util.o prospector.o
+	$(NVCC) $(CARGS) prospector.o util.o -o prospector.out
 
-version:
-	$(NVCC) --version
+prospector.o:
+	$(NVCC) $(CARGS) --device-c prospector.cu -o prospector.o
 
 util.o:
 	$(NVCC) $(CARGS) --device-c util.cu -o util.o
 
-prospector.o:
-	$(NVCC) $(CARGS) --device-c prospector.cu -o prospector.o
+version:
+	$(NVCC) --version
 
 clean:
 	rm -fv *.o *.out
