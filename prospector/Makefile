@@ -3,13 +3,12 @@ CARGS = --std=c++14 -g
 
 .PHONY: version clean
 
-main.out: libgpu.a
-	g++ -o main.out main.cpp -L. -lgpu -L/usr/local/cuda/lib64 -lcudart	
+# main.out: libgpu.a
+	# g++ -o main.out main.cpp -L. -lgpu -L/usr/local/cuda/lib64 -lcudart	
 
-libgpu.a: prospector.o util.o
-	$(NVCC) -dlink -o link.o prospector.o util.o 
-	$(NVCC) -lib -o libgpu.a link.o prospector.o util.o
-
+device_linked.o: prospector.o util.o
+	$(NVCC) -dlink -o device_linked.o prospector.o util.o
+	
 prospector.o:
 	$(NVCC) $(CARGS) -dc -o prospector.o prospector.cu
 

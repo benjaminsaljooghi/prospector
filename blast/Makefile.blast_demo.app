@@ -8,19 +8,21 @@
 ###  BASIC PROJECT SETTINGS
 APP = blast_demo.out
 SRC = blast_demo
-OBJ = ../lib_test/lib_test
+OBJ = ../prospector/device_linked ../prospector/prospector ../prospector/util
+# MY_LIBS = -L../prospector -lgpu -L/usr/local/cuda/lib64 -lcudart
+MY_LIBS = -L/usr/local/cuda/lib64 -lcudart
 
 
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS) $(MY_LIBS)
 
 # These settings are necessary for optimized WorkShop builds, due to
 # BLAST's own use of them.
 CXXFLAGS = $(FAST_CXXFLAGS)
 
 ### LOCAL_LDFLAGS automatically added
-LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS) 
+LDFLAGS = $(LOCAL_LDFLAGS) $(FAST_LDFLAGS)
 
 REQUIRES = objects -Cygwin
 

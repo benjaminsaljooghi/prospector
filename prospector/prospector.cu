@@ -220,8 +220,9 @@ void run(string genome_path, int min_repeats, int k_start, int k_end, int buffer
 string get_genome_path(char** argv)
 {
 	string executed_program(argv[0]);
+    printf("executed_program: %s\n", executed_program.c_str());
 	string executed_dir = executed_program.substr(0, executed_program.find_last_of("\\/"));
-	string genome_path = executed_dir + "/data/pyogenes.fasta";
+	string genome_path = executed_dir + "./data/pyogenes.fasta";
 	return genome_path;
 }
 

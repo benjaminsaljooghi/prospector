@@ -34,9 +34,19 @@ $(status_dir)/.%.files:;
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
 
-lib_test.o:
-	cd ../lib_test && make
+../prospector/device_linked.o: ../prospector/prospector.o ../prospector/util.o
+	cd ../prospector && make device_linked
 
-clean:
-	rm -fv *.o 
-	cd ../lib_test && make clean
+../prospector/prospector.o:
+	cd ../prospector && make prospector
+
+../prospector/util.o:
+	cd ../prospector && make util
+
+# clean_prospector:
+# 	cd ../prospector && make clean
+	
+
+
+# lib_test.o:
+# 	cd ../lib_test && make

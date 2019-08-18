@@ -52,7 +52,6 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
-#include "../lib_test/lib_test.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -249,13 +248,15 @@ void CBlastDemoApplication::Exit(void)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
+// Simulated #include hpp
+void entry_point(char** argv);
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     // Execute main application function
-    int result = summation(5, 2);
-    printf("hello summation %d\n", result);
+    
+    entry_point(argv);
     // return CBlastDemoApplication().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
