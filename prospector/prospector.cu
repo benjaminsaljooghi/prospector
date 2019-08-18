@@ -225,7 +225,10 @@ string get_genome_path(char** argv)
 	return genome_path;
 }
 
-int main(int argc, char** argv)
+
+
+
+int entry_point(char** argv)
 {
 	clock_t start = clock();
 	string genome_path = get_genome_path(argv);
