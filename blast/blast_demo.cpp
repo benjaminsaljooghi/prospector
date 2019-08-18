@@ -249,14 +249,14 @@ void CBlastDemoApplication::Exit(void)
 //  MAIN
 
 // Simulated #include hpp
-void entry_point(char** argv);
+void prospector_main(char** argv);
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     // Execute main application function
     
-    entry_point(argv);
+    prospector_main(argv);
     // return CBlastDemoApplication().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

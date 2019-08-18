@@ -228,8 +228,7 @@ string get_genome_path(char** argv)
 
 
 
-
-int entry_point(char** argv)
+int prospector_main(char** argv)
 {
 	clock_t start = clock();
 	string genome_path = get_genome_path(argv);

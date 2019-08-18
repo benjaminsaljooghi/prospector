@@ -43,10 +43,3 @@ $(status_dir)/.%.files:;
 ../prospector/util.o:
 	cd ../prospector && make util
 
-# clean_prospector:
-# 	cd ../prospector && make clean
-	
-
-
-# lib_test.o:
-# 	cd ../lib_test && make
