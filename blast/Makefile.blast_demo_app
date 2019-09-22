@@ -34,12 +34,13 @@ $(status_dir)/.%.files:;
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
 
-../prospector/device_linked.o: ../prospector/prospector.o ../prospector/util.o
-	cd ../prospector && make device_linked
+
+../prospector/dlinked.o: ../prospector/prospector.o ../prospector/util.o
+	cd ../prospector && make dlinked.o
 
 ../prospector/prospector.o:
-	cd ../prospector && make prospector
+	cd ../prospector && make prospector.o
 
 ../prospector/util.o:
-	cd ../prospector && make util
+	cd ../prospector && make util.o
 

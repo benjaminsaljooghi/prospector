@@ -8,7 +8,7 @@
 ###  BASIC PROJECT SETTINGS
 APP = blast_demo.out
 SRC = blast_demo
-OBJ = ../prospector/device_linked ../prospector/prospector ../prospector/util
+OBJ = ../prospector/dlinked ../prospector/prospector ../prospector/util
 # MY_LIBS = -L../prospector -lgpu -L/usr/local/cuda/lib64 -lcudart
 MY_LIBS = -L/usr/local/cuda/lib64 -lcudart
 

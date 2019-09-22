@@ -4,12 +4,14 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "debug blast_demo",
+            "name": "(gdb) Launch blast",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
-            "args": ["-program", "blastn", "-dryrun"],
+            "program": "${workspaceFolder}/blast/blast_demo.out",
+            // "args": ["-program", "blastn", "-db", "${workspaceFolder}/blast/Actino_DB", "-in", "${workspaceFolder}/blast/my_spacer.fasta"],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -22,8 +24,48 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build blast_demo_app",
-            "miDebuggerPath": "/usr/bin/gdb"
+            // "preLaunchTask": "build blast_demo_app",
+        },
+        {
+            "name": "(gdb) Launch prospector",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/prospector/program.out",
+            // "args": ["-program", "blastn", "-db", "${workspaceFolder}/blast/Actino_DB", "-in", "${workspaceFolder}/blast/my_spacer.fasta"],
+            "args": ["/home/benjamin/data/pyogenes.fasta"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            // "preLaunchTask": "build blast_demo_app",
+        },
+        {
+            "name": "(gdb) Launch invoker",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/invoker/invoker.out",
+            "args": ["/home/benjamin/projects/CRISPR/data/pyogenes.fasta"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build invoker",
         }
     ]
 }

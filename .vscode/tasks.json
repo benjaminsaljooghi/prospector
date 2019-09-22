@@ -8,8 +8,16 @@
             "type": "shell",
             "command": "make",
             "options": {
-                "cwd": "${workspaceRoot}/CRISPR/foo"
+                "cwd": "${workspaceRoot}/blast"
             },
+        },
+        {
+            "label": "build invoker",
+            "type": "shell",
+            "command": "make",
+            "options": {
+                "cwd": "${workspaceRoot}/invoker"
+            }
         }
     ]
 }

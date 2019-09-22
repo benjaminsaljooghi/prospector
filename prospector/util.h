@@ -1,18 +1,7 @@
 #pragma once
-
 #include "stdafx.h"
 
-#ifdef __CUDACC__
-#define CUDA_CALLABLE_MEMBER __host__ __device__
-#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
-#else
-#define CUDA_CALLABLE_MEMBER
-#define KERNEL_ARGS2(grid, block)
-#define KERNEL_ARGS3(grid, block, sh_mem)
-#define KERNEL_ARGS4(grid, block, sh_mem, stream)
-#endif
+
 
 #define PRINTF_BYTE_FORMAT_ALIGN 10
 
@@ -24,21 +13,23 @@ namespace Util
 
 	vector<int> flatten(vector<vector<int>> vecs);
 
-	bool contains(vector<int> a, vector<int> b);
+	bool subset(vector<int> a, vector<int> b);
 
-	void cfree(void* device_ptr);
+	struct Locus
+	{
+		int k;
+		std::vector<int> genome_indices;
+		// std::vector<int> spacer_scores;
+	};
 
-	template <typename T> void cpull(T* h, const T* d, int count);
+	struct Prospection
+	{
+		std::string genome;
+		std::vector<Util::Locus> crisprs;
+	};
 
-	template <typename T> T* cpush(const T* src, int count);
-
-	void cwait();
-
-	__device__ char complement(char nuc);
-
-	__device__ bool mutant(const char* genome, int start_a, int start_b, int k);
-
-	__device__ bool dyad(int dyad_min, const char* genome, int start, int k_size);
+	
+	vector<std::string> repeats(std::string genome, Util::Locus locus);
+	vector<std::string> spacers(std::string genome, Util::Locus locus);
+	std::string seqs_to_fasta(std::vector<std::string> seqs);
 }
-
-#include "util.inl"

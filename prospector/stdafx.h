@@ -17,12 +17,6 @@
 #include <set>
 #include <ctime>
 #include <string>
+#include <sstream>
 
-// CUDA
-#include "cuda.h"
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "cuda_fp16.h"
-
-// Because I prefer concise code
 using namespace std;

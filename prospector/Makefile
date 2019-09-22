@@ -3,17 +3,22 @@ CARGS = --std=c++14 -g
 
 .PHONY: version clean
 
-# main.out: libgpu.a
-	# g++ -o main.out main.cpp -L. -lgpu -L/usr/local/cuda/lib64 -lcudart	
 
-device_linked.o: prospector.o util.o
-	$(NVCC) -dlink -o device_linked.o prospector.o util.o
+
+# program.out: device_linked.o
+	# g++ -o program.out prospector.o util.o device_linked.o -L. -L/usr/local/cuda/lib64 -lcudart
+
+program.out: dlinked.o prospector.o util.o
+	g++ -o program.out prospector.o util.o dlinked.o -L. -L/usr/local/cuda/lib64 -lcudart
+
+dlinked.o: prospector.o
+	$(NVCC) -dlink -o dlinked.o prospector.o
 	
 prospector.o:
 	$(NVCC) $(CARGS) -dc -o prospector.o prospector.cu
 
 util.o:
-	$(NVCC) $(CARGS) -dc -o util.o util.cu
+	$(NVCC) $(CARGS) -c -o util.o util.cpp
 
 version:
 	$(NVCC) --version
