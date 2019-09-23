@@ -1,27 +1,20 @@
 NVCC = /usr/local/cuda/bin/nvcc
 CARGS = --std=c++14 -g
+OBJ_DIR = ../obj
 
 .PHONY: version clean
 
+program: dlinked prospector util
+	g++ -o $(OBJ_DIR)/program.out $(OBJ_DIR)/prospector.o $(OBJ_DIR)/util.o $(OBJ_DIR)/dlinked.o -L. -L/usr/local/cuda/lib64 -lcudart
 
-
-# program.out: device_linked.o
-	# g++ -o program.out prospector.o util.o device_linked.o -L. -L/usr/local/cuda/lib64 -lcudart
-
-program.out: dlinked.o prospector.o util.o
-	g++ -o program.out prospector.o util.o dlinked.o -L. -L/usr/local/cuda/lib64 -lcudart
-
-dlinked.o: prospector.o
-	$(NVCC) -dlink -o dlinked.o prospector.o
+dlinked: prospector
+	$(NVCC) -dlink -o $(OBJ_DIR)/dlinked.o $(OBJ_DIR)/prospector.o
 	
-prospector.o:
-	$(NVCC) $(CARGS) -dc -o prospector.o prospector.cu
+prospector:
+	$(NVCC) $(CARGS) -dc -o $(OBJ_DIR)/prospector.o prospector.cu
 
-util.o:
-	$(NVCC) $(CARGS) -c -o util.o util.cpp
-
-version:
-	$(NVCC) --version
+util:
+	g++ $(CARGS) -c -o $(OBJ_DIR)/util.o util.cpp
 
 clean:
-	rm -fv *.o *.so *.out *.a
+	rm -fv $(OBJ_DIR)/*.o $(OBJ_DIR)/*.out

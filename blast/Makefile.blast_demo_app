@@ -34,13 +34,14 @@ $(status_dir)/.%.files:;
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
 
+OBJ_DIR = ../obj
 
-../prospector/dlinked.o: ../prospector/prospector.o ../prospector/util.o
-	cd ../prospector && make dlinked.o
+$(OBJ_DIR)/dlinked.o: $(OBJ_DIR)/prospector.o
+	cd ../prospector && make dlinked
 
-../prospector/prospector.o:
-	cd ../prospector && make prospector.o
+$(OBJ_DIR)/prospector.o:
+	cd ../prospector && make prospector
 
-../prospector/util.o:
-	cd ../prospector && make util.o
-
+$(OBJ_DIR)/util.o:
+	cd ../prospector && make util
+	

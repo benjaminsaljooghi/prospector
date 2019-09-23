@@ -1,1 +1,0 @@
-make clean && make && ./blast_demo.out -program blastn -db Actino_DB -in my_spacer.fasta -out results.txt
