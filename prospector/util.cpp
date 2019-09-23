@@ -80,6 +80,32 @@ bool Util::subset(vector<int> a, vector<int> b)
 }
 
 
+bool Util::repeat_subset(Util::Locus a, Util::Locus b)
+{
+	// a cannot be a repeat_subset of b if its k is greater than b
+	if (a.k > b.k)
+	{
+		return false;
+	}
+	else
+	{
+		for (int a_begin : a.genome_indices)
+		{
+			int a_end = a_begin + a.k;
+			for (int b_begin : b.genome_indices)
+			{
+				int b_end = b_begin + b.k;
+				if (a_begin >= b_begin && a_end <= b_end)
+				{
+					return true;
+				}
+			}
+		}	
+		return false;
+	}
+		
+}
+
 std::vector<std::string> Util::repeats(std::string genome, Util::Locus locus)
 {
     std::vector<std::string> result;

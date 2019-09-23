@@ -36,6 +36,7 @@
 #define K_START 20
 #define K_END 60
 #define BUFFER 10
+#define PRINTF_BYTE_FORMAT_ALIGN 10
 
 
 void cwait()
@@ -288,7 +289,7 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
     int* device_dyads = cpush(&dyads[0], total_dyad_count);
     int* device_k_map = cpush(&k_map[0], total_dyad_count);
 
-    discover_crisprs KERNEL_ARGS2(16, 128) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
+    discover_crisprs KERNEL_ARGS2(8, 256) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
     cwait();
     
     cpull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
@@ -306,8 +307,6 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
             continue;
         int k = k_map[d_index];
 
-        // vector<int> crispr;
-        // crispr.push_back(k);
         struct Util::Locus locus;
         locus.k = k;
         for (int i = 0; i < buffer_size; i++)
@@ -334,8 +333,8 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
             Util::Locus other_crispr = loci[j];
 
             if (Util::subset(this_crispr.genome_indices, other_crispr.genome_indices))
+            // if (Util::repeat_subset(this_crispr, other_crispr))
             {
-                // vec_crisprs[i][0] = -1;
                 this_crispr_is_a_subset = true;
                 break;
             }
