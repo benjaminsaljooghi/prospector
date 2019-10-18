@@ -1,5 +1,3 @@
-#pragma once
-
 // C
 #include <stdio.h>
 #include <stdlib.h>

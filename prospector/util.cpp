@@ -71,7 +71,7 @@ bool Util::subset(vector<int> a, vector<int> b)
 {
 	for (int e : a)
 	{
-		// Attempt to find e in in b. If the pointer arrives at b.end() then e is not inside b. Therefore. a is not contained within b
+		// Attempt to find e in in b. If the pointer arrives at b.end() then e is not inside b. Therefore a is not contained within b
 		if (find(b.begin(), b.end(), e) == b.end())
 			return false;
 	}
@@ -91,17 +91,24 @@ bool Util::repeat_subset(Util::Locus a, Util::Locus b)
 	{
 		for (int a_begin : a.genome_indices)
 		{
-			int a_end = a_begin + a.k;
+			bool a_is_substring_of_any_repeats_in_b = false;
 			for (int b_begin : b.genome_indices)
 			{
-				int b_end = b_begin + b.k;
-				if (a_begin >= b_begin && a_end <= b_end)
+				bool substring = a_begin >= b_begin && a_begin + a.k <= b_begin + b.k;
+				// a_is_substring_of_any_repeats_in_b |= substring; 
+				if (substring)
 				{
-					return true;
+					a_is_substring_of_any_repeats_in_b = true;
+					break;
 				}
 			}
+
+			if (!a_is_substring_of_any_repeats_in_b)
+			{
+				return false;
+			}
 		}	
-		return false;
+		return true;
 	}
 		
 }

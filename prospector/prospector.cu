@@ -320,7 +320,7 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
     }
     
 
-    printf("prune subset crisprs...\n");
+    printf("prune crisprs...\n");
     vector<Util::Locus> pruned_loci;
     for (int i = 0; i < loci.size(); i++)
     {
@@ -332,8 +332,8 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
                 continue;
             Util::Locus other_crispr = loci[j];
 
-            if (Util::subset(this_crispr.genome_indices, other_crispr.genome_indices))
-            // if (Util::repeat_subset(this_crispr, other_crispr))
+            // if (Util::subset(this_crispr.genome_indices, other_crispr.genome_indices))
+            if (Util::repeat_subset(this_crispr, other_crispr) || Util::subset(this_crispr.genome_indices, other_crispr.genome_indices))
             {
                 this_crispr_is_a_subset = true;
                 break;
@@ -344,6 +344,8 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
         {
             pruned_loci.push_back(this_crispr);
         }
+
+
     }
 
     sort(pruned_loci.begin(), pruned_loci.end(), comparison_routine);
