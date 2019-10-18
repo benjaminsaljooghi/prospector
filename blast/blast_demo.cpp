@@ -178,7 +178,7 @@ int CBlastDemoApplication::Run(void)
         string_stream << "\t" << "repeats:" << endl;
         for (unsigned int i = 0; i < spacers.size(); i++)
         {
-            string_stream << "\t\t" << crispr.genome_indices[i] << " " << repeats[i] << endl;
+            string_stream << "\t\t" << crispr.genome_indices[i] << " " << repeats[i] << " " << crispr.genome_indices[i] + crispr.k << endl;
         }
 
         string_stream << endl;
