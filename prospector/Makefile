@@ -4,8 +4,12 @@ OBJ_DIR = ../obj
 
 .PHONY: version clean
 
-program: dlinked prospector util
-	g++ -o $(OBJ_DIR)/program.out $(OBJ_DIR)/prospector.o $(OBJ_DIR)/util.o $(OBJ_DIR)/dlinked.o -L. -L/usr/local/cuda/lib64 -lcudart
+# program: dlinked prospector util
+# 	g++ -o $(OBJ_DIR)/program.out $(OBJ_DIR)/prospector.o $(OBJ_DIR)/util.o $(OBJ_DIR)/dlinked.o -L. -L/usr/local/cuda/lib64 -lcudart
+lib: dlinked prospector util
+	
+
+
 
 dlinked: prospector
 	$(NVCC) -dlink -o $(OBJ_DIR)/dlinked.o $(OBJ_DIR)/prospector.o
