@@ -6,6 +6,33 @@ namespace Util
 	{
 		int k;
 		std::vector<int> genome_indices;
+
+		int start(int repeat)
+		{
+			return genome_indices[repeat];
+		}
+		int end(int repeat)
+		{
+			return genome_indices[repeat] + k;
+		}
+
+		bool repeat_substring(int _start, int _end, int repeat)
+		{
+			return _start >= start(repeat) && _end <= end(repeat);
+		}
+
+		bool repeat_substring(int _start, int _end)
+		{
+			for (int i = 0; i < genome_indices.size(); i++)
+			{
+				if (repeat_substring(_start, _end, i))
+				{
+					return true;
+				}				
+			}
+			return false;
+		}
+
 	};
 
 	struct Prospection
