@@ -7,5 +7,5 @@
 
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
-builddir = /home/benjamin/ncbi_cxx--22_0_0/GCC540-DebugMT64/build
+builddir = /home/benjamin/proj/ncbi_cxx--22_0_0/GCC540-DebugMT64/build
 # builddir = $(NCBI)/c++/Release/build

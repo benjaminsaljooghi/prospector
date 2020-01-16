@@ -1,4 +1,6 @@
 
+run: build
+	./blast/blast_demo.out
 
 
 build: clean
@@ -10,3 +12,5 @@ build: clean
 clean:
 	cd prospector && make clean
 	cd blast && make clean
+
+
