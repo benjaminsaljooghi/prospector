@@ -79,7 +79,7 @@ bool Util::subset(vector<int> a, vector<int> b)
 	return true;
 }
 
-
+// Are all the repeats of Locus a substrings of any of the repeats in Locus b?
 bool Util::repeat_subset(Util::Locus a, Util::Locus b)
 {
 	// a cannot be a repeat_subset of b if its k is greater than b
@@ -87,30 +87,18 @@ bool Util::repeat_subset(Util::Locus a, Util::Locus b)
 	{
 		return false;
 	}
-	else
-	{
-		for (int a_begin : a.genome_indices)
-		{
-			bool a_is_substring_of_any_repeats_in_b = false;
-			for (int b_begin : b.genome_indices)
-			{
-				bool substring = a_begin >= b_begin && a_begin + a.k <= b_begin + b.k;
-				// a_is_substring_of_any_repeats_in_b |= substring; 
-				if (substring)
-				{
-					a_is_substring_of_any_repeats_in_b = true;
-					break;
-				}
-			}
 
-			if (!a_is_substring_of_any_repeats_in_b)
-			{
-				return false;
-			}
-		}	
-		return true;
+	for (int i = 0; i < a.genome_indices.size(); i++)
+	{
+		if (!b.repeat_substring(a.start(i), a.end(i)))
+		{
+			// this repeat was not a substring of b
+			return false;
+		}
 	}
-		
+
+	// all a repeats are substrings of b repeats
+	return true;
 }
 
 std::vector<std::string> Util::repeats(std::string genome, Util::Locus locus)
