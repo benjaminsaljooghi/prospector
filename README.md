@@ -7,6 +7,8 @@ https://www.ebi.ac.uk/genomes/phage.html
 
 # NCBI toolkit
 
+[book](https://ncbi.github.io/cxx-toolkit/)
+
 NCBI = ncbi_cxx--22_0_0
 
 Configure toolkit to build only what is required for BLAST project.
