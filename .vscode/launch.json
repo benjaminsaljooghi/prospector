@@ -32,7 +32,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/prospector/program.out",
             // "args": ["-program", "blastn", "-db", "${workspaceFolder}/blast/Actino_DB", "-in", "${workspaceFolder}/blast/my_spacer.fasta"],
-            "args": ["/home/benjamin/proj/data/pyogenes.fasta"],
+            "args": ["/home/benjamin/proj/crispr-data/pyogenes.fasta"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

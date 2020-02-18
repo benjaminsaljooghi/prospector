@@ -110,7 +110,7 @@ map<string, int> BLAST(vector<string> seqs)
     SDataLoaderConfig dlconfig(is_protein);
     CBlastInputSourceConfig iconfig(dlconfig);
     CScope scope(*objmgr);
-    string target_db_path("/home/benjamin/proj/data/bacteriophages.fasta");
+    string target_db_path("/home/benjamin/proj/crispr-data/bacteriophages.fasta");
     const CSearchDatabase target_db(target_db_path, CSearchDatabase::eBlastDbIsNucleotide);
 
     string fasta = Util::seqs_to_fasta(seqs);

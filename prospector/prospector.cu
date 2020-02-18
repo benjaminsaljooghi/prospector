@@ -373,7 +373,7 @@ Util::Prospection run(string genome_path, int min_repeats, int k_start, int k_en
 Util::Prospection Prospector::prospector_main()
 {
 	clock_t start = clock();
-    string genome_path("/home/benjamin/proj/data/pyogenes.fasta");
+    string genome_path("/home/benjamin/proj/crispr-data/pyogenes.fasta");
 	Util::Prospection prospection = run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER);
 	printf("main completed in %.3f seconds.\n", Util::duration(start));
     return prospection;
