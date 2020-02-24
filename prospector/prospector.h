@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "../util/stdafx.h"
 
 namespace Prospector
 {

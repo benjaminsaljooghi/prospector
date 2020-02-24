@@ -8,8 +8,11 @@
 ###  BASIC PROJECT SETTINGS
 APP = blast_demo.out
 SRC = blast_demo
-OBJ_DIR = ../obj
-OBJ = $(OBJ_DIR)/dlinked $(OBJ_DIR)/prospector $(OBJ_DIR)/util
+# OBJ_DIR = ../obj
+# OBJ = $(OBJ_DIR)/dlinked $(OBJ_DIR)/prospector $(OBJ_DIR)/util
+OBJ = ../util/util
+
+
 MY_LIBS = -L/usr/local/cuda/lib64 -lcudart
 
 

@@ -1,5 +1,5 @@
-#include "stdafx.h"
-#include "util.h"
+#include "../util/stdafx.h"
+#include "../util/util.h"
 #include "prospector.h"
 
 

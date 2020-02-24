@@ -23,7 +23,7 @@ namespace Util
 
 		bool repeat_substring(int _start, int _end)
 		{
-			for (int i = 0; i < genome_indices.size(); i++)
+			for (size_t i = 0; i < genome_indices.size(); i++)
 			{
 				if (repeat_substring(_start, _end, i))
 				{
@@ -50,4 +50,7 @@ namespace Util
 	vector<std::string> spacers(std::string, Util::Locus);
 	std::string seqs_to_fasta(std::vector<std::string>);
 	bool repeat_subset(Locus, Locus);
+
+
+
 }

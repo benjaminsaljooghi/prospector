@@ -1,16 +1,16 @@
-
-run: build
-	./blast/blast_demo.out
+CARGS = --std=c++14 -g
 
 
-build: clean
-	cd prospector && make
+
+invoker.o: blast/blast_demo.cpp prospector/prospector.cu util/util.cpp
+	g++ $(CARGS) -o invoker.cpp blast/blast_demo.o
+
+
+
+blast.o: blast/blast_demo.cpp util/util.cpp
 	cd blast && make
 
 
-
-clean:
-	cd prospector && make clean
-	cd blast && make clean
-
+prospector.o: prospector/prospector.cu util/util.cpp
+	cd prospector && make
 
