@@ -30,7 +30,7 @@
 #define SPACER_MAX 72
 #define SPACER_SKIP 10
 #define REPEATS_MIN 3
-#define SCAN_DOMAIN 1000
+#define SCAN_DOMAIN SPACER_MAX
 #define ALLOW_DISCREPANT_LENGTHS false
 #define MIN_REPEATS 3
 #define K_START 20
