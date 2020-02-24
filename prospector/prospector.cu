@@ -65,7 +65,7 @@ void cufree(void* device_ptr)
 
 
 
-__device__ char complement(char nuc)
+__device__ __host__ char complement(char nuc)
 {
 	switch (nuc)
 	{
@@ -85,6 +85,22 @@ __device__ char complement(char nuc)
 		return 'n';
 	}
 }
+
+__host__ string reverse_complement(string seq)
+{
+
+    string reverse = seq;
+    int len = reverse.length();
+
+    for (int i = 0; i < len; i++)
+    {
+        reverse[i] = complement(seq[len - i - 1]);
+    }
+
+    return reverse;
+}
+
+
 
 
 __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
@@ -354,11 +370,27 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 }
 
 
-Util::Prospection run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size)
+Util::Prospection run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size, bool pos_strand)
 {
     string genome = Util::parse_fasta(genome_path).begin()->second;
-    char* device_genome = cpush(genome.c_str(), genome.length());
 
+    string genome_neg_strand = reverse_complement(genome);
+
+    
+    char* device_genome;
+    
+    if (pos_strand)
+    {
+        device_genome = cpush(genome.c_str(), genome.length());
+    }
+    else
+    {
+        device_genome = cpush(genome_neg_strand.c_str(), genome_neg_strand.length());
+    }
+
+
+
+    
     vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length(), k_start, k_end);
     vector<Util::Locus> crisprs = crispr_gen(device_genome, genome.length(), k_start, k_end, min_repeats, buffer_size, all_dyads);
 
@@ -373,8 +405,8 @@ Util::Prospection run(string genome_path, int min_repeats, int k_start, int k_en
 Util::Prospection Prospector::prospector_main()
 {
 	clock_t start = clock();
-    string genome_path("/home/benjamin/proj/crispr-data/pyogenes.fasta");
-	Util::Prospection prospection = run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER);
+    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+	Util::Prospection prospection = run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER, true);
 	printf("main completed in %.3f seconds.\n", Util::duration(start));
     return prospection;
 }
