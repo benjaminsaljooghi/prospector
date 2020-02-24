@@ -89,7 +89,7 @@ map<string, int> BLAST(vector<string> seqs)
 }
 
 
-int main()
-{
+// int main()
+// {
     
-}
+// }
