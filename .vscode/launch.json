@@ -9,7 +9,7 @@
             "name": "(gdb) Launch blast",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/blast/blast_demo.out",
+            "program": "${workspaceFolder}/blast/blast.out",
             // "args": ["-program", "blastn", "-db", "${workspaceFolder}/blast/Actino_DB", "-in", "${workspaceFolder}/blast/my_spacer.fasta"],
             "args": [],
             "stopAtEntry": false,
@@ -24,7 +24,7 @@
                     "ignoreFailures": true
                 }
             ],
-            // "preLaunchTask": "build blast_demo_app",
+            // "preLaunchTask": "build blast_app",
         },
         {
             "name": "(gdb) Launch prospector",
@@ -45,7 +45,7 @@
                     "ignoreFailures": true
                 }
             ],
-            // "preLaunchTask": "build blast_demo_app",
+            // "preLaunchTask": "build blast_app",
         },
         {
             "name": "(gdb) Launch invoker",
