@@ -33,8 +33,6 @@ $(status_dir)/.%.files:;
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
-
-
 ../util/util.o:
 	cd ../util && make
 	

@@ -8,17 +8,11 @@
 ###  BASIC PROJECT SETTINGS
 APP = blast.out
 SRC = blast
-# OBJ_DIR = ../obj
-# OBJ = $(OBJ_DIR)/dlinked $(OBJ_DIR)/prospector $(OBJ_DIR)/util
 OBJ = ../util/util
-
-
-# MY_LIBS = -L/usr/local/cuda/lib64 -lcudart
-
 
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS) $(MY_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS))
 
 # These settings are necessary for optimized WorkShop builds, due to
 # BLAST's own use of them.
