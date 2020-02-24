@@ -110,7 +110,7 @@ map<string, int> BLAST(vector<string> seqs)
     SDataLoaderConfig dlconfig(is_protein);
     CBlastInputSourceConfig iconfig(dlconfig);
     CScope scope(*objmgr);
-    string target_db_path("/home/benjamin/proj/crispr-data/bacteriophages.fasta");
+    string target_db_path("/home/ben/Documents/crispr-data/bacteriophages.fasta");
     const CSearchDatabase target_db(target_db_path, CSearchDatabase::eBlastDbIsNucleotide);
 
     string fasta = Util::seqs_to_fasta(seqs);
@@ -149,27 +149,58 @@ map<string, int> BLAST(vector<string> seqs)
 }
 
 
+
+
+
 int CBlastDemoApplication::Run(void)
 {
     Util::Prospection prospection = Prospector::prospector_main();
 
+    vector<Util::Locus> crisprs = prospection.crisprs;
+    string genome = prospection.genome;
+    
+    
+
 
     vector<string> all_spacers;
-
-
-    for (Util::Locus crispr : prospection.crisprs)
+    for (Util::Locus crispr : crisprs)
     {
-        vector<string> spacers = Util::spacers(prospection.genome, crispr);
+        vector<string> spacers = Util::spacers(genome, crispr);
         all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
     }
 
 
     map<string, int> spacer_scores = BLAST(all_spacers);
 
-    for (Util::Locus crispr : prospection.crisprs)
+
+
+    
+    vector<Util::Locus> crisprs_filtered = vector<Util::Locus>();
+
+    for (Util::Locus crispr : crisprs)
     {
-        vector<string> repeats = Util::repeats(prospection.genome, crispr);
-        vector<string> spacers = Util::spacers(prospection.genome, crispr);
+
+        vector<string> spacers = Util::spacers(genome, crispr);
+
+        float spacer_identity_percent_sum = 0;
+        for (string spacer : spacers)
+        {
+            spacer_identity_percent_sum += spacer_scores[spacer] / spacer.length();
+        }
+
+        float mean_identity = spacer_identity_percent_sum / spacers.size(); 
+    
+        if (mean_identity >= 0.5)
+        {
+            crisprs_filtered.push_back(crispr);
+        }
+    }
+
+
+    for (Util::Locus crispr : crisprs_filtered)
+    {
+        vector<string> repeats = Util::repeats(genome, crispr);
+        vector<string> spacers = Util::spacers(genome, crispr);
 
         std::ostringstream string_stream;
     
