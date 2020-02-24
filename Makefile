@@ -1,3 +1,7 @@
+
+
+# TODO: Change blast Makefiles to lib so that blast.out is not attempted.
+
 CARGS = --std=c++14 -g
 
 ARGS_A = -std=gnu++11 -Wl,-rpath,/home/ben/Documents/ncbi/GCC800-DebugMT64/lib -L. -Wl,--enable-new-dtags -Wl,-export-dynamic -pthread -g
