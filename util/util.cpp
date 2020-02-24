@@ -136,3 +136,15 @@ std::string Util::seqs_to_fasta(vector<string> seqs)
 }
 
 
+
+
+vector<string> Util::get_kmers(string seq, int k)
+{
+	vector<string> kmers;
+	for (int i = 0; i < seq.length() - k + 1; i++)
+	{
+		kmers.push_back(seq.substr(i, k));
+	}
+	return kmers;
+}
+

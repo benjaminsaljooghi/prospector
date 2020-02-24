@@ -13,7 +13,7 @@ SRC = blast_demo
 OBJ = ../util/util
 
 
-MY_LIBS = -L/usr/local/cuda/lib64 -lcudart
+# MY_LIBS = -L/usr/local/cuda/lib64 -lcudart
 
 
 LIB_ = $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
@@ -34,3 +34,5 @@ REQUIRES = objects -Cygwin
 # CFLAGS   = $(FAST_CFLAGS)
 # CXXFLAGS = $(FAST_CXXFLAGS)
 # LDFLAGS  = $(FAST_LDFLAGS)
+
+

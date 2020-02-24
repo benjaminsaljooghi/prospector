@@ -50,6 +50,7 @@ namespace Util
 	vector<std::string> spacers(std::string, Util::Locus);
 	std::string seqs_to_fasta(std::vector<std::string>);
 	bool repeat_subset(Locus, Locus);
+	vector<string> get_kmers(string seq, int k);
 
 
 
