@@ -23,7 +23,8 @@
 #endif
 
 
-#define DYAD_MIN 5
+// #define DYAD_MIN 10
+#define MISMATCH_TOLERANCE_RATIO 5
 #define REPEAT_MIN 20
 #define REPEAT_MAX 60
 #define SPACER_MIN 21
@@ -116,14 +117,27 @@ __device__ bool mutant(const char* genome, int start_a, int start_b, int k)
 }
 
 
-__device__ bool dyad(int dyad_min, const char* genome, int start, int k_size)
+
+__device__ bool dyad(const char* genome, int start, int k)
 {
-	for (int i = 0; i < dyad_min; i++)
+
+
+    int mismatch_tolerance = k / MISMATCH_TOLERANCE_RATIO;
+
+    int mismatch_count = 0;
+    int end = start + k;
+
+	for (int i = 0; i < k; i++)
 	{
-		char beginning_upstream = genome[start + i];
-		char end_downstream = genome[start + k_size - i - 1];
-		if (beginning_upstream != complement(end_downstream))
-			return false;
+		char upstream = genome[start + i];
+		char downstream = genome[end - i - 1];
+
+        mismatch_count += upstream == complement(downstream) ? 0 : 1;
+
+        if (mismatch_count == mismatch_tolerance)
+        {
+            return false;
+        }
 	}
 	return true;
 }
@@ -215,7 +229,7 @@ __device__ void dyad_discovery_single_index(const char* genome, size_t genome_le
 {
     for (int k = k_start; k < k_end; k++)
     {
-        if (dyad(DYAD_MIN, genome, d_index, k))
+        if (dyad(genome, d_index, k))
         {
             int k_jump = genome_len;
             int k_index = k - k_start;
@@ -404,6 +418,7 @@ Util::Prospection run(string genome_path, int min_repeats, int k_start, int k_en
 
 Util::Prospection Prospector::prospector_main()
 {
+    printf("Hi!");
 	clock_t start = clock();
     string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
 	Util::Prospection prospection = run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER, true);
@@ -411,7 +426,4 @@ Util::Prospection Prospector::prospector_main()
     return prospection;
 }
 
-// int main(int argc, char** argv)
-// {
-    // Prospector::prospector_main();
-// }
+
