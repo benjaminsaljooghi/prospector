@@ -225,8 +225,59 @@ int CBlastDemoApplication::Run(void)
 
     }
 
+
+    // now check upstream of the arrays for cas genes
+
+    int k = 20;
+    int upstream_size = 10000;
+
+
+    // get Cas9
+    string cas9_seq = Util::parse_fasta("../crispr-data/addGeneSpCas9.fasta").begin()->second;
+
+
+    vector<string> cas9_kmers = get_kmers(cas9_seq, k);
+    
+
+
+    string crisrpcasfinder_cas9 = genome.substr(854751, 858857 - 854751);
+    vector<string> crisprcasfinder_cas9_kmers = get_kmers(crisrpcasfinder_cas9, k);
+
+    for (Util::Locus crispr : crisprs_filtered)
+    {
+        // transform the upstream 10k into kmers
+        string upstream = genome.substr(crispr.genome_indices[0] - upstream_size, upstream_size);
+        vector<string> upstream_kmers = get_kmers(upstream, k);
+
+        // where, or do, these kmers overlap? (comparing the set of the cas9_kmers against the set of the upstream kmers)
+
+        // what quantity of kmers in the cas9_kmers exists in the upstream_kmers?
+
+        int present = 0;
+
+        // for (string cas9_kmer : cas9_kmers)
+        for (string cas9_kmer : crisprcasfinder_cas9_kmers)
+        {
+            for (string upstream_kmer : upstream_kmers)
+            {
+                present += cas9_kmer.compare(upstream_kmer) == 0 ? 1 : 0;
+            }
+        }
+
+        printf("for k size %d we have a cas9_kmer count of %d and a presence of %d\n", crispr.k, crisprcasfinder_cas9_kmers.size(), present);
+
+    }
+    
+
+
+
+
     return 0;
 }
+
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
