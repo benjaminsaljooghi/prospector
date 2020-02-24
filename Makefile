@@ -12,7 +12,27 @@ LIBS = -L/home/ben/Documents/ncbi/GCC800-DebugMT64/lib -lblastinput-static -lncb
 
 CUDA_LIB = -L/usr/local/cuda/lib64 -lcudart
 
-invoker.out: blast/blast.cpp prospector/prospector.cu util/util.cpp
+invoker.out: $(OBJS)
 	/usr/bin/g++ $(ARGS_A) $(OBJS) $(LIBS) $(CUDA_LIB) invoker.cpp -o invoker.out
 
+util/util.o:
+	cd util && make
 
+prospector/prospector.o:
+	cd prospector && make
+
+prospector/dlinked.o:
+	cd prospector && make
+
+blast/blast.o:
+	cd blast && make
+
+
+full_clean: clean
+	cd blast && make clean
+	cd prospector && make clean
+	cd util && make clean
+
+
+clean:
+	rm invoker.out
