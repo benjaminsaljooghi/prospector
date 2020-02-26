@@ -37,7 +37,7 @@
 #define MIN_REPEATS 3
 #define K_START 20
 #define K_END 60
-#define BUFFER 10
+#define BUFFER 50
 #define PRINTF_BYTE_FORMAT_ALIGN 10
 
 
