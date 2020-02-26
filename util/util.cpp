@@ -255,7 +255,12 @@ void print_spacers(string genome, Crispr crispr, map<string, int> spacer_scores)
 	for (unsigned int i = 0; i < spacers.size(); i++)
 	{
 		string spacer = spacers[i];
-		cout << "\t\t" << spacer_scores[spacer] << "/" << spacer.length() << " " << spacer << endl; 
+
+		printf("\t\t");
+		printf("%d/%zd", spacer_scores[spacer], spacer.length());
+		// printf(" %d/%zd", spacer_scores[reverse_complement(spacer)], spacer.length()); // unnecessary because BLAST searches both strands.
+		printf(" %s\n", spacer.c_str());
+
 	}
 
 	cout << endl;

@@ -27,7 +27,12 @@ int main()
     for (Crispr crispr : crisprs)
     {
         vector<string> spacers = get_spacers(crispr, genome);
-        all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
+        // all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
+        for (string spacer : spacers)
+        {
+            all_spacers.push_back(spacer);
+            // all_spacers.push_back(reverse_complement(spacer)); // unnecessary because BLAST searches both strands.
+        }
     }
 
     map<string, int> spacer_scores = BLAST(all_spacers);
