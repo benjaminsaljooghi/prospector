@@ -232,7 +232,7 @@ float similarity(string a, string b)
 }
 
 
-float repeat_conservation(vector<string> repeats)
+float string_conservation(vector<string> repeats)
 {
 	string consensus = most_frequent(repeats);
 
@@ -320,7 +320,7 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 void print_header(string genome, Crispr crispr)
 {	
 	vector<string> repeats = get_repeats(crispr, genome);
-	printf("%d %d %f\n", crispr.genome_indices[0], crispr.k, repeat_conservation(repeats));
+	printf("%d %d %f\n", crispr.genome_indices[0], crispr.k, string_conservation(repeats));
 }
 
 
