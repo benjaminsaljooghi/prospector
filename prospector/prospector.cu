@@ -1,13 +1,13 @@
-#include "../util/stdafx.h"
-#include "../util/util.h"
-#include "prospector.h"
-
-
 // CUDA
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "cuda_fp16.h"
+
+
+#include "../util/stdafx.h"
+#include "../util/util.h"
+#include "prospector.h"
 
 
 #ifdef __CUDACC__
@@ -24,7 +24,8 @@
 
 
 // #define DYAD_MIN 10
-#define MISMATCH_TOLERANCE_RATIO 5
+#define MISMATCH_TOLERANCE_RATIO 4
+#define MUTANT_TOLERANCE_RATIO 5
 #define REPEAT_MIN 20
 #define REPEAT_MAX 60
 #define SPACER_MIN 21
@@ -45,7 +46,7 @@ void cwait()
 	printf("waiting for kernel... ");
 	clock_t start = clock();
 	cudaError err = cudaDeviceSynchronize();
-	printf("done in %.3f seconds\n", Util::duration(start));
+	printf("done in %.3f seconds\n", duration(start));
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
@@ -65,72 +66,60 @@ void cufree(void* device_ptr)
 }
 
 
-
-__device__ __host__ char complement(char nuc)
+__device__ char complement(char nuc)
 {
-	switch (nuc)
-	{
-	case 'A':
-		return 'T';
-	case 'T':
-		return 'A';
-	case 'C':
-		return 'G';
-	case 'G':
-		return 'C';
-	case 'N':
-		return 'N';
-	case 'n':
-		return 'n';
-	default:
-		return 'n';
-	}
-}
-
-__host__ string reverse_complement(string seq)
-{
-
-    string reverse = seq;
-    int len = reverse.length();
-
-    for (int i = 0; i < len; i++)
+    switch (nuc)
     {
-        reverse[i] = complement(seq[len - i - 1]);
+    case 'A':
+        return 'T';
+    case 'T':
+        return 'A';
+    case 'C':
+        return 'G';
+    case 'G':
+        return 'C';
+    case 'N':
+        return 'N';
+    case 'n':
+        return 'n';
+    default:
+        return 'n';
     }
-
-    return reverse;
 }
 
 
 
 
-__device__ bool mutant(const char* genome, int start_a, int start_b, int k)
+__device__ __host__ bool mutant(const char* genome, int start_a, int start_b, int k)
 {
+	int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+
 	int mutations = 0;
-	int allowed_mutations = k / 10;
+
 	for (int i = 0; i < k; i++)
 	{
-		if (genome[start_a + i] != genome[start_b + i] && ++mutations > allowed_mutations)
+        mutations += genome[start_a + i] == genome[start_b + i] ? 0 : 1;
+		if (mutations > allowed_mutations)
+        {
 			return false;
+        }
 	}
 	return true;
 }
 
 
 
-__device__ bool dyad(const char* genome, int start, int k)
+__device__ bool dyad(const char* genome, int start_index, int k)
 {
-
-
     int mismatch_tolerance = k / MISMATCH_TOLERANCE_RATIO;
 
     int mismatch_count = 0;
-    int end = start + k;
+    int end_index = start_index + k - 1;
 
-	for (int i = 0; i < k; i++)
+	for (int i = 0; i < k/2; i++)
 	{
-		char upstream = genome[start + i];
-		char downstream = genome[end - i - 1];
+		char upstream = genome[start_index + i];
+		char downstream = genome[end_index - i];
 
         mismatch_count += upstream == complement(downstream) ? 0 : 1;
 
@@ -187,15 +176,22 @@ template <typename T> T* cpush(const T* src, int count)
 
 
 
-__global__ void discover_crisprs(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map, int buffer_size)
+__global__ void discover_crisprs(int total_dyad_count, const char* genome, size_t genome_len, int* dyads, int* buffer, int* k_map)
 {
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
+
     for (int d_index = thread_id; d_index < total_dyad_count; d_index += stride)
     {
         int k = k_map[d_index];
+
+        // if (k != 36)
+        // {
+        //     continue;
+        // }
+
         int dyad = dyads[d_index];
-        int buffer_start = d_index * buffer_size;
+        int buffer_start = d_index * BUFFER;
 
         int repeat_index = 0;
 
@@ -204,12 +200,28 @@ __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_
 
         // Search for repeats of this dyad
         int candidate = dyad + k + SPACER_SKIP;
+
+
         int countdown = SCAN_DOMAIN;
-        while (countdown-- > 0 && candidate + k < genome_len)
+        while (true)
         {
+
+            if (candidate + k > genome_len)
+            {
+                break;
+            }
+
+            if (countdown-- == 0)
+            {
+                break;
+            }
+
+
             // Is this candidate a repeat?
             if (mutant(genome, dyad, candidate, k))
             {
+                printf("saving repeat at %d\n", candidate);
+
                 // Save repeat
                 repeat_index++;
                 buffer[buffer_start + repeat_index] = candidate;
@@ -225,25 +237,25 @@ __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_
 }
 
 
-__device__ void dyad_discovery_single_index(const char* genome, size_t genome_len, int d_index, int k_start, int k_end, int* dyad_buffer)
+__device__ void dyad_discovery_single_index(const char* genome, size_t genome_len, int d_index, int* dyad_buffer)
 {
-    for (int k = k_start; k < k_end; k++)
+    for (int k = K_START; k < K_END; k++)
     {
         if (dyad(genome, d_index, k))
         {
             int k_jump = genome_len;
-            int k_index = k - k_start;
+            int k_index = k - K_START;
             dyad_buffer[k_index * k_jump + d_index] = d_index;
         }
     }
 }
 
-__global__ void dyad_discovery(const char* genome, size_t genome_len, int k_start, int k_end, int* dyad_buffer)
+__global__ void dyad_discovery(const char* genome, size_t genome_len, int* dyad_buffer)
 {
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     int stride = blockDim.x * gridDim.x;
     for (int d_index = thread_id; d_index < genome_len; d_index += stride)
-        dyad_discovery_single_index(genome, genome_len, d_index, k_start, k_end, dyad_buffer);
+        dyad_discovery_single_index(genome, genome_len, d_index, dyad_buffer);
 }
 
 vector<int> dyad_lengths(vector<vector<int>> all_dyads)
@@ -255,15 +267,15 @@ vector<int> dyad_lengths(vector<vector<int>> all_dyads)
 	return lengths;
 }
 
-vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start, int k_end)
+vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len)
 {
-    size_t buffer_count = genome_len * (k_end - k_start);
+    size_t buffer_count = genome_len * (K_END - K_START);
     int* dyad_buffer = new int[buffer_count];
 	fill_n(dyad_buffer, buffer_count, -1);
 
     int* device_dyad_buffer = cpush(dyad_buffer, buffer_count);
     
-    dyad_discovery KERNEL_ARGS2(16, 128) (device_genome, genome_len, k_start, k_end, device_dyad_buffer);
+    dyad_discovery KERNEL_ARGS2(16, 128) (device_genome, genome_len, device_dyad_buffer);
     cwait();
 
     cpull(dyad_buffer, device_dyad_buffer, buffer_count);
@@ -271,9 +283,9 @@ vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start
 
     printf("extract dyads...\n");
     vector<vector<int>> all_dyads;
-    for (int k = k_start; k < k_end; k++)
+    for (int k = K_START; k < K_END; k++)
     {
-        int hopscotch = genome_len * (k - k_start);
+        int hopscotch = genome_len * (k - K_START);
         vector<int> dyads;
         for (int i = 0; i < genome_len; i++)
         {
@@ -290,28 +302,28 @@ vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len, int k_start
 
 
 
-bool comparison_routine(Util::Locus a, Util::Locus b)
+bool comparison_routine(Crispr a, Crispr b)
 {
     return a.genome_indices[0] < b.genome_indices[0];
 }
 
 
 
-vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_start, int k_end, int min_repeats, int buffer_size, vector<vector<int>> all_dyads)
+vector<Crispr> crispr_gen(char* device_genome, size_t genome_len, vector<vector<int>> all_dyads)
 {
     vector<int> lens = dyad_lengths(all_dyads);
-    vector<int> dyads = Util::flatten(all_dyads);
+    vector<int> dyads = flatten(all_dyads);
     int total_dyad_count = dyads.size();
 
     vector<int> k_map;
     for (int k_index = 0; k_index < lens.size(); k_index++)
     {
-        int k = k_start + k_index;
+        int k = K_START + k_index;
         for (int dyad_index_within_len = 0; dyad_index_within_len < lens[k_index]; dyad_index_within_len++)
             k_map.push_back(k);
     }
 
-	int crispr_buffer_count = total_dyad_count * buffer_size;
+	int crispr_buffer_count = total_dyad_count * BUFFER;
 	int* crispr_buffer = new int[crispr_buffer_count];
 	fill_n(crispr_buffer, crispr_buffer_count, -1);
 
@@ -319,7 +331,7 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
     int* device_dyads = cpush(&dyads[0], total_dyad_count);
     int* device_k_map = cpush(&k_map[0], total_dyad_count);
 
-    discover_crisprs KERNEL_ARGS2(8, 256) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map, buffer_size);
+    discover_crisprs KERNEL_ARGS2(8, 256) (total_dyad_count, device_genome, genome_len, device_dyads, device_crispr_buffer, device_k_map);
     cwait();
     
     cpull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
@@ -328,42 +340,69 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 	cufree(device_dyads);
 	cufree(device_k_map);
 
-    vector<Util::Locus> loci;
+
+    // print out the buffer
+    int count = 0;
+    for (int d_index = 0; d_index < total_dyad_count; d_index++)
+    {
+        if (crispr_buffer[d_index * BUFFER + 1] == -1)
+        {
+            continue;
+        }
+        count += 1;
+
+        printf("%d: ", d_index);
+        for (int i = 0; i < BUFFER; i++)
+        {
+            printf("%d ", crispr_buffer[d_index * BUFFER + i]);
+        }
+        printf("\n");
+    }
+
+    vector<Crispr> crisprs;
+
     printf("extract results...\n");
     for (int d_index = 0; d_index < total_dyad_count; d_index++)
     {
-        int buffer_start = d_index * buffer_size;
-        if (crispr_buffer[buffer_start + min_repeats - 1] == -1)
+        // if this crispr does not have the required number of minimum repeats, then ignore it
+        if (crispr_buffer[d_index * BUFFER + MIN_REPEATS] == -1)
             continue;
-        int k = k_map[d_index];
 
-        struct Util::Locus locus;
-        locus.k = k;
-        for (int i = 0; i < buffer_size; i++)
+        struct Crispr Crispr;
+
+
+        vector<int> genome_indices;
+        for (int i = 0; i < BUFFER; i++)
         {
-            int val = crispr_buffer[buffer_start + i];
+            int val = crispr_buffer[d_index * BUFFER + i];
             if (val == -1)
                 break;
-            locus.genome_indices.push_back(val);
+            genome_indices.push_back(val);
         }
-        loci.push_back(locus);
+
+        Crispr.k = k_map[d_index];
+        Crispr.genome_indices = genome_indices;
+
+        crisprs.push_back(Crispr);
+    
     }
     
 
     printf("prune crisprs...\n");
-    vector<Util::Locus> pruned_loci;
-    for (int i = 0; i < loci.size(); i++)
+    vector<Crispr> pruned_crisprs;
+    for (int i = 0; i < crisprs.size(); i++)
     {
-        Util::Locus this_crispr = loci[i];
+        Crispr this_crispr = crisprs[i];
         bool this_crispr_is_a_subset = false;
-        for (int j = 0; j < loci.size(); j++)
+        for (int j = 0; j < crisprs.size(); j++)
         {
             if (i == j)
                 continue;
-            Util::Locus other_crispr = loci[j];
 
-            // if (Util::subset(this_crispr.genome_indices, other_crispr.genome_indices))
-            if (Util::repeat_subset(this_crispr, other_crispr) || Util::subset(this_crispr.genome_indices, other_crispr.genome_indices))
+            Crispr other_crispr = crisprs[j];
+
+            // if (subset(this_crispr.genome_indices, other_crispr.genome_indices))
+            if (repeat_subset(this_crispr, other_crispr) || subset(this_crispr.genome_indices, other_crispr.genome_indices))
             {
                 this_crispr_is_a_subset = true;
                 break;
@@ -372,58 +411,30 @@ vector<Util::Locus> crispr_gen(char* device_genome, size_t genome_len, int k_sta
 
         if (!this_crispr_is_a_subset)
         {
-            pruned_loci.push_back(this_crispr);
+            pruned_crisprs.push_back(this_crispr);
         }
 
 
     }
 
-    sort(pruned_loci.begin(), pruned_loci.end(), comparison_routine);
+    sort(pruned_crisprs.begin(), pruned_crisprs.end(), comparison_routine);
 
-    return pruned_loci;
+    return pruned_crisprs;
+    
 }
 
 
-Util::Prospection run(string genome_path, int min_repeats, int k_start, int k_end, int buffer_size, bool pos_strand)
+vector<Crispr> prospector_main(string genome)
 {
-    string genome = Util::parse_fasta(genome_path).begin()->second;
+	clock_t start = clock();
 
-    string genome_neg_strand = reverse_complement(genome);
-
-    
-    char* device_genome;
-    
-    if (pos_strand)
-    {
-        device_genome = cpush(genome.c_str(), genome.length());
-    }
-    else
-    {
-        device_genome = cpush(genome_neg_strand.c_str(), genome_neg_strand.length());
-    }
-
-
-
-    
-    vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length(), k_start, k_end);
-    vector<Util::Locus> crisprs = crispr_gen(device_genome, genome.length(), k_start, k_end, min_repeats, buffer_size, all_dyads);
-
+    char* device_genome = cpush(genome.c_str(), genome.length());
+    vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length());
+    vector<Crispr> crisprs = crispr_gen(device_genome, genome.length(), all_dyads);
     cufree(device_genome);
 
-    Util::Prospection prospection;
-    prospection.genome = genome;
-    prospection.crisprs = crisprs; 
-    return prospection;
-}
-
-Util::Prospection Prospector::prospector_main()
-{
-    printf("Hi!");
-	clock_t start = clock();
-    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
-	Util::Prospection prospection = run(genome_path, MIN_REPEATS, K_START, K_END, BUFFER, true);
-	printf("main completed in %.3f seconds.\n", Util::duration(start));
-    return prospection;
+	printf("prospector completed in %.3f seconds.\n", duration(start));
+    return crisprs;
 }
 
 

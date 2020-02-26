@@ -3,8 +3,8 @@ ARGS = -std=gnu++11 -c  -Wall -Wno-format-y2k  -pthread -g -fPIC -D_DEBUG -D_LAR
 INC = -I. -I/home/ben/Documents/ncbi/GCC800-DebugMT64/inc -I/home/ben/Documents/ncbi/include -I/home/ben/Documents/ncbi/include/internal
 
 
-blast.o:
+blast.o: blast.cpp
 	/usr/bin/g++ $(ARGS) $(INC) blast.cpp -o blast.o 
 
 clean:
-	rm blast.o
+	rm -f blast.o

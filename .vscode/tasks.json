@@ -4,19 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build blast_app",
-            "type": "shell",
-            "command": "make",
-            "options": {
-                "cwd": "${workspaceRoot}/blast"
-            },
-        },
-        {
             "label": "build invoker",
             "type": "shell",
-            "command": "make",
+            "command": "make invoker.out",
             "options": {
-                "cwd": "${workspaceRoot}/invoker"
+                "cwd": "${workspaceRoot}"
             }
         }
     ]

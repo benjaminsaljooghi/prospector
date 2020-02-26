@@ -1,57 +1,46 @@
 #include "stdafx.h"
 
-namespace Util
+
+
+#define POS_STRAND true
+
+
+struct Crispr
 {
-	struct Locus
-	{
-		int k;
-		std::vector<int> genome_indices;
-
-		int start(int repeat)
-		{
-			return genome_indices[repeat];
-		}
-		int end(int repeat)
-		{
-			return genome_indices[repeat] + k;
-		}
-
-		bool repeat_substring(int _start, int _end, int repeat)
-		{
-			return _start >= start(repeat) && _end <= end(repeat);
-		}
-
-		bool repeat_substring(int _start, int _end)
-		{
-			for (size_t i = 0; i < genome_indices.size(); i++)
-			{
-				if (repeat_substring(_start, _end, i))
-				{
-					return true;
-				}				
-			}
-			return false;
-		}
-
-	};
-
-	struct Prospection
-	{
-		std::string genome;
-		std::vector<Util::Locus> crisprs;
-	};
+	int k;
+	vector<int> genome_indices;
+};
 
 
-	double duration(clock_t begin);
-	map<string, string> parse_fasta(string file_path);
-	vector<int> flatten(vector<vector<int>> vecs);
-	bool subset(vector<int> a, vector<int> b);	
-	vector<std::string> repeats(std::string, Util::Locus);
-	vector<std::string> spacers(std::string, Util::Locus);
-	std::string seqs_to_fasta(std::vector<std::string>);
-	bool repeat_subset(Locus, Locus);
-	vector<string> get_kmers(string seq, int k);
+// general
+double duration(clock_t begin);
+vector<int> flatten(vector<vector<int>> vecs);
+bool subset(vector<int> a, vector<int> b);
+
+
+// seq
+map<string, string> parse_fasta(string file_path);
+char _complement(char a);
+string reverse_complement(string seq);
+int mismatch_count(string repeat);
+string seqs_to_fasta(vector<string> seqs);
+vector<string> get_kmers(string seq, int k);
 
 
 
-}
+// crispr
+vector<string> get_repeats(Crispr crispr, string genome);
+vector<string> get_spacers(Crispr crispr, string genome);
+float repeat_conservation(vector<string> repeats);
+bool repeat_substring(Crispr crispr, int _start, int _end);
+bool repeat_subset(Crispr a, Crispr b);
+bool any_overlap(Crispr a, Crispr b);
+
+
+
+// print crisprs
+void print_spacers(string genome, Crispr crispr, map<string, int> spacer_scores);
+void print_spacers(string genome, Crispr crispr);
+void print_repeats(string genome, Crispr crispr, bool reverse_complements);
+void print(string genome, vector<Crispr> crisprs);
+void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores);

@@ -58,6 +58,7 @@
         "algorithm": "cpp",
         "memory": "cpp",
         "string": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "*.cuh": "cpp"
     }
 }

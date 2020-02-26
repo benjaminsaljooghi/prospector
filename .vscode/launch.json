@@ -4,55 +4,12 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
-        {
-            "name": "(gdb) Launch blast",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/blast/blast.out",
-            // "args": ["-program", "blastn", "-db", "${workspaceFolder}/blast/Actino_DB", "-in", "${workspaceFolder}/blast/my_spacer.fasta"],
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            // "preLaunchTask": "build blast_app",
-        },
-        {
-            "name": "(gdb) Launch prospector",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/prospector/program.out",
-            // "args": ["-program", "blastn", "-db", "${workspaceFolder}/blast/Actino_DB", "-in", "${workspaceFolder}/blast/my_spacer.fasta"],
-            "args": ["/home/ben/Documents/crispr-data/pyogenes.fasta"],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            // "preLaunchTask": "build blast_app",
-        },
         {
             "name": "(gdb) Launch invoker",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/invoker/invoker.out",
-            "args": ["/home/ben/CRISPR/data/pyogenes.fasta"],
+            "program": "${workspaceFolder}/invoker.out",
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

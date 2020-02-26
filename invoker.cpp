@@ -1,13 +1,3 @@
-// #include <stdio.h>
-
-
-// int main()
-// {
-//     printf("hi\n");
-// }
-
-
-
 #include "util/stdafx.h"
 #include "util/util.h"
 
@@ -20,78 +10,119 @@ map<string, int> BLAST(vector<string> seqs);
 int main()
 {
 
-    // printf("hi\n");
+    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+    string genome = parse_fasta(genome_path).begin()->second;
 
-    Util::Prospection prospection = Prospector::prospector_main();
+    if (!POS_STRAND)
+    {
+        genome = reverse_complement(genome);
+    }
 
-    vector<Util::Locus> crisprs = prospection.crisprs;
-    string genome = prospection.genome;
-    
-    
+ 
+    vector<Crispr> crisprs = prospector_main(genome);
+
 
 
     vector<string> all_spacers;
-    for (Util::Locus crispr : crisprs)
+    for (Crispr crispr : crisprs)
     {
-        vector<string> spacers = Util::spacers(genome, crispr);
+        vector<string> spacers = get_spacers(crispr, genome);
         all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
     }
-
 
     map<string, int> spacer_scores = BLAST(all_spacers);
 
 
+    printf("----------not filtered------------\n");
 
-    
-    vector<Util::Locus> crisprs_filtered = vector<Util::Locus>();
+    print(genome, crisprs, spacer_scores);
 
-    for (Util::Locus crispr : crisprs)
+
+    vector<Crispr> crisprs_filtered = vector<Crispr>();
+    for (int i = 0; i < crisprs.size(); i++)
     {
 
-        vector<string> spacers = Util::spacers(genome, crispr);
+        Crispr crispr = crisprs[i];
+        vector<string> spacers = get_spacers(crispr, genome);
+        vector<string> repeats = get_repeats(crispr, genome);
+
+
+        // get mean spacer identity
 
         float spacer_identity_percent_sum = 0;
         for (string spacer : spacers)
         {
-            spacer_identity_percent_sum += spacer_scores[spacer] / spacer.length();
+            spacer_identity_percent_sum += (float) spacer_scores[spacer] / (float) spacer.length();
         }
-
         float mean_identity = spacer_identity_percent_sum / spacers.size(); 
     
-        if (mean_identity >= 0.5)
+
+
+        // cancel this crispr on the basis of not meeting these requirements
+
+        // insufficient spacer score
+        if (mean_identity < 0.5)
         {
-            crisprs_filtered.push_back(crispr);
+            continue;
         }
+
+
+        // overlaps with another crispr but has a worse conservation than it
+        bool overlaps_and_has_worse_conservation = false;
+        float this_conservation = repeat_conservation(repeats);
+        for (int j = 0; j < crisprs.size(); j++)
+        {
+            if (i == j)
+            {
+                continue;
+            }
+
+            Crispr other_crispr = crisprs[j];
+
+
+            if (any_overlap(crispr, other_crispr))
+            {
+                // these crisprs overlap.
+
+                // cancel the current crispr if it has a worse conservation score than other_crispr.
+                // that is, other_crispr is the new candidate bona fide crispr for the current domain.
+
+
+
+                float other_conservation = repeat_conservation(get_repeats(other_crispr, genome));
+
+                if (this_conservation < other_conservation)
+                {
+                    overlaps_and_has_worse_conservation = true;
+                    break;
+                }
+
+            }
+        }
+        if (overlaps_and_has_worse_conservation)
+        {
+            continue;
+        }
+
+
+        // this crispr met all requirements
+        crisprs_filtered.push_back(crispr);
     }
 
 
-    for (Util::Locus crispr : crisprs_filtered)
-    {
-        vector<string> repeats = Util::repeats(genome, crispr);
-        vector<string> spacers = Util::spacers(genome, crispr);
 
-        std::ostringstream string_stream;
-    
-        string_stream << crispr.genome_indices[0] << " " << crispr.k << endl;
+    printf("----------filtered----------\n");
 
-        string_stream << "\t" << "repeats:" << endl;
-        for (unsigned int i = 0; i < spacers.size(); i++)
-        {
-            string_stream << "\t\t" << crispr.genome_indices[i] << " " << repeats[i] << " " << crispr.genome_indices[i] + crispr.k << endl;
-        }
+    print(genome, crisprs_filtered, spacer_scores);
 
-        string_stream << endl;
-    
-        string_stream << "\t" << "spacers:" << endl;
 
-        for (string spacer : spacers)
-        {
-            string_stream << "\t\t" << spacer_scores[spacer] << "/" << spacer.length() << " " << spacer << endl; 
-        }
+    return 0;
 
-        printf("%s\n\n", string_stream.str().c_str());
 
-    }
+
+
+
+
 
 
     // now check upstream of the arrays for cas genes
@@ -101,39 +132,38 @@ int main()
 
 
     // get Cas9
-    string cas9_seq = Util::parse_fasta("../crispr-data/addGeneSpCas9.fasta").begin()->second;
+    string cas9_seq = parse_fasta("../crispr-data/addGeneSpCas9.fasta").begin()->second;
 
 
-    vector<string> cas9_kmers = Util::get_kmers(cas9_seq, k);
+    vector<string> cas9_kmers = get_kmers(cas9_seq, k);
     
-
-
     string crisrpcasfinder_cas9 = genome.substr(854751, 858857 - 854751);
-    vector<string> crisprcasfinder_cas9_kmers = Util::get_kmers(crisrpcasfinder_cas9, k);
+    vector<string> crisprcasfinder_cas9_kmers = get_kmers(crisrpcasfinder_cas9, k);
 
-    for (Util::Locus crispr : crisprs_filtered)
-    {
-        // transform the upstream 10k into kmers
-        string upstream = genome.substr(crispr.genome_indices[0] - upstream_size, upstream_size);
-        vector<string> upstream_kmers = Util::get_kmers(upstream, k);
 
-        // where, or do, these kmers overlap? (comparing the set of the cas9_kmers against the set of the upstream kmers)
+    // for (Crispr crispr : crisprs_filtered)
+    // {
+    //     // transform the upstream 10k into kmers
+    //     string upstream = genome.substr(crispr.genome_indices[0] - upstream_size, upstream_size);
+    //     vector<string> upstream_kmers = get_kmers(upstream, k);
 
-        // what quantity of kmers in the cas9_kmers exists in the upstream_kmers?
+    //     // where, or do, these kmers overlap? (comparing the set of the cas9_kmers against the set of the upstream kmers)
 
-        int present = 0;
+    //     // what quantity of kmers in the cas9_kmers exists in the upstream_kmers?
 
-        // for (string cas9_kmer : cas9_kmers)
-        for (string cas9_kmer : crisprcasfinder_cas9_kmers)
-        {
-            for (string upstream_kmer : upstream_kmers)
-            {
-                present += cas9_kmer.compare(upstream_kmer) == 0 ? 1 : 0;
-            }
-        }
+    //     int present = 0;
 
-        printf("for k size %d we have a cas9_kmer count of %zd and a presence of %d\n", crispr.k, crisprcasfinder_cas9_kmers.size(), present);
+    //     // for (string cas9_kmer : cas9_kmers)
+    //     for (string cas9_kmer : crisprcasfinder_cas9_kmers)
+    //     {
+    //         for (string upstream_kmer : upstream_kmers)
+    //         {
+    //             present += cas9_kmer.compare(upstream_kmer) == 0 ? 1 : 0;
+    //         }
+    //     }
 
-    }
+    //     printf("for k size %d we have a cas9_kmer count of %zd and a presence of %d\n", crispr.k, crisprcasfinder_cas9_kmers.size(), present);
+
+    // }
 
 }

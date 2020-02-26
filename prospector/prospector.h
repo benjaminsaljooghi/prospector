@@ -1,6 +1,4 @@
 #include "../util/stdafx.h"
 
-namespace Prospector
-{
-    Util::Prospection prospector_main();
-}
+
+vector<Crispr> prospector_main(string);

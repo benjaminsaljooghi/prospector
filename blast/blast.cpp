@@ -53,20 +53,20 @@ map<string, int> BLAST(vector<string> seqs)
     string target_db_path("/home/ben/Documents/crispr-data/bacteriophages.fasta");
     const CSearchDatabase target_db(target_db_path, CSearchDatabase::eBlastDbIsNucleotide);
 
-    string fasta = Util::seqs_to_fasta(seqs);
+    string fasta = seqs_to_fasta(seqs);
     CBlastFastaInputSource fasta_input(fasta, iconfig);
     CBlastInput blast_input(&fasta_input);
     TSeqLocVector query_loc = blast_input.GetAllSeqLocs(scope);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
     CLocalBlast blaster(query_factory, opts, target_db);
 
-	printf("BLAST program instantiated in %.3f seconds.\n", Util::duration(start));
+	printf("BLAST program instantiated in %.3f seconds.\n", duration(start));
     printf("Running BLAST program...\n");
     start = clock();
 
     CSearchResultSet results = *blaster.Run();
     
-    printf("BLAST program completed in %.3f seconds.\n", Util::duration(start));
+    printf("BLAST program completed in %.3f seconds.\n", duration(start));
 
     map<string, int> seq_max_scores;
     for (unsigned int i = 0; i < results.GetNumResults(); i++)
