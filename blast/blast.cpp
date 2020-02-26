@@ -33,8 +33,21 @@ USING_SCOPE(blast);
 
 
 
-map<string, int> BLAST(vector<string> seqs)
+map<string, int> BLAST(set<string> _seqs)
 {
+
+    printf("BLASTing %zd sequences...\n", _seqs.size());
+
+    vector<string> seqs;
+    for (string seq : _seqs)
+    {
+        if (seq.length() > 100)
+        {
+            continue;
+        }
+        printf("%zd\n", seq.length());
+        seqs.push_back(seq);
+    }
 
     printf("Instantiating a BLAST program...\n");
     clock_t start = clock();
@@ -87,9 +100,3 @@ map<string, int> BLAST(vector<string> seqs)
     }
     return seq_max_scores;
 }
-
-
-// int main()
-// {
-    
-// }
