@@ -232,7 +232,7 @@ float similarity(string a, string b)
 }
 
 
-float string_conservation(vector<string> repeats)
+float consensus_conservation(vector<string> repeats)
 {
 	string consensus = most_frequent(repeats);
 
@@ -240,12 +240,73 @@ float string_conservation(vector<string> repeats)
 	for (int i = 0; i < repeats.size(); i++)
 	{
 		similarity_sum += similarity(consensus, repeats[i]);
+
 	}
 
 	return similarity_sum / (float) repeats.size();
 }
 
+float differential_length_similarity(string a, string b)
+{
+	size_t a_len = a.length();
+	size_t b_len = b.length();
 
+	size_t small_length;
+	size_t big_length;
+
+	if (a_len < b_len)
+	{
+		small_length = a_len;
+		big_length = b_len;
+	}
+	else
+	{
+		small_length = b_len;
+		big_length = a_len;
+	}
+	
+	int matches = 0;
+
+	for (int i = 0; i < small_length; i++)
+	{
+		matches += a[i] == b[i] ? 1 : 0;
+	}
+
+	return (float) matches / (float) big_length;
+	
+}
+
+float spacer_conservation(vector<string> spacers)
+{
+
+	float similarity_mean_sum = 0;
+
+	for (int i = 0; i < spacers.size(); i++)
+	{
+		// what is the mean similarity of this spacer against all other spacers?
+		float similarity_sum = 0;
+		for (int j = 0; j < spacers.size(); j++)
+		{
+			if (i == j)
+			{
+				continue;
+			}
+			string a = spacers[i];
+			string b = spacers[j];
+
+			similarity_sum += differential_length_similarity(a, b);
+		}
+
+		// what was the mean similarity for this spacer against all other spacers?
+		float similarity_mean = similarity_sum / ((float) spacers.size() - 1);
+
+		// add that to the mean
+		similarity_mean_sum += similarity_mean;
+	}		
+
+	// what was the overall mean similarity?
+	return similarity_mean_sum / (float) spacers.size(); 
+}
 
 void print_spacers(string genome, Crispr crispr, map<string, int> spacer_scores)
 {
@@ -327,7 +388,7 @@ void print_header(string genome, Crispr crispr)
 	vector<string> repeats = get_repeats(crispr, genome);
 	vector<string> spacers = get_spacers(crispr, genome);
 
-	printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, string_conservation(repeats), 	string_conservation(spacers));
+	printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, consensus_conservation(repeats), spacer_conservation(spacers));
 }
 
 

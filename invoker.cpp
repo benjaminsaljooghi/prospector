@@ -31,14 +31,14 @@ int main()
         vector<string> repeats = get_repeats(crispr, genome);
 
         // high spacer conservation?
-        if (string_conservation(spacers) > 0.9)
+        if (spacer_conservation(spacers) > 0.5)
         {
             continue;
         }
 
         // overlaps with another crispr but has a worse conservation than it?
         bool overlaps_and_has_worse_conservation = false;
-        float this_conservation = string_conservation(repeats);
+        float this_conservation = consensus_conservation(repeats);
         for (int j = 0; j < crisprs.size(); j++)
         {
             if (i == j)
@@ -54,7 +54,7 @@ int main()
                 // these crisprs overlap and compete to be the bona fide crispr of this locus.
 
 
-                float other_conservation = string_conservation(get_repeats(other_crispr, genome));
+                float other_conservation = consensus_conservation(get_repeats(other_crispr, genome));
                 if (this_conservation < other_conservation)
                 {
                     // this_crispr loses candidacy to be the bona fide crispr for this locus.

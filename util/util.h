@@ -31,7 +31,8 @@ vector<string> get_kmers(string seq, int k);
 // crispr
 vector<string> get_repeats(Crispr crispr, string genome);
 vector<string> get_spacers(Crispr crispr, string genome);
-float string_conservation(vector<string> repeats);
+float consensus_conservation(vector<string> repeats);
+float spacer_conservation(vector<string> spacers);
 bool repeat_substring(Crispr crispr, int _start, int _end);
 bool repeat_subset(Crispr a, Crispr b);
 bool any_overlap(Crispr a, Crispr b);
