@@ -325,7 +325,9 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 void print_header(string genome, Crispr crispr)
 {	
 	vector<string> repeats = get_repeats(crispr, genome);
-	printf("%d %d %f\n", crispr.genome_indices[0], crispr.k, string_conservation(repeats));
+	vector<string> spacers = get_spacers(crispr, genome);
+
+	printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, string_conservation(repeats), 	string_conservation(spacers));
 }
 
 
