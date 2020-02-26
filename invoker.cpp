@@ -4,13 +4,13 @@
 #include "prospector/prospector.h"
 
 
-map<string, int> BLAST(vector<string> seqs);
+map<string, int> BLAST(set<string> seqs);
 
 
 int main()
 {
 
-    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+    string genome_path("/home/ben/Documents/crispr-data/StaphAureus.fasta");
     string genome = parse_fasta(genome_path).begin()->second;
 
     if (!POS_STRAND)
@@ -22,27 +22,6 @@ int main()
     vector<Crispr> crisprs = prospector_main(genome);
 
 
-
-    vector<string> all_spacers;
-    for (Crispr crispr : crisprs)
-    {
-        vector<string> spacers = get_spacers(crispr, genome);
-        // all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
-        for (string spacer : spacers)
-        {
-            all_spacers.push_back(spacer);
-            // all_spacers.push_back(reverse_complement(spacer)); // unnecessary because BLAST searches both strands.
-        }
-    }
-
-    map<string, int> spacer_scores = BLAST(all_spacers);
-
-
-    printf("----------not filtered------------\n");
-
-    print(genome, crisprs, spacer_scores);
-
-
     vector<Crispr> crisprs_filtered = vector<Crispr>();
     for (int i = 0; i < crisprs.size(); i++)
     {
@@ -51,35 +30,13 @@ int main()
         vector<string> spacers = get_spacers(crispr, genome);
         vector<string> repeats = get_repeats(crispr, genome);
 
-
-        // get mean spacer identity
-
-        float spacer_identity_percent_sum = 0;
-        for (string spacer : spacers)
-        {
-            spacer_identity_percent_sum += (float) spacer_scores[spacer] / (float) spacer.length();
-        }
-        float mean_identity = spacer_identity_percent_sum / spacers.size(); 
-    
-
-
-        // cancel this crispr on the basis of not meeting these requirements
-
-        // insufficient spacer score
-        if (mean_identity < 0.5)
-        {
-            continue;
-        }
-
-
-        // high spacer conservation
+        // high spacer conservation?
         if (string_conservation(spacers) > 0.9)
         {
             continue;
         }
 
-
-        // overlaps with another crispr but has a worse conservation than it
+        // overlaps with another crispr but has a worse conservation than it?
         bool overlaps_and_has_worse_conservation = false;
         float this_conservation = string_conservation(repeats);
         for (int j = 0; j < crisprs.size(); j++)
@@ -94,21 +51,16 @@ int main()
 
             if (any_overlap(crispr, other_crispr))
             {
-                // these crisprs overlap.
-
-                // cancel the current crispr if it has a worse conservation score than other_crispr.
-                // that is, other_crispr is the new candidate bona fide crispr for the current domain.
-
+                // these crisprs overlap and compete to be the bona fide crispr of this locus.
 
 
                 float other_conservation = string_conservation(get_repeats(other_crispr, genome));
-
                 if (this_conservation < other_conservation)
                 {
+                    // this_crispr loses candidacy to be the bona fide crispr for this locus.
                     overlaps_and_has_worse_conservation = true;
                     break;
                 }
-
             }
         }
         if (overlaps_and_has_worse_conservation)
@@ -123,9 +75,50 @@ int main()
 
 
 
-    printf("----------filtered----------\n");
 
+
+    // // get mean spacer identity
+
+    // float spacer_identity_percent_sum = 0;
+    // for (string spacer : spacers)
+    // {
+    //     spacer_identity_percent_sum += (float) spacer_scores[spacer] / (float) spacer.length();
+    // }
+    // float mean_identity = spacer_identity_percent_sum / spacers.size(); 
+
+
+    // insufficient spacer score
+    // if (mean_identity < 0.5)
+    // {
+    //     continue;
+    // }
+
+
+
+    set<string> all_spacers;
+    for (Crispr crispr : crisprs_filtered)
+    {
+        vector<string> spacers = get_spacers(crispr, genome);
+        // all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
+        for (string spacer : spacers)
+        { 
+            all_spacers.insert(spacer);
+            // all_spacers.push_back(reverse_complement(spacer)); // unnecessary because BLAST searches both strands.
+        }
+    }
+
+
+    map<string, int> spacer_scores = BLAST(all_spacers);
+
+
+    printf("----------not filtered----------\n");
+    print(genome, crisprs, spacer_scores);
+
+
+    printf("----------filtered----------\n");
     print(genome, crisprs_filtered, spacer_scores);
+
+
 
 
     return 0;
