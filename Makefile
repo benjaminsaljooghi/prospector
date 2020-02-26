@@ -31,7 +31,7 @@ clean:
 	cd util && make clean
 	cd prospector && make clean
 	cd blast && make clean
-	rm -f invoker.out
+	rm -f invoker.o
 	rm -f invoker.out
 
 	# rm $(OBJS)
