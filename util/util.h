@@ -6,7 +6,12 @@
 
 
 // general
+double duration(clock_t begin, clock_t end);
 double duration(clock_t begin);
+void done(clock_t begin, string out);
+void done(clock_t begin);
+
+
 vector<int> flatten(vector<vector<int>> vecs);
 bool subset(vector<int> a, vector<int> b);
 

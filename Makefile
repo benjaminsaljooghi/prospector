@@ -1,7 +1,7 @@
 # CARGS = --std=c++14 -g
 
 
-MY_ARGS = -Wall -Werror -fopenmp
+MY_ARGS = -Wall -Werror -fopenmp -O3
 ARGS_A = -std=gnu++11 -Wl,-rpath,/home/ben/Documents/ncbi/GCC800-DebugMT64/lib -L. -Wl,--enable-new-dtags -Wl,-export-dynamic -pthread -g
 
 OBJS = invoker.o util/util.o blast/blast.o prospector/prospector.o prospector/dlinked.o
@@ -23,12 +23,12 @@ invoker.o: invoker.cpp
 util/util.o: util/util.cpp
 	cd util && make
 
-prospector/prospector.o: prospector
-
-prospector/dlinked.o: prospector
-
-prospector: prospector/prospector.cu
+prospector/prospector.o: prospector/prospector.cu
 	cd prospector && make
+
+prospector/dlinked.o: prospector/prospector.cu
+	cd prospector && make
+
 
 blast/blast.o: blast/blast.cpp
 	cd blast && make

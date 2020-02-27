@@ -4,10 +4,28 @@
 
 // general
 
+double duration(clock_t begin, clock_t end)
+{
+	return (end - begin) / (double)CLOCKS_PER_SEC;
+}
+
 double duration(clock_t begin)
 {
-	return (clock() - begin) / (double)CLOCKS_PER_SEC;
+	return duration(begin, clock());
 }
+
+void done(clock_t begin, string out)
+{
+	printf("%s done in %.3f seconds\n", out.c_str(), duration(begin));
+}
+
+void done(clock_t begin)
+{
+	done(begin, "");
+}
+
+
+
 
 vector<int> flatten(vector<vector<int>> vecs)
 {
@@ -107,10 +125,10 @@ char _complement(char a)
 string reverse_complement(string seq)
 {
 
-    int len = seq.length();
+    size_t len = seq.length();
     string complement = seq;
 
-    for (int i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++)
     {
         complement[i] = _complement(seq[i]);
     }
@@ -123,12 +141,12 @@ int mismatch_count(string repeat)
 {
 	int _count = 0;
 
-	int k = repeat.size();
+	size_t k = repeat.size();
 	int start_index = 0;
 	int end_index = start_index + repeat.size() - 1;
 
 
-	for (int i = 0; i < k/2; i++)
+	for (size_t i = 0; i < k/2; i++)
 	{
 		char upstream = repeat[start_index + i];
 		char downstream = repeat[end_index - i];
@@ -141,7 +159,7 @@ int mismatch_count(string repeat)
 string seqs_to_fasta(vector<string> seqs)
 {
     ostringstream string_stream;
-    for (unsigned int i = 0; i < seqs.size(); i++)
+    for (size_t i = 0; i < seqs.size(); i++)
     {
         string_stream << ">" << i << endl;
         string_stream << seqs[i] << endl;  
@@ -152,7 +170,7 @@ string seqs_to_fasta(vector<string> seqs)
 vector<string> get_kmers(string seq, int k)
 {
 	vector<string> kmers;
-	for (int i = 0; i < seq.length() - k + 1; i++)
+	for (size_t i = 0; i < seq.length() - k + 1; i++)
 	{
 		kmers.push_back(seq.substr(i, k));
 	}
@@ -197,7 +215,7 @@ float similarity(string a, string b)
 	
 
 	int matches = 0;
-	for (int i = 0; i < a.length(); i++)
+	for (size_t i = 0; i < a.length(); i++)
 	{
 		matches += a[i] == b[i] ? 1 : 0; 
 	}
@@ -212,7 +230,7 @@ float get_conservation_consensus(vector<string> repeats)
 	string consensus = most_frequent(repeats);
 
 	float similarity_sum = 0;
-	for (int i = 0; i < repeats.size(); i++)
+	for (size_t i = 0; i < repeats.size(); i++)
 	{
 		similarity_sum += similarity(consensus, repeats[i]);
 
@@ -242,7 +260,7 @@ float differential_length_string_comparison(string a, string b)
 	
 	int matches = 0;
 
-	for (int i = 0; i < small_length; i++)
+	for (size_t i = 0; i < small_length; i++)
 	{
 		matches += a[i] == b[i] ? 1 : 0;
 	}
@@ -455,7 +473,7 @@ bool repeat_subset(Crispr a, Crispr b)
 		return false;
 	}
 
-	for (int i = 0; i < a.genome_indices.size(); i++)
+	for (size_t i = 0; i < a.genome_indices.size(); i++)
 	{
 		if (!repeat_substring(b, a.genome_indices[i], a.genome_indices[i] + a.k - 1))
 		{

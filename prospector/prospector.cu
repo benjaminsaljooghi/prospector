@@ -56,13 +56,15 @@ void cwait()
 
 void cufree(void* device_ptr)
 {
-	printf("executing cudafree\n");
+	printf("executing cudafree... ");
+    clock_t start = clock();
 	cudaError err = cudaFree(device_ptr);
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "failed to free device ptr (error code %s)!\n", cudaGetErrorString(err));
 		exit(err);
 	}
+    done(start);
 }
 
 
@@ -138,13 +140,16 @@ template <typename T> void cpull(T* h, const T* d, int count)
 
 	cudaError err;
 
-	printf("memcpy %*d bytes from device...\n", PRINTF_BYTE_FORMAT_ALIGN, (int)bytes);
+	printf("memcpy %*zd bytes from device... ", PRINTF_BYTE_FORMAT_ALIGN, bytes);
+    clock_t start = clock();
 	err = cudaMemcpy(h, d, bytes, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "failed to copy from device to host (error code %s)!\n", cudaGetErrorString(err));
 		exit(err);
 	}
+    done(start);
+    
 }
 
 
@@ -155,21 +160,25 @@ template <typename T> T* cpush(const T* src, int count)
 	cudaError err;
 	T* ptr = NULL;
 
-	printf("malloc %*d bytes on device...\n", PRINTF_BYTE_FORMAT_ALIGN, (int) bytes);
+	printf("malloc %*zd bytes on device... ", PRINTF_BYTE_FORMAT_ALIGN, bytes);
+    clock_t start = clock();
 	err = cudaMalloc((void**)& ptr, bytes);
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "failed to malloc device (error code %s)!\n", cudaGetErrorString(err));
 		exit(err);
 	}
+    done(start);
 
-	printf("memcpy %*d bytes to device...\n", PRINTF_BYTE_FORMAT_ALIGN, (int) bytes);
+	printf("memcpy %*zd bytes to device... ", PRINTF_BYTE_FORMAT_ALIGN, bytes);
+    start = clock();
 	err = cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "failed to copy from host to device (error code %s)!\n", cudaGetErrorString(err));
 		exit(err);
 	}
+    done(start);
 
 	return (T*)ptr;
 }
@@ -220,7 +229,7 @@ __global__ void discover_crisprs(int total_dyad_count, const char* genome, size_
             // Is this candidate a repeat?
             if (mutant(genome, dyad, candidate, k))
             {
-                printf("saving repeat at %d\n", candidate);
+                // printf("saving repeat at %d\n", candidate);
 
                 // Save repeat
                 repeat_index++;
@@ -260,10 +269,12 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, int* dyad_
 
 vector<int> dyad_lengths(vector<vector<int>> all_dyads)
 {
-	printf("compute dyad lengths...\n");
-	vector<int> lengths;
+	printf("compute dyad lengths... ");
+	clock_t start = clock();
+    vector<int> lengths;
 	for (auto vec : all_dyads)
 		lengths.push_back((int)vec.size());
+    done(start);
 	return lengths;
 }
 
@@ -281,7 +292,8 @@ vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len)
     cpull(dyad_buffer, device_dyad_buffer, buffer_count);
     cufree(device_dyad_buffer);
 
-    printf("extract dyads...\n");
+    printf("extract dyads... ");
+    clock_t start = clock();
     vector<vector<int>> all_dyads;
     for (int k = K_START; k < K_END; k++)
     {
@@ -296,6 +308,7 @@ vector<vector<int>> dyad_gen(char* device_genome, size_t genome_len)
         }
         all_dyads.push_back(dyads);
     }
+    done(start);
 
     return all_dyads;
 }
@@ -308,6 +321,25 @@ bool comparison_routine(Crispr a, Crispr b)
 }
 
 
+void print_buffer(int total_dyad_count, int* crispr_buffer)
+{    
+    int count = 0;
+    for (int d_index = 0; d_index < total_dyad_count; d_index++)
+    {
+        if (crispr_buffer[d_index * BUFFER + 1] == -1)
+        {
+            continue;
+        }
+        count += 1;
+
+        printf("%d: ", d_index);
+        for (int i = 0; i < BUFFER; i++)
+        {
+            printf("%d ", crispr_buffer[d_index * BUFFER + i]);
+        }
+        printf("\n");
+    }
+}
 
 vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<int>> all_dyads)
 {
@@ -315,6 +347,8 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
     vector<int> dyads = flatten(all_dyads);
     int total_dyad_count = dyads.size();
 
+    printf("generating k_map... ");
+    clock_t start = clock();
     vector<int> k_map;
     for (int k_index = 0; k_index < lens.size(); k_index++)
     {
@@ -322,7 +356,7 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
         for (int dyad_index_within_len = 0; dyad_index_within_len < lens[k_index]; dyad_index_within_len++)
             k_map.push_back(k);
     }
-
+    done(start);
 
 	int crispr_buffer_count = total_dyad_count * BUFFER;
 	int* crispr_buffer = new int[crispr_buffer_count];
@@ -342,27 +376,11 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
 	cufree(device_k_map);
 
 
-    // print out the buffer
-    int count = 0;
-    for (int d_index = 0; d_index < total_dyad_count; d_index++)
-    {
-        if (crispr_buffer[d_index * BUFFER + 1] == -1)
-        {
-            continue;
-        }
-        count += 1;
-
-        printf("%d: ", d_index);
-        for (int i = 0; i < BUFFER; i++)
-        {
-            printf("%d ", crispr_buffer[d_index * BUFFER + i]);
-        }
-        printf("\n");
-    }
 
     vector<Crispr> crisprs;
 
-    printf("extract results...\n");
+    printf("extract results... ");
+    start = clock();
     for (int d_index = 0; d_index < total_dyad_count; d_index++)
     {
         // if this crispr does not have the required number of minimum repeats, then ignore it
@@ -387,7 +405,9 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
         crisprs.push_back(crispr);
     
     }
-    
+	done(start);
+
+
 
     // printf("prune crisprs...\n");
     // vector<Crispr> pruned_crisprs;
@@ -432,51 +452,20 @@ vector<Crispr> prospector_main(string genome)
 	clock_t start = clock();
 
     char* device_genome = cpush(genome.c_str(), genome.length());
+
+    clock_t dyad_start = clock();
     vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length());
+    clock_t dyad_end = clock();
 
-    // printf("-------print dyads---------\n");
+    printf("dyad_gen completed in %.3f seconds.\n", duration(dyad_start, dyad_end));
 
-
-
-    // string thing = genome.substr(1085433, 36);
-
-
-    // printf("%d", dyad(genome.c_str(), 1085433, 36));
-
-
-    // printf("%s\n", thing.c_str()); 
-
-
-
-    // for (int i = 0; i < all_dyads.size(); i++)
-    // {
-    //     int k = i + K_START;
-
-    //     if (k != 36)
-    //     {
-    //         continue;
-    //     }
-
-    //     vector<int> dyads = all_dyads[i];
-        
-    //     for (int genome_index : dyads)
-    //     {
-    //         if (genome_index > 1085000 && genome_index < 1087000)
-    //         {
-
-    //             printf("%d %d %s\n", genome_index, k, genome.substr(genome_index, k).c_str());
-    //         }
-
-
-    //     }
-    // }
-
-
-    // exit(0);
-
+    clock_t crispr_start = clock();
     vector<Crispr> crisprs = crispr_gen(genome, device_genome, genome.length(), all_dyads);
+    clock_t crispr_end = clock();
+    
     cufree(device_genome);
 
+    printf("crispr_gen completed in %.3f seconds.\n", duration(crispr_start, crispr_end));
 	printf("prospector completed in %.3f seconds.\n", duration(start));
     return crisprs;
 }

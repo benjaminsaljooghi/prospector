@@ -36,20 +36,28 @@ USING_SCOPE(blast);
 map<string, int> BLAST(set<string> _seqs)
 {
 
-    printf("BLASTing %zd sequences...\n", _seqs.size());
 
     vector<string> seqs;
+    size_t max = 0;
     for (string seq : _seqs)
     {
-        if (seq.length() > 100)
-        {
-            continue;
-        }
-        printf("%zd\n", seq.length());
+        // if (seq.length() > 100)
+        // {
+        //     continue;
+        // }
+        // printf("%zd\n", seq.length());
         seqs.push_back(seq);
+        if (seq.length() > max)
+        {
+            max = seq.length();
+        }
     }
+    
+    printf("blasting %zd sequences of max length %zd...\n", _seqs.size(), max);
 
-    printf("Instantiating a BLAST program...\n");
+
+
+    printf("instantiating blast... ");
     clock_t start = clock();
 
     EProgram program = ProgramNameToEnum("blastn"); 
@@ -73,13 +81,16 @@ map<string, int> BLAST(set<string> _seqs)
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
     CLocalBlast blaster(query_factory, opts, target_db);
 
-	printf("BLAST program instantiated in %.3f seconds.\n", duration(start));
-    printf("Running BLAST program...\n");
+	// printf("blas program instantiated in %.3f seconds.\n", duration(start));
+    done(start);
+
+    printf("blasting... ");
     start = clock();
 
     CSearchResultSet results = *blaster.Run();
     
-    printf("BLAST program completed in %.3f seconds.\n", duration(start));
+    // printf("BLAST program completed in %.3f seconds.\n", duration(start));
+    done(start);
 
     map<string, int> seq_max_scores;
     for (unsigned int i = 0; i < results.GetNumResults(); i++)

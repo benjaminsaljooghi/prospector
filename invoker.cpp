@@ -7,10 +7,12 @@
 map<string, int> BLAST(set<string> seqs);
 
 
-int main()
-{
 
-    string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
+void run()
+{
+    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+    // string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+    
     string genome = parse_fasta(genome_path).begin()->second;
 
     if (!POS_STRAND)
@@ -167,61 +169,70 @@ int main()
         {
             of_interest.push_back(crispr);
         }
-
-
     }    
 
 
 
-    printf("done\n");
-    return 0;
+
+    return;
 
 
-
-
-
-
-
-
-    // now check upstream of the arrays for cas genes
-
-    // int k = 20;
-    // int upstream_size = 10000;
-
-
-    // get Cas9
-    // string cas9_seq = parse_fasta("../crispr-data/addGeneSpCas9.fasta").begin()->second;
-
-
-    // vector<string> cas9_kmers = get_kmers(cas9_seq, k);
+    string spy_cas9_path("/home/ben/Documents/crispr-data/SpyCas9.fasta");
     
-    // string crisrpcasfinder_cas9 = genome.substr(854751, 858857 - 854751);
-    // vector<string> crisprcasfinder_cas9_kmers = get_kmers(crisrpcasfinder_cas9, k);
+    string cas9_seq = parse_fasta(spy_cas9_path).begin()->second;
 
 
-    // for (Crispr crispr : crisprs_filtered)
-    // {
-    //     // transform the upstream 10k into kmers
-    //     string upstream = genome.substr(crispr.genome_indices[0] - upstream_size, upstream_size);
-    //     vector<string> upstream_kmers = get_kmers(upstream, k);
 
-    //     // where, or do, these kmers overlap? (comparing the set of the cas9_kmers against the set of the upstream kmers)
 
-    //     // what quantity of kmers in the cas9_kmers exists in the upstream_kmers?
+    int k = 6;
+    int upstream_size = 10000;
 
-    //     int present = 0;
 
-    //     // for (string cas9_kmer : cas9_kmers)
-    //     for (string cas9_kmer : crisprcasfinder_cas9_kmers)
-    //     {
-    //         for (string upstream_kmer : upstream_kmers)
-    //         {
-    //             present += cas9_kmer.compare(upstream_kmer) == 0 ? 1 : 0;
-    //         }
-    //     }
+    vector<string> cas9_kmers = get_kmers(cas9_seq, k);
+    
 
-    //     printf("for k size %d we have a cas9_kmer count of %zd and a presence of %d\n", crispr.k, crisprcasfinder_cas9_kmers.size(), present);
+    for (Crispr crispr : crisprs_domain_best)
+    {
+        // transform the upstream 10k into kmers
+        string upstream = genome.substr(crispr.start - upstream_size, upstream_size); // get upstream AND downstream
+        vector<string> upstream_kmers = get_kmers(upstream, k);
 
-    // }
+        // where, or do, these kmers overlap? (comparing the set of the cas9_kmers against the set of the upstream kmers)
+
+        // what quantity of kmers in the cas9_kmers exists in the upstream_kmers?
+
+        int present = 0;
+
+        for (string cas9_kmer : cas9_kmers)
+        {
+            for (string upstream_kmer : upstream_kmers)
+            {
+                present += cas9_kmer.compare(upstream_kmer) == 0 ? 1 : 0;
+            }
+        }
+
+        printf("for CRISPR with start %d and k %d we have a cas9_kmer count of %zd and a presence of %d\n", crispr.start, crispr.k, cas9_kmers.size(), present);
+
+    }
+
 
 }
+
+int main()
+{
+    clock_t start = clock();
+    
+    run();
+
+    done(start, "invoker");
+
+    return 0;
+}
+
+
+// for CRISPR with start 1825009 and k 36 we have a cas9_kmer count of 4098 and a presence of 149
+// for CRISPR with start 1085433 and k 36 we have a cas9_kmer count of 4098 and a presence of 350
+// for CRISPR with start 1577785 and k 20 we have a cas9_kmer count of 4098 and a presence of 172
+// for CRISPR with start 130731 and k 21 we have a cas9_kmer count of 4098 and a presence of 187
+// for CRISPR with start 31489 and k 20 we have a cas9_kmer count of 4098 and a presence of 166
+// for CRISPR with start 528759 and k 21 we have a cas9_kmer count of 4098 and a presence of 153
