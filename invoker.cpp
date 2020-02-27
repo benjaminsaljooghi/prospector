@@ -8,8 +8,8 @@ map<string, int> BLAST(set<string> seqs);
 
 void run()
 {
-    string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
-    // string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+    // string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
+    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
     
     string genome = parse_fasta(genome_path).begin()->second;
 
@@ -157,15 +157,8 @@ void run()
 
 
     printf("----------top n----------\n");
+    vector<Crispr> top_n(crisprs.begin(), crisprs.begin() + 20);
     print(genome, top_n, spacer_scores);
-
-    GET A VECTOR RANGE INSTEAD OF MANUAL FOR LOOP
-
-    vector<Crispr> top_n;
-    for (size_t i = 0; i < 20; i++)
-    {
-        top_n.push_back(crisprs[i]);
-    }
 
 
 
