@@ -1,7 +1,7 @@
 # CARGS = --std=c++14 -g
 
 
-MY_ARGS = -Wall -Werror
+MY_ARGS = -Wall -Werror -fopenmp
 ARGS_A = -std=gnu++11 -Wl,-rpath,/home/ben/Documents/ncbi/GCC800-DebugMT64/lib -L. -Wl,--enable-new-dtags -Wl,-export-dynamic -pthread -g
 
 OBJS = invoker.o util/util.o blast/blast.o prospector/prospector.o prospector/dlinked.o
@@ -20,11 +20,11 @@ run: invoker.out
 invoker.out: clean $(OBJS)
 	g++ -g $(MY_ARGS) $(ARGS_A) $(OBJS) $(LIBS) $(CUDA_LIB) -o invoker.out -ftime-report
 
-invoker.o: invoker.cpp util/util.cpp prospector/prospector.cu blast/blast.cpp
+invoker.o: clean invoker.cpp util/util.cpp prospector/prospector.cu blast/blast.cpp
 	cd util && make
 	cd prospector && make
 	cd blast && make
-	g++ -c -g invoker.cpp -o invoker.o
+	g++ $(MY_ARGS) -c -g invoker.cpp -o invoker.o
 
 
 clean:

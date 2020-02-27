@@ -5,13 +5,6 @@
 #define POS_STRAND true
 
 
-struct Crispr
-{
-	int k;
-	vector<int> genome_indices;
-};
-
-
 // general
 double duration(clock_t begin);
 vector<int> flatten(vector<vector<int>> vecs);
@@ -28,15 +21,64 @@ vector<string> get_kmers(string seq, int k);
 
 
 
-// crispr
-vector<string> get_repeats(Crispr crispr, string genome);
-vector<string> get_spacers(Crispr crispr, string genome);
-float consensus_conservation(vector<string> repeats);
-float spacer_conservation(vector<string> spacers);
+// Crispr
+float get_conservation_consensus(vector<string> repeats);
+float get_conservation_spacer(vector<string> spacers);
+
+
+class Crispr
+{
+	public:
+		int k;
+		vector<int> genome_indices;
+		int start;
+		int end;
+
+		vector<string> repeats;
+		vector<string> spacers;
+		float conservation_repeats;
+		float conservation_spacers;
+		// float overall_heuristic; // higher the number the better
+
+		Crispr(string genome, int _k, vector<int> _genome_indices)
+		{
+
+			k = _k;
+			genome_indices = _genome_indices;
+
+			start = genome_indices[0];
+			end = genome_indices[genome_indices.size()-1] + k - 1;
+
+
+			for (size_t i = 0; i < genome_indices.size(); i++)
+			{
+				repeats.push_back(genome.substr(genome_indices[i], k).c_str());
+			}
+
+			for (size_t i = 0; i < genome_indices.size()-1; i++)
+			{
+				int current_repeat_end = genome_indices[i] + k;
+				int next_repeat_begin = genome_indices[i+1];
+				int spacer_size = next_repeat_begin - current_repeat_end;
+				spacers.push_back(genome.substr(current_repeat_end, spacer_size));
+			}   
+			
+
+			conservation_repeats = get_conservation_consensus(repeats);
+			conservation_spacers = get_conservation_spacer(spacers);
+
+			// overall_heuristic = conservation_repeats - conservation_spacers; // high conservation_repeats and low conservation_spacers is ideal
+
+		}
+	private:
+
+};
+
+// Crispr
 bool repeat_substring(Crispr crispr, int _start, int _end);
 bool repeat_subset(Crispr a, Crispr b);
 bool any_overlap(Crispr a, Crispr b);
-
+bool heuristic_comparison(Crispr a, Crispr b);
 
 
 // print crisprs

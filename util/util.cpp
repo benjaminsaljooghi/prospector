@@ -164,31 +164,6 @@ vector<string> get_kmers(string seq, int k)
 // crispr
 
 
-vector<string> get_repeats(Crispr crispr, string genome)
-{
-	vector<string> result;
-	for (int index : crispr.genome_indices)
-	{
-		result.push_back(genome.substr(index, crispr.k).c_str());
-	}
-	return result;
-}
-
-
-vector<string> get_spacers(Crispr crispr, string genome)
-{
-	vector<string> result;
-	for (unsigned int i = 0; i < crispr.genome_indices.size()-1; i++)
-	{
-		int current_repeat_end = crispr.genome_indices[i] + crispr.k;
-		int next_repeat_begin = crispr.genome_indices[i+1];
-		int spacer_size = next_repeat_begin - current_repeat_end;
-		result.push_back(genome.substr(current_repeat_end, spacer_size));
-	}   
-	return result; 
-}
-
-
 string most_frequent(vector<string> repeats)
 {
 	map<string, int> frequencies;
@@ -232,7 +207,7 @@ float similarity(string a, string b)
 }
 
 
-float consensus_conservation(vector<string> repeats)
+float get_conservation_consensus(vector<string> repeats)
 {
 	string consensus = most_frequent(repeats);
 
@@ -246,7 +221,7 @@ float consensus_conservation(vector<string> repeats)
 	return similarity_sum / (float) repeats.size();
 }
 
-float differential_length_similarity(string a, string b)
+float differential_length_string_comparison(string a, string b)
 {
 	size_t a_len = a.length();
 	size_t b_len = b.length();
@@ -276,47 +251,74 @@ float differential_length_similarity(string a, string b)
 	
 }
 
-float spacer_conservation(vector<string> spacers)
+float get_conservation_spacer(vector<string> spacers)
 {
 
-	float similarity_mean_sum = 0;
+	// float similarity_mean_sum = 0;
 
-	for (int i = 0; i < spacers.size(); i++)
+	// for (int i = 0; i < spacers.size(); i++)
+	// {
+	// 	// what is the mean similarity of this spacer against all other spacers?
+	// 	float similarity_sum = 0;
+	// 	for (int j = 0; j < spacers.size(); j++)
+	// 	{
+	// 		if (i == j)
+	// 		{
+	// 			continue;
+	// 		}
+	// 		string a = spacers[i];
+	// 		string b = spacers[j];
+
+	// 		similarity_sum += differential_length_similarity(a, b);
+	// 	}
+
+	// 	// what was the mean similarity for this spacer against all other spacers?
+	// 	float similarity_mean = similarity_sum / ((float) spacers.size() - 1);
+
+	// 	// add that to the mean
+	// 	similarity_mean_sum += similarity_mean;
+	// }		
+
+	// // what was the overall mean similarity?
+	// return similarity_mean_sum / (float) spacers.size(); 
+
+
+
+
+	// we want this to be calculcated such that if there are more spacers then the entropy increases, reducing the conservation score (which is good)
+	
+
+
+	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself
+	
+	float score_sum = 0;
+	int comparisons = 0;
+	for (size_t i = 0; i < spacers.size(); i++)
 	{
-		// what is the mean similarity of this spacer against all other spacers?
-		float similarity_sum = 0;
-		for (int j = 0; j < spacers.size(); j++)
+		for (size_t j = 0; j < i; j++)
 		{
-			if (i == j)
-			{
-				continue;
-			}
 			string a = spacers[i];
 			string b = spacers[j];
-
-			similarity_sum += differential_length_similarity(a, b);
+			float score = differential_length_string_comparison(a, b);
+			score_sum += score;
+			comparisons++;
 		}
+	}
 
-		// what was the mean similarity for this spacer against all other spacers?
-		float similarity_mean = similarity_sum / ((float) spacers.size() - 1);
 
-		// add that to the mean
-		similarity_mean_sum += similarity_mean;
-	}		
+	float mean_score = score_sum / comparisons;
 
-	// what was the overall mean similarity?
-	return similarity_mean_sum / (float) spacers.size(); 
+	// divide the score by the number of spacers to punish having more spacers
+	return mean_score / spacers.size();
+
 }
 
 void print_spacers(string genome, Crispr crispr, map<string, int> spacer_scores)
 {
-	vector<string> spacers = get_spacers(crispr, genome);
 	
 	cout << "\t" << "spacers:" << endl;
-	for (unsigned int i = 0; i < spacers.size(); i++)
+	for (string spacer : crispr.spacers)
 	{
-		string spacer = spacers[i];
-
 		printf("\t\t");
 		printf("%d/%zd", spacer_scores[spacer], spacer.length());
 		// printf(" %d/%zd", spacer_scores[reverse_complement(spacer)], spacer.length()); // unnecessary because BLAST searches both strands.
@@ -330,12 +332,9 @@ void print_spacers(string genome, Crispr crispr, map<string, int> spacer_scores)
 
 void print_spacers(string genome, Crispr crispr)
 {
-	vector<string> spacers = get_spacers(crispr, genome);
-
 	map<string, int> spacer_scores;
-	for (unsigned int i = 0; i < spacers.size(); i++)
+	for (string spacer : crispr.spacers)
 	{
-		string spacer = spacers[i];
 		spacer_scores[spacer] = -1;
 	}
 
@@ -346,17 +345,14 @@ void print_spacers(string genome, Crispr crispr)
 
 void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 {
-	vector<string> repeats = get_repeats(crispr, genome);
-
-
-	string outer = reverse_complements ? "repeats (reverse complements)" : "repeats";
+	// string outer = reverse_complements ? "repeats (reverse complements)" : "repeats";
+	string outer = "repeats";
 	cout << "\t" << outer << endl;
 
-	for (unsigned int i = 0; i < repeats.size(); i++)
+	for (size_t i = 0; i < crispr.repeats.size(); i++)
 	{
-
-
-		string repeat = reverse_complements ? reverse_complement(repeats[i]) : repeats[i];
+		// string repeat = reverse_complements ? reverse_complement(repeats[i]) : repeats[i];
+		string repeat = crispr.repeats[i];
 
 		int mismatches = mismatch_count(repeat);
 		int matches = repeat.length() / 2 - mismatches;
@@ -385,10 +381,11 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 
 void print_header(string genome, Crispr crispr)
 {	
-	vector<string> repeats = get_repeats(crispr, genome);
-	vector<string> spacers = get_spacers(crispr, genome);
+	// vector<string> repeats = get_repeats(crispr, genome);
+	// vector<string> spacers = get_spacers(crispr, genome);
 
-	printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, consensus_conservation(repeats), spacer_conservation(spacers));
+	// printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, get_conservation_consensus(repeats), get_conservation_spacer(spacers));
+	printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, crispr.conservation_repeats, crispr.conservation_spacers);
 }
 
 
@@ -489,4 +486,24 @@ bool any_overlap(Crispr a, Crispr b)
 	bool b_bleeds_into_a = b_before_a && b_end >= a_start;
 
 	return a_bleeds_into_b || b_bleeds_into_a;
+}
+
+bool heuristic_comparison(Crispr a, Crispr b)
+{
+	// return a.overall_heuristic > b.overall_heuristic;
+
+	if (a.conservation_repeats > b.conservation_repeats)
+	{
+		return true;
+	}
+	else if (a.conservation_repeats == b.conservation_repeats)
+	{
+		return a.conservation_spacers < b.conservation_spacers;
+	}
+	else
+	{
+		return false;
+	}
+	
+
 }

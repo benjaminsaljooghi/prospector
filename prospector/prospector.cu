@@ -24,7 +24,7 @@
 
 
 // #define DYAD_MIN 10
-#define MISMATCH_TOLERANCE_RATIO 4
+#define MISMATCH_TOLERANCE_RATIO 3
 #define MUTANT_TOLERANCE_RATIO 5
 #define REPEAT_MIN 20
 #define REPEAT_MAX 60
@@ -66,7 +66,7 @@ void cufree(void* device_ptr)
 }
 
 
-__device__ char complement(char nuc)
+__device__ __host__ char complement(char nuc)
 {
     switch (nuc)
     {
@@ -109,7 +109,7 @@ __device__ __host__ bool mutant(const char* genome, int start_a, int start_b, in
 
 
 
-__device__ bool dyad(const char* genome, int start_index, int k)
+__device__ __host__ bool dyad(const char* genome, int start_index, int k)
 {
     int mismatch_tolerance = k / MISMATCH_TOLERANCE_RATIO;
 
@@ -309,7 +309,7 @@ bool comparison_routine(Crispr a, Crispr b)
 
 
 
-vector<Crispr> crispr_gen(char* device_genome, size_t genome_len, vector<vector<int>> all_dyads)
+vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<int>> all_dyads)
 {
     vector<int> lens = dyad_lengths(all_dyads);
     vector<int> dyads = flatten(all_dyads);
@@ -322,6 +322,7 @@ vector<Crispr> crispr_gen(char* device_genome, size_t genome_len, vector<vector<
         for (int dyad_index_within_len = 0; dyad_index_within_len < lens[k_index]; dyad_index_within_len++)
             k_map.push_back(k);
     }
+
 
 	int crispr_buffer_count = total_dyad_count * BUFFER;
 	int* crispr_buffer = new int[crispr_buffer_count];
@@ -368,8 +369,6 @@ vector<Crispr> crispr_gen(char* device_genome, size_t genome_len, vector<vector<
         if (crispr_buffer[d_index * BUFFER + MIN_REPEATS] == -1)
             continue;
 
-        struct Crispr Crispr;
-
 
         vector<int> genome_indices;
         for (int i = 0; i < BUFFER; i++)
@@ -380,46 +379,50 @@ vector<Crispr> crispr_gen(char* device_genome, size_t genome_len, vector<vector<
             genome_indices.push_back(val);
         }
 
-        Crispr.k = k_map[d_index];
-        Crispr.genome_indices = genome_indices;
+        Crispr crispr(genome, k_map[d_index], genome_indices);
 
-        crisprs.push_back(Crispr);
+        // Crispr.k = k_map[d_index];
+        // Crispr.genome_indices = genome_indices;
+
+        crisprs.push_back(crispr);
     
     }
     
 
-    printf("prune crisprs...\n");
-    vector<Crispr> pruned_crisprs;
-    for (int i = 0; i < crisprs.size(); i++)
-    {
-        Crispr this_crispr = crisprs[i];
-        bool this_crispr_is_a_subset = false;
-        for (int j = 0; j < crisprs.size(); j++)
-        {
-            if (i == j)
-                continue;
+    // printf("prune crisprs...\n");
+    // vector<Crispr> pruned_crisprs;
+    // for (int i = 0; i < crisprs.size(); i++)
+    // {
+    //     Crispr this_crispr = crisprs[i];
+    //     bool this_crispr_is_a_subset = false;
+    //     for (int j = 0; j < crisprs.size(); j++)
+    //     {
+    //         if (i == j)
+    //             continue;
 
-            Crispr other_crispr = crisprs[j];
+    //         Crispr other_crispr = crisprs[j];
 
-            // if (subset(this_crispr.genome_indices, other_crispr.genome_indices))
-            if (repeat_subset(this_crispr, other_crispr) || subset(this_crispr.genome_indices, other_crispr.genome_indices))
-            {
-                this_crispr_is_a_subset = true;
-                break;
-            }
-        }
+    //         // if (subset(this_crispr.genome_indices, other_crispr.genome_indices))
+    //         if (repeat_subset(this_crispr, other_crispr) || subset(this_crispr.genome_indices, other_crispr.genome_indices))
+    //         {
+    //             this_crispr_is_a_subset = true;
+    //             break;
+    //         }
+    //     }
 
-        if (!this_crispr_is_a_subset)
-        {
-            pruned_crisprs.push_back(this_crispr);
-        }
+    //     if (!this_crispr_is_a_subset)
+    //     {
+    //         pruned_crisprs.push_back(this_crispr);
+    //     }
 
 
-    }
+    // }
 
-    sort(pruned_crisprs.begin(), pruned_crisprs.end(), comparison_routine);
+    // sort(pruned_crisprs.begin(), pruned_crisprs.end(), comparison_routine);
 
-    return pruned_crisprs;
+    // return pruned_crisprs;
+    
+    return crisprs;
     
 }
 
@@ -430,7 +433,48 @@ vector<Crispr> prospector_main(string genome)
 
     char* device_genome = cpush(genome.c_str(), genome.length());
     vector<vector<int>> all_dyads = dyad_gen(device_genome, genome.length());
-    vector<Crispr> crisprs = crispr_gen(device_genome, genome.length(), all_dyads);
+
+    // printf("-------print dyads---------\n");
+
+
+
+    // string thing = genome.substr(1085433, 36);
+
+
+    // printf("%d", dyad(genome.c_str(), 1085433, 36));
+
+
+    // printf("%s\n", thing.c_str()); 
+
+
+
+    // for (int i = 0; i < all_dyads.size(); i++)
+    // {
+    //     int k = i + K_START;
+
+    //     if (k != 36)
+    //     {
+    //         continue;
+    //     }
+
+    //     vector<int> dyads = all_dyads[i];
+        
+    //     for (int genome_index : dyads)
+    //     {
+    //         if (genome_index > 1085000 && genome_index < 1087000)
+    //         {
+
+    //             printf("%d %d %s\n", genome_index, k, genome.substr(genome_index, k).c_str());
+    //         }
+
+
+    //     }
+    // }
+
+
+    // exit(0);
+
+    vector<Crispr> crisprs = crispr_gen(genome, device_genome, genome.length(), all_dyads);
     cufree(device_genome);
 
 	printf("prospector completed in %.3f seconds.\n", duration(start));
