@@ -27,8 +27,9 @@ vector<string> get_kmers(string seq, int k);
 
 
 // Crispr
-float get_conservation_consensus(vector<string> repeats);
-float get_conservation_spacer(vector<string> spacers);
+double get_conservation_consensus(vector<string> repeats);
+double get_conservation_spacer(vector<string> spacers);
+double get_conservation_spacer_2(vector<string> spacers);
 
 
 class Crispr
@@ -41,9 +42,9 @@ class Crispr
 
 		vector<string> repeats;
 		vector<string> spacers;
-		float conservation_repeats;
-		float conservation_spacers;
-		// float overall_heuristic; // higher the number the better
+		double conservation_repeats;
+		double conservation_spacers;
+		double overall_heuristic; // higher the number the better
 
 		Crispr(string genome, int _k, vector<int> _genome_indices)
 		{
@@ -72,7 +73,9 @@ class Crispr
 			conservation_repeats = get_conservation_consensus(repeats);
 			conservation_spacers = get_conservation_spacer(spacers);
 
-			// overall_heuristic = conservation_repeats - conservation_spacers; // high conservation_repeats and low conservation_spacers is ideal
+
+
+			overall_heuristic = conservation_repeats - conservation_spacers; // high conservation_repeats and low conservation_spacers is ideal
 
 		}
 	private:

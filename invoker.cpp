@@ -6,11 +6,9 @@
 
 map<string, int> BLAST(set<string> seqs);
 
-
-
 void run()
 {
-    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
+    string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
     // string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
     
     string genome = parse_fasta(genome_path).begin()->second;
@@ -158,14 +156,32 @@ void run()
     // print(genome, crisprs, spacer_scores);
 
 
-    printf("----------filtered----------\n");
+    printf("----------top n----------\n");
+    print(genome, top_n, spacer_scores);
+
+    GET A VECTOR RANGE INSTEAD OF MANUAL FOR LOOP
+
+    vector<Crispr> top_n;
+    for (size_t i = 0; i < 20; i++)
+    {
+        top_n.push_back(crisprs[i]);
+    }
+
+
+
+    
+
+
+
+    printf("----------domain best----------\n");
     print(genome, crisprs_domain_best, spacer_scores);
+
 
 
     vector<Crispr> of_interest;
     for (Crispr crispr : crisprs)
     {
-        if (crispr.k == 36 && crispr.start > 1824944 && crispr.end < 1827552 && crispr.genome_indices.size() > 35)
+        if (crispr.start > 860000 && crispr.end < 870000)
         {
             of_interest.push_back(crispr);
         }
@@ -174,14 +190,15 @@ void run()
 
 
 
+    printf("done\n");
+
+
     return;
 
 
     string spy_cas9_path("/home/ben/Documents/crispr-data/SpyCas9.fasta");
     
     string cas9_seq = parse_fasta(spy_cas9_path).begin()->second;
-
-
 
 
     int k = 6;
@@ -214,8 +231,6 @@ void run()
         printf("for CRISPR with start %d and k %d we have a cas9_kmer count of %zd and a presence of %d\n", crispr.start, crispr.k, cas9_kmers.size(), present);
 
     }
-
-
 }
 
 int main()

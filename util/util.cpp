@@ -206,7 +206,7 @@ string most_frequent(vector<string> repeats)
 }
 
 
-float similarity(string a, string b)
+double similarity(string a, string b)
 {
 	if (a.length() != b.length())
 	{
@@ -221,25 +221,25 @@ float similarity(string a, string b)
 	}
 	
 	
-	return (float) matches / (float) a.length();
+	return (double) matches / (double) a.length();
 }
 
 
-float get_conservation_consensus(vector<string> repeats)
+double get_conservation_consensus(vector<string> repeats)
 {
 	string consensus = most_frequent(repeats);
 
-	float similarity_sum = 0;
+	double similarity_sum = 0;
 	for (size_t i = 0; i < repeats.size(); i++)
 	{
 		similarity_sum += similarity(consensus, repeats[i]);
 
 	}
 
-	return similarity_sum / (float) repeats.size();
+	return similarity_sum / (double) repeats.size();
 }
 
-float differential_length_string_comparison(string a, string b)
+double bp_match_score(string a, string b)
 {
 	size_t a_len = a.length();
 	size_t b_len = b.length();
@@ -265,51 +265,19 @@ float differential_length_string_comparison(string a, string b)
 		matches += a[i] == b[i] ? 1 : 0;
 	}
 
-	return (float) matches / (float) big_length;
-	
+	int max_possible_matches = big_length;
+
+	return (double) matches / (double) max_possible_matches;
+
 }
 
-float get_conservation_spacer(vector<string> spacers)
+double get_conservation_spacer(vector<string> spacers)
 {
-
-	// float similarity_mean_sum = 0;
-
-	// for (int i = 0; i < spacers.size(); i++)
-	// {
-	// 	// what is the mean similarity of this spacer against all other spacers?
-	// 	float similarity_sum = 0;
-	// 	for (int j = 0; j < spacers.size(); j++)
-	// 	{
-	// 		if (i == j)
-	// 		{
-	// 			continue;
-	// 		}
-	// 		string a = spacers[i];
-	// 		string b = spacers[j];
-
-	// 		similarity_sum += differential_length_similarity(a, b);
-	// 	}
-
-	// 	// what was the mean similarity for this spacer against all other spacers?
-	// 	float similarity_mean = similarity_sum / ((float) spacers.size() - 1);
-
-	// 	// add that to the mean
-	// 	similarity_mean_sum += similarity_mean;
-	// }		
-
-	// // what was the overall mean similarity?
-	// return similarity_mean_sum / (float) spacers.size(); 
-
-
-
-
-	// we want this to be calculcated such that if there are more spacers then the entropy increases, reducing the conservation score (which is good)
-	
 
 
 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself
 	
-	float score_sum = 0;
+	double score_sum = 0;
 	int comparisons = 0;
 	for (size_t i = 0; i < spacers.size(); i++)
 	{
@@ -317,24 +285,79 @@ float get_conservation_spacer(vector<string> spacers)
 		{
 			string a = spacers[i];
 			string b = spacers[j];
-			float score = differential_length_string_comparison(a, b);
+			double score = bp_match_score(a, b);
 			score_sum += score;
 			comparisons++;
 		}
 	}
 
 
-	float mean_score = score_sum / comparisons;
+	double mean_score = score_sum / (double) comparisons;
 
 	// divide the score by the number of spacers to punish having more spacers
-	return mean_score / spacers.size();
+	return mean_score / (double) spacers.size();
 
 }
 
+// double get_conservation_spacer_2(vector<string> spacers)
+// {
+// 	// we want to avoid the presence of there being kmers common across the spacers.
+
+	
+
+// 	// concatenate all the spacers into one sequence and build a frequency list of kmers
+	
+// 	string superspacer;
+
+// 	for (string spacer : spacers)
+// 	{
+// 		superspacer += spacer;
+// 	}
+
+
+// 	map<string, int> frequencies;
+
+// 	for (int k = 3; k < 10; k++)
+// 	{
+// 		for (size_t i = 0; i < superspacer.length() - k + 1; i++)
+// 		{
+// 			string kmer = superspacer.substr(i, k);
+// 			frequencies[kmer] += 1;
+// 		}
+// 	}
+
+
+// 	// what is the highest frequency? does the size of k matter?
+// 	int max_frequency = 0;
+// 	string max_kmer;
+// 	for (auto const& x : frequencies)
+// 	{
+// 		if (x.second > max_frequency)
+// 		{	
+// 			max_frequency = x.second;
+// 			max_kmer = x.first;
+// 		}
+// 	}
+
+// 	// what does this max_frequency value mean? how do we determine a score from it?
+
+
+
+// 	// first, I am interested in this frequency value as a fraction of the number of spacers.
+// 	double fraction_a = ((double)1) /( (double) max_frequency / (double) spacers.size());
+
+// 	// second, I am interested in what the length of k is as a fraction of the mean spacer size. The larger k is relative to the mean spacer size, the WORSE the score is.
+// 	// double fraction_b = max_frequency / 
+
+// 	return fraction_a;
+// }
+
+
+
 void print_spacers(string genome, Crispr crispr, map<string, int> spacer_scores)
 {
-	
-	cout << "\t" << "spacers:" << endl;
+	printf("\tspacers (%zd)\n", crispr.spacers.size());
+
 	for (string spacer : crispr.spacers)
 	{
 		printf("\t\t");
@@ -364,8 +387,8 @@ void print_spacers(string genome, Crispr crispr)
 void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 {
 	// string outer = reverse_complements ? "repeats (reverse complements)" : "repeats";
-	string outer = "repeats";
-	cout << "\t" << outer << endl;
+	
+	printf("\trepeats (%zd)\n", crispr.repeats.size());
 
 	for (size_t i = 0; i < crispr.repeats.size(); i++)
 	{
@@ -374,7 +397,7 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 
 		int mismatches = mismatch_count(repeat);
 		int matches = repeat.length() / 2 - mismatches;
-		float score = (float) matches / (float) (repeat.length() / 2);
+		double score = (double) matches / (double) (repeat.length() / 2);
 
 
 		int start = crispr.genome_indices[i];
@@ -399,11 +422,8 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 
 void print_header(string genome, Crispr crispr)
 {	
-	// vector<string> repeats = get_repeats(crispr, genome);
-	// vector<string> spacers = get_spacers(crispr, genome);
-
-	// printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, get_conservation_consensus(repeats), get_conservation_spacer(spacers));
-	printf("%d %d %f %f\n", crispr.genome_indices[0], crispr.k, crispr.conservation_repeats, crispr.conservation_spacers);
+	printf("%d - %d %d\n\n", crispr.start, crispr.end, crispr.k);
+	printf("\t%fh %fr %fs\n\n", crispr.overall_heuristic, crispr.conservation_repeats, crispr.conservation_spacers);
 }
 
 
@@ -508,20 +528,45 @@ bool any_overlap(Crispr a, Crispr b)
 
 bool heuristic_comparison(Crispr a, Crispr b)
 {
-	// return a.overall_heuristic > b.overall_heuristic;
 
-	if (a.conservation_repeats > b.conservation_repeats)
-	{
-		return true;
-	}
-	else if (a.conservation_repeats == b.conservation_repeats)
-	{
-		return a.conservation_spacers < b.conservation_spacers;
-	}
-	else
-	{
-		return false;
-	}
+	// bool better_repeat_conservation = a.conservation_repeats > b.conservation_repeats;
+	// bool larger_repeat_size = a.k > b.k;
+
+
+	// if (larger_repeat_size)
+	// {
+	// 	return true;
+	// }
+
+	// if (better_repeat_conservation)
+	// {
+	// 	return true;
+	// }
+
+	// return false;
+
+
+
+
+	// if (a.conservation_repeats == b.conservation_repeats && a.k != b.k)
+	// {
+	// 	return a.k > b.k;
+	// }
+
+	return a.overall_heuristic > b.overall_heuristic;
+
+	// if (a.conservation_repeats > b.conservation_repeats)
+	// {
+	// 	return true;
+	// }
+	// else if (a.conservation_repeats == b.conservation_repeats)
+	// {
+	// 	return a.conservation_spacers < b.conservation_spacers;
+	// }
+	// else
+	// {
+	// 	return false;
+	// }
 	
 
 }
