@@ -8,11 +8,33 @@ map<string, int> BLAST(set<string> seqs);
 
 void run()
 {
-    // string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
-    string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
-    
+    string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
+    // string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
     string genome = parse_fasta(genome_path).begin()->second;
 
+    // int start_a = 1079091;
+    // int end_a = 1081322;
+
+    // int start_b = 1081340;
+    // int end_b = 1083253;
+
+    // Cas9_0_II	1,079,091	1,081,322	+
+    // Cas9_1_II	1,081,340	1,083,253
+
+    // string ThCas9 = genome.substr(start_a, end_b - start_a);
+
+    // printf("ThCas9:\n");
+    // printf("%s\n", ThCas9.c_str());
+
+    // vector<string> seqs = sixwaytranslation(ThCas9);
+
+    // for (string __seq : seqs)
+    // {
+    //     printf("frame:\n%s\n", __seq.c_str());
+    // }
+    
+
+    
     if (!POS_STRAND)
     {
         genome = reverse_complement(genome);
@@ -156,9 +178,9 @@ void run()
     // print(genome, crisprs, spacer_scores);
 
 
-    printf("----------top n----------\n");
-    vector<Crispr> top_n(crisprs.begin(), crisprs.begin() + 20);
-    print(genome, top_n, spacer_scores);
+    // printf("----------top n----------\n");
+    // vector<Crispr> top_n(crisprs.begin(), crisprs.begin() + 20);
+    // print(genome, top_n, spacer_scores);
 
 
 
@@ -181,49 +203,48 @@ void run()
     }    
 
 
-
-
-    printf("done\n");
-
-
-    return;
-
-
-    string spy_cas9_path("/home/ben/Documents/crispr-data/SpyCas9.fasta");
-    
-    string cas9_seq = parse_fasta(spy_cas9_path).begin()->second;
-
-
-    int k = 6;
+    int k = 5;
     int upstream_size = 10000;
 
 
-    vector<string> cas9_kmers = get_kmers(cas9_seq, k);
     
+    map<string, string> profiles;
 
-    for (Crispr crispr : crisprs_domain_best)
-    {
-        // transform the upstream 10k into kmers
-        string upstream = genome.substr(crispr.start - upstream_size, upstream_size); // get upstream AND downstream
-        vector<string> upstream_kmers = get_kmers(upstream, k);
+    profiles["cas9_amino_thermophilus"] = parse_fasta("/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta").begin()->second;
+    profiles["cas9_amino_pyogenes"] = parse_fasta("/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta").begin()->second;
 
-        // where, or do, these kmers overlap? (comparing the set of the cas9_kmers against the set of the upstream kmers)
 
-        // what quantity of kmers in the cas9_kmers exists in the upstream_kmers?
+    
+	for (auto const& profile_container : profiles)
+	{
+        string name = profile_container.first;
+        string profile = profile_container.second;
 
-        int present = 0;
-
-        for (string cas9_kmer : cas9_kmers)
+        vector<string> query_kmers = get_kmers(profile, k);
+        
+        #pragma omp parallel for
+        for (Crispr crispr : crisprs_domain_best)
         {
-            for (string upstream_kmer : upstream_kmers)
+            string upstream = genome.substr(crispr.start - upstream_size, upstream_size);
+            vector<string> target_kmers = get_kmers_amino(upstream, k);
+
+            // atomic<int> present(0);
+            int present = 0;
+            for (string query_kmer : query_kmers)
             {
-                present += cas9_kmer.compare(upstream_kmer) == 0 ? 1 : 0;
+                for (string target_kmer : target_kmers)
+                {
+                    int to_add = query_kmer.compare(target_kmer) == 0 ? 1 : 0;
+                    present += to_add;
+                }
             }
+
+            printf("for profile %s, for CRISPR with start %d and k %d we have a query kmer count of %zd and a presence of %d\n", name.c_str(), crispr.start, crispr.k, query_kmers.size(), present);
+
         }
-
-        printf("for CRISPR with start %d and k %d we have a cas9_kmer count of %zd and a presence of %d\n", crispr.start, crispr.k, cas9_kmers.size(), present);
-
+    
     }
+
 }
 
 int main()

@@ -16,6 +16,7 @@
 #include <ctime>
 #include <string>
 #include <sstream>
+#include <atomic>
 
 
 using namespace std;
