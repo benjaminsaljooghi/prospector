@@ -23,7 +23,8 @@ string reverse_complement(string seq);
 int mismatch_count(string repeat);
 string seqs_to_fasta(vector<string> seqs);
 vector<string> get_kmers(string seq, int k);
-
+vector<string> get_kmers_amino(string dna, int k);
+vector<string> sixwaytranslation(string dna);
 
 
 // Crispr

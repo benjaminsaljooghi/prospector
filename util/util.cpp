@@ -177,6 +177,138 @@ vector<string> get_kmers(string seq, int k)
 	return kmers;
 }
 
+vector<string> get_kmers_amino(string dna, int k)
+{       
+	vector<string> super_amino_acid_kmers;
+	for (string amino_acid_seq : sixwaytranslation(dna))
+	{
+		for (string __kmer : get_kmers(amino_acid_seq, k))
+		{
+			super_amino_acid_kmers.push_back(__kmer);
+		}
+	}
+	return super_amino_acid_kmers;
+}
+
+
+vector<string> sixwaytranslation(string seq)
+{
+	map<string, string> codon_table;
+
+	codon_table["TTT"] = 'F';
+	codon_table["TTC"] = 'F';
+	codon_table["TTA"] = 'L';
+	codon_table["TTG"] = 'L';
+
+	codon_table["CTT"] = 'L';
+	codon_table["CTC"] = 'L';
+	codon_table["CTA"] = 'L';
+	codon_table["CTG"] = 'L';
+	
+	codon_table["ATT"] = 'I';
+	codon_table["ATC"] = 'I';
+	codon_table["ATA"] = 'I';
+	codon_table["ATG"] = 'M';
+	
+	codon_table["GTT"] = 'V';
+	codon_table["GTC"] = 'V';
+	codon_table["GTA"] = 'V';
+	codon_table["GTG"] = 'V';
+
+
+
+	codon_table["TCT"] = "S";
+	codon_table["TCC"] = "S";
+	codon_table["TCA"] = "S";
+	codon_table["TCG"] = "S";
+	
+	codon_table["CCT"] = "P";
+	codon_table["CCC"] = "P";
+	codon_table["CCA"] = "P";
+	codon_table["CCG"] = "P";
+	
+	codon_table["ACT"] = "T";
+	codon_table["ACC"] = "T";
+	codon_table["ACA"] = "T";
+	codon_table["ACG"] = "T";
+	
+	codon_table["GCT"] = "A";
+	codon_table["GCC"] = "A";
+	codon_table["GCA"] = "A";
+	codon_table["GCG"] = "A";
+
+
+
+	codon_table["TAT"] = "Y";
+	codon_table["TAC"] = "Y";
+	codon_table["TAA"] = "STOP"; //STOP
+	codon_table["TAG"] = "STOP"; // STOP
+
+	codon_table["CAT"] = "H";
+	codon_table["CAC"] = "H";
+	codon_table["CAA"] = "Q";
+	codon_table["CAG"] = "Q";
+	
+	codon_table["AAT"] = "N";
+	codon_table["AAC"] = "N";
+	codon_table["AAA"] = "K";
+	codon_table["AAG"] = "K";
+	
+	codon_table["GAT"] = "D";
+	codon_table["GAC"] = "D";
+	codon_table["GAA"] = "E";
+	codon_table["GAG"] = "E";
+
+
+
+	codon_table["TGT"] = "C";
+	codon_table["TGC"] = "C";
+	codon_table["TGA"] = "STOP"; //STOP
+	codon_table["TGG"] = "W";
+
+	codon_table["CGT"] = "R";
+	codon_table["CGC"] = "R";
+	codon_table["CGA"] = "R";
+	codon_table["CGG"] = "R";
+
+	codon_table["AGT"] = "S";
+	codon_table["AGC"] = "S";
+	codon_table["AGA"] = "R";
+	codon_table["AGG"] = "R";
+
+	codon_table["GGT"] = "G";
+	codon_table["GGC"] = "G";
+	codon_table["GGA"] = "G";
+	codon_table["GGG"] = "G";
+
+
+
+	// string rc = reverse_complement(seq);
+
+	vector<string> amino_acid_seqs = vector<string>(3);
+
+	int k = 3;
+
+	for (size_t frame = 0; frame < 3; frame++)
+	{
+		for (size_t i = frame; i + k < seq.size(); i += k)
+		{
+			string codon = seq.substr(i, k);
+			string amino_acid = codon_table[codon];
+			if (amino_acid != "STOP")
+			{
+				amino_acid_seqs[frame] += amino_acid;
+			}
+
+		}
+
+	}
+
+
+
+	return amino_acid_seqs;
+}
+
 
 
 // crispr
