@@ -2,7 +2,6 @@
 
 
 
-#define POS_STRAND true
 
 
 // general
@@ -12,7 +11,14 @@ void done(clock_t begin, string out);
 void done(clock_t begin);
 
 
-vector<int> flatten(vector<vector<int>> vecs);
+template <typename T> vector<T> flatten(vector<vector<T>> vecs)
+{
+	vector<T> flattened;
+	for (vector<T> v : vecs) flattened.insert(flattened.end(), v.begin(), v.end());
+	return flattened;
+}
+
+
 bool subset(vector<int> a, vector<int> b);
 
 
@@ -22,10 +28,9 @@ char _complement(char a);
 string reverse_complement(string seq);
 int mismatch_count(string repeat);
 string seqs_to_fasta(vector<string> seqs);
-vector<string> get_kmers(string seq, int k);
-vector<string> get_kmers_amino(string dna, int k);
+vector<string> get_kmers(string seq, unsigned int k);
+vector<string> get_kmers_amino(string dna, unsigned int k);
 vector<string> sixwaytranslation(string dna);
-
 
 // Crispr
 double get_conservation_consensus(vector<string> repeats);
@@ -36,10 +41,10 @@ double get_conservation_spacer_2(vector<string> spacers);
 class Crispr
 {
 	public:
-		int k;
-		vector<int> genome_indices;
-		int start;
-		int end;
+		unsigned int k;
+		vector<unsigned int> genome_indices;
+		unsigned int start;
+		unsigned int end;
 
 		vector<string> repeats;
 		vector<string> spacers;
@@ -47,11 +52,12 @@ class Crispr
 		double conservation_spacers;
 		double overall_heuristic; // higher the number the better
 
-		Crispr(string genome, int _k, vector<int> _genome_indices)
+		Crispr(string genome, unsigned int _k, vector<unsigned int> _genome_indices)
 		{
 
 			k = _k;
 			genome_indices = _genome_indices;
+			sort(genome_indices.begin(), genome_indices.end());
 
 			start = genome_indices[0];
 			end = genome_indices[genome_indices.size()-1] + k - 1;
@@ -64,9 +70,9 @@ class Crispr
 
 			for (size_t i = 0; i < genome_indices.size()-1; i++)
 			{
-				int current_repeat_end = genome_indices[i] + k;
-				int next_repeat_begin = genome_indices[i+1];
-				int spacer_size = next_repeat_begin - current_repeat_end;
+				unsigned int current_repeat_end = genome_indices[i] + k;
+				unsigned int next_repeat_begin = genome_indices[i+1];
+				unsigned int spacer_size = next_repeat_begin - current_repeat_end;
 				spacers.push_back(genome.substr(current_repeat_end, spacer_size));
 			}   
 			
@@ -84,7 +90,7 @@ class Crispr
 };
 
 // Crispr
-bool repeat_substring(Crispr crispr, int _start, int _end);
+bool repeat_substring(Crispr crispr, unsigned int _start, unsigned int _end);
 bool repeat_subset(Crispr a, Crispr b);
 bool any_overlap(Crispr a, Crispr b);
 bool heuristic_comparison(Crispr a, Crispr b);

@@ -27,13 +27,6 @@ void done(clock_t begin)
 
 
 
-vector<int> flatten(vector<vector<int>> vecs)
-{
-	vector<int> flattened;
-	for (auto v : vecs)
-		flattened.insert(flattened.end(), v.begin(), v.end());
-	return flattened;
-}
 
 bool subset(vector<int> a, vector<int> b)
 {
@@ -56,7 +49,8 @@ map<char, char> complement_table;
 
 map<string, string> parse_fasta(string file_path)
 {
-	cout << "reading: " << file_path << endl;
+	printf("reading %s... ", file_path.c_str());
+	clock_t start = clock();
 	ifstream input(file_path);
 	if (!input.good())
 	{
@@ -104,6 +98,7 @@ map<string, string> parse_fasta(string file_path)
 		seqs[name] = content;
 	}
 
+	done(start);
 	return seqs;
 }
 
@@ -167,7 +162,7 @@ string seqs_to_fasta(vector<string> seqs)
     return string_stream.str();
 }
 
-vector<string> get_kmers(string seq, int k)
+vector<string> get_kmers(string seq, unsigned int k)
 {
 	vector<string> kmers;
 	for (size_t i = 0; i < seq.length() - k + 1; i++)
@@ -177,7 +172,7 @@ vector<string> get_kmers(string seq, int k)
 	return kmers;
 }
 
-vector<string> get_kmers_amino(string dna, int k)
+vector<string> get_kmers_amino(string dna, unsigned int k)
 {       
 	vector<string> super_amino_acid_kmers;
 	for (string amino_acid_seq : sixwaytranslation(dna))
@@ -535,12 +530,12 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 		int start = crispr.genome_indices[i];
 		int end = start + crispr.k - 1;
 
-		if (!POS_STRAND)
-		{
-			int temp = genome.size() - end;
-			end = genome.size() - start;
-			start = temp;
-		}
+		// if (!POS_STRAND)
+		// {
+		// 	int temp = genome.size() - end;
+		// 	end = genome.size() - start;
+		// 	start = temp;
+		// }
 
 		// cout << "\t\t" << matches << "/" << repeat.length() / 2 << " " << score << " " << start << " " << repeat << " " << end << endl;
 		printf("\t\t");
@@ -599,12 +594,12 @@ void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores
 
 
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
-bool repeat_substring(Crispr b, int start, int end)
+bool repeat_substring(Crispr b, unsigned int start, unsigned int end)
 {
 	for (size_t i = 0; i < b.genome_indices.size(); i++)
 	{
-		int repeat_start = b.genome_indices[i];
-		int repeat_end = b.genome_indices[i] + b.k - 1;
+		unsigned int repeat_start = b.genome_indices[i];
+		unsigned int repeat_end = b.genome_indices[i] + b.k - 1;
 
 		if (start >= repeat_start && end <= repeat_end)
 		{
@@ -641,11 +636,11 @@ bool repeat_subset(Crispr a, Crispr b)
 bool any_overlap(Crispr a, Crispr b)
 {
 
-	int a_start = a.genome_indices[0];
-	int a_end = a.genome_indices[a.genome_indices.size() - 1] + a.k - 1;
+	unsigned int a_start = a.genome_indices[0];
+	unsigned int a_end = a.genome_indices[a.genome_indices.size() - 1] + a.k - 1;
 
-	int b_start = b.genome_indices[0];
-	int b_end = b.genome_indices[b.genome_indices.size() - 1] + b.k - 1;
+	unsigned int b_start = b.genome_indices[0];
+	unsigned int b_end = b.genome_indices[b.genome_indices.size() - 1] + b.k - 1;
 
 
 

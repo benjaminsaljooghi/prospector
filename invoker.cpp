@@ -6,53 +6,101 @@
 
 map<string, int> BLAST(set<string> seqs);
 
-void run()
+
+void debug(vector<Crispr> crisprs)
 {
-    string genome_path("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta");
-    // string genome_path("/home/ben/Documents/crispr-data/pyogenes.fasta");
-    string genome = parse_fasta(genome_path).begin()->second;
-
-    // int start_a = 1079091;
-    // int end_a = 1081322;
-
-    // int start_b = 1081340;
-    // int end_b = 1083253;
-
-    // Cas9_0_II	1,079,091	1,081,322	+
-    // Cas9_1_II	1,081,340	1,083,253
-
-    // string ThCas9 = genome.substr(start_a, end_b - start_a);
-
-    // printf("ThCas9:\n");
-    // printf("%s\n", ThCas9.c_str());
-
-    // vector<string> seqs = sixwaytranslation(ThCas9);
-
-    // for (string __seq : seqs)
-    // {
-    //     printf("frame:\n%s\n", __seq.c_str());
-    // }
-    
-
-    
-    if (!POS_STRAND)
+    vector<Crispr> of_interest;
+    for (Crispr crispr : crisprs)
     {
-        genome = reverse_complement(genome);
+        if (crispr.start > 1824000 && crispr.end < 1828000)
+        {
+            of_interest.push_back(crispr);
+        }
     }
 
- 
-    vector<Crispr> crisprs = prospector_main(genome);
-
-    // printf("--------all crisprs returned by prosector----------");
-    // print(genome, crisprs);
-    printf("filtering %zd crisprs...\n", crisprs.size());
+}
 
 
+class Profile
+{
 
-    // sort crisprs in descending order of heuristic
-    sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
+    public:
+
+        string name;
+        string seq;
+        vector<string> kmers;
+
+        Profile(string _name, string _path, int _k)
+        {
+            seq = parse_fasta(_path).begin()->second;
+            kmers = get_kmers(seq, _k); 
+        }
+
+        int check_against(vector<string> target_kmers)
+        {
+            int present = 0;
+            for (string query_kmer : kmers)
+            {
+                for (string target_kmer : target_kmers)
+                {
+                    int comparison = query_kmer.compare(target_kmer);
+                    if (comparison == 0)
+                    {
+                        present += 1;
+                        break;
+                    }
+                }
+            }
+            return present;
+        }
+
+    private:
+
+};
 
 
+
+void cas(string genome, vector<Crispr> crisprs)
+{
+    clock_t start = clock();
+
+    int k = 5;
+    int upstream_size = 10000;    
+
+    vector<Profile> profiles = {
+        Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
+        Profile("pyogenes", "/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta", k)
+    };
+
+    #pragma omp parallel for      
+    for (Crispr crispr : crisprs)
+    {
+        string upstream = genome.substr(crispr.start - upstream_size, upstream_size);
+        vector<string> target_kmers = get_kmers_amino(upstream, k);
+
+        for (Profile profile : profiles)
+        {
+            int present = profile.check_against(target_kmers);
+            printf("profile %s; CRISPR %d %d: %d/%zd\n", profile.name.c_str(), crispr.start, crispr.k, present, profile.kmers.size());
+
+        }
+    }
+
+
+
+    done(start, "cas detection");
+
+}
+
+
+vector<Crispr> domain_best(vector<Crispr> crisprs)
+{
+
+    printf("filtering %zd crisprs... ", crisprs.size());
+    clock_t start = clock();
+
+  
+    
     // get the best of each domain
     vector<Crispr> crisprs_domain_best;
     for (size_t i = 0; i < crisprs.size(); i++)
@@ -62,7 +110,6 @@ void run()
 
 
         // check if the domain exists
-        
         bool best_already_exists = false;
         for (size_t j = 0; j < crisprs_domain_best.size(); j++)
         {
@@ -79,176 +126,86 @@ void run()
         {
             crisprs_domain_best.push_back(crispr);
         }
-
-
     }
+    done(start);
+    return crisprs_domain_best;
+}
 
-
-    // vector<Crispr> crisprs_filtered = vector<Crispr>();
-
-
-    // #pragma omp parallel for
-    // for (size_t i = 0; i < crisprs.size(); i++)
-    // {
-    //     if (i % 100 == 0)
-    //     {
-    //         printf("%zd\n", i);
-    //     }
-
-    //     Crispr crispr = crisprs[i];
-
-        // // high spacer conservation?
-        // if (crispr.conservation_spacers > 0.3)
-        // {
-        //     continue;
-        // }
-
-        // overlaps with another crispr but has a worse conservation than it?
-        // bool overlaps_and_has_worse_conservation = false;
-        // float this_conservation = crispr.conservation_repeats;
-        // for (size_t j = 0; j < crisprs.size(); j++)
-        // {
-        //     if (i == j)
-        //     {
-        //         continue;
-        //     }
-
-        //     Crispr other_crispr = crisprs[j];
-
-        //     if (any_overlap(crispr, other_crispr))
-        //     {
-        //         // these crisprs overlap and compete to be the bona fide crispr of this locus.
-
-        //         float other_conservation = other_crispr.conservation_repeats;
-        //         if (this_conservation < other_conservation || crispr.conservation_spacers > other_crispr.conservation_spacers)
-        //         {
-        //             // this_crispr loses candidacy to be the bona fide crispr for this locus.
-        //             overlaps_and_has_worse_conservation = true;
-        //             break;
-        //         }
-
-        //     }
-        // }
-        // if (overlaps_and_has_worse_conservation)
-        // {
-        //     continue;
-        // }
-
-
-        // // this crispr met all requirements
-        // crisprs_filtered.push_back(crispr);
-    // }
-
-
-
-    // // get mean spacer identity
-
-    // float spacer_identity_percent_sum = 0;
-    // for (string spacer : spacers)
-    // {
-    //     spacer_identity_percent_sum += (float) spacer_scores[spacer] / (float) spacer.length();
-    // }
-    // float mean_identity = spacer_identity_percent_sum / spacers.size(); 
-
-
-    // insufficient spacer score
-    // if (mean_identity < 0.5)
-    // {
-    //     continue;
-    // }
-
-
-
+map<string, int> get_spacer_scores(vector<Crispr> crisprs)
+{
     set<string> all_spacers;
-    for (Crispr crispr : crisprs_domain_best)
-    {
-        // all_spacers.insert(all_spacers.end(), spacers.begin(), spacers.end());
-        for (string spacer : crispr.spacers)
-        { 
-            all_spacers.insert(spacer);
-            // all_spacers.push_back(reverse_complement(spacer)); // unnecessary because BLAST searches both strands.
-        }
-    }
-
-
-    map<string, int> spacer_scores = BLAST(all_spacers);
-
-
-    // printf("----------not filtered----------\n");
-    // print(genome, crisprs, spacer_scores);
-
-
-    // printf("----------top n----------\n");
-    // vector<Crispr> top_n(crisprs.begin(), crisprs.begin() + 20);
-    // print(genome, top_n, spacer_scores);
-
-
-
-    
-
-
-
-    printf("----------domain best----------\n");
-    print(genome, crisprs_domain_best, spacer_scores);
-
-
-
-    vector<Crispr> of_interest;
     for (Crispr crispr : crisprs)
     {
-        if (crispr.start > 860000 && crispr.end < 870000)
-        {
-            of_interest.push_back(crispr);
-        }
-    }    
-
-
-    int k = 5;
-    int upstream_size = 10000;
-
-
-    
-    map<string, string> profiles;
-
-    profiles["cas9_amino_thermophilus"] = parse_fasta("/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta").begin()->second;
-    profiles["cas9_amino_pyogenes"] = parse_fasta("/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta").begin()->second;
-
-
-    
-	for (auto const& profile_container : profiles)
-	{
-        string name = profile_container.first;
-        string profile = profile_container.second;
-
-        vector<string> query_kmers = get_kmers(profile, k);
-        
-        #pragma omp parallel for
-        for (Crispr crispr : crisprs_domain_best)
-        {
-            string upstream = genome.substr(crispr.start - upstream_size, upstream_size);
-            vector<string> target_kmers = get_kmers_amino(upstream, k);
-
-            // atomic<int> present(0);
-            int present = 0;
-            for (string query_kmer : query_kmers)
-            {
-                for (string target_kmer : target_kmers)
-                {
-                    int to_add = query_kmer.compare(target_kmer) == 0 ? 1 : 0;
-                    present += to_add;
-                }
-            }
-
-            printf("for profile %s, for CRISPR with start %d and k %d we have a query kmer count of %zd and a presence of %d\n", name.c_str(), crispr.start, crispr.k, query_kmers.size(), present);
-
-        }
-    
+        for (string spacer : crispr.spacers)
+            all_spacers.insert(spacer);
     }
 
+    map<string, int> spacer_scores = BLAST(all_spacers);
+    return spacer_scores;
+}
+
+vector<Crispr> spacer_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
+{
+    
+    vector<Crispr> crisprs_spacer_filtered;
+
+
+    for (Crispr crispr : crisprs)
+    {
+        // get the mean spacer score
+        double spacer_score_sum = 0;
+        for (string spacer : crispr.spacers)
+        {
+            spacer_score_sum += (double) spacer_scores[spacer] / (double) spacer.size();
+        }
+        double spacer_score_mean = spacer_score_sum / (double) crispr.spacers.size(); 
+
+        if (spacer_score_mean > 0.6)
+        {
+            crisprs_spacer_filtered.push_back(crispr);
+        }
+    }
+
+    return crisprs_spacer_filtered;
+}
+
+
+void run()
+{        
+    map<string, string> genomes = {
+        {"thermophilus", parse_fasta("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta").begin()->second},
+        {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
+    };
+
+
+    string genome = genomes["thermophilus"];
+
+
+
+
+    vector<Crispr> crisprs = prospector_main(genome);
+
+
+
+
+    vector<Crispr> crisprs_domain_best = domain_best(crisprs);
+
+
+    // debug(crisprs);
+
+
+    map<string, int> spacer_scores = get_spacer_scores(crisprs_domain_best);
+
+    vector<Crispr> crisprs_spacer_filtered = spacer_filtered(crisprs_domain_best, spacer_scores);
+
+    print(genome, crisprs_domain_best, spacer_scores);
+
+    cas(genome, crisprs_spacer_filtered);
 }
 
 int main()
 {
+    printf("running invoker...\n");
     clock_t start = clock();
     
     run();
@@ -258,10 +215,3 @@ int main()
     return 0;
 }
 
-
-// for CRISPR with start 1825009 and k 36 we have a cas9_kmer count of 4098 and a presence of 149
-// for CRISPR with start 1085433 and k 36 we have a cas9_kmer count of 4098 and a presence of 350
-// for CRISPR with start 1577785 and k 20 we have a cas9_kmer count of 4098 and a presence of 172
-// for CRISPR with start 130731 and k 21 we have a cas9_kmer count of 4098 and a presence of 187
-// for CRISPR with start 31489 and k 20 we have a cas9_kmer count of 4098 and a presence of 166
-// for CRISPR with start 528759 and k 21 we have a cas9_kmer count of 4098 and a presence of 153
