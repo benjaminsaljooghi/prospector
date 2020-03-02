@@ -19,6 +19,39 @@ template <typename T> vector<T> flatten(vector<vector<T>> vecs)
 }
 
 
+template <typename T> T median(vector<T> scores)
+{
+  size_t size = scores.size();
+
+  if (size == 0)
+  {
+    return 0;  // Undefined, really.
+  }
+  else
+  {
+    sort(scores.begin(), scores.end());
+    if (size % 2 == 0)
+    {
+      return (scores[size / 2 - 1] + scores[size / 2]) / 2;
+    }
+    else 
+    {
+      return scores[size / 2];
+    }
+  }
+}
+
+template <typename T> T mean(vector<T> scores)
+{
+	T sum = 0;
+	for (T score : scores)
+	{
+		sum += score;
+	}
+	return sum / (double) scores.size();
+}
+
+
 bool subset(vector<int> a, vector<int> b);
 
 
@@ -50,18 +83,21 @@ class Crispr
 		vector<string> spacers;
 		double conservation_repeats;
 		double conservation_spacers;
-		double overall_heuristic; // higher the number the better
+		double overall_heuristic; // higher the better
 
 		Crispr(string genome, unsigned int _k, vector<unsigned int> _genome_indices)
 		{
-
 			k = _k;
 			genome_indices = _genome_indices;
+			update(genome);
+		}
+
+		void update(string genome)
+		{
 			sort(genome_indices.begin(), genome_indices.end());
 
-			start = genome_indices[0];
-			end = genome_indices[genome_indices.size()-1] + k - 1;
-
+			repeats.clear();
+			spacers.clear();
 
 			for (size_t i = 0; i < genome_indices.size(); i++)
 			{
@@ -75,16 +111,52 @@ class Crispr
 				unsigned int spacer_size = next_repeat_begin - current_repeat_end;
 				spacers.push_back(genome.substr(current_repeat_end, spacer_size));
 			}   
-			
 
+
+			start = genome_indices[0];
+			end = genome_indices[genome_indices.size()-1] + k - 1;		
+			
 			conservation_repeats = get_conservation_consensus(repeats);
 			conservation_spacers = get_conservation_spacer(spacers);
-
-
-
-			overall_heuristic = conservation_repeats - conservation_spacers; // high conservation_repeats and low conservation_spacers is ideal
-
+			overall_heuristic = conservation_repeats - (conservation_spacers * 1.5); // high conservation_repeats and low conservation_spacers is ideal
 		}
+
+		void insert(string genome, unsigned int repeat_index)
+		{
+			genome_indices.push_back(repeat_index);
+			update(genome);
+		}
+
+		unsigned int consensus(string genome)
+		{
+			map<string, int> frequencies;
+			for (size_t i = 0; i < genome_indices.size(); i++)
+			{
+				string repeat = repeats[i];
+				frequencies[repeat] += 1;
+			}
+
+			int max_freq = 0;
+			string max_repeat;
+			for (auto const& pack : frequencies)
+			{
+				if (pack.second > max_freq)
+				{
+					max_freq = pack.second;
+					max_repeat = pack.first;
+				}	
+			}
+
+			auto it = find(repeats.begin(), repeats.end(), max_repeat);
+			if (it == repeats.end())
+			{
+				printf("something impossible just happened\n");
+			}
+
+			size_t repeat_index = it - repeats.begin();
+			return genome_indices[repeat_index];
+		}
+
 	private:
 
 };
@@ -93,6 +165,7 @@ class Crispr
 bool repeat_substring(Crispr crispr, unsigned int _start, unsigned int _end);
 bool repeat_subset(Crispr a, Crispr b);
 bool any_overlap(Crispr a, Crispr b);
+bool perfect_genome_index_subset(Crispr a, Crispr b);
 bool heuristic_comparison(Crispr a, Crispr b);
 
 

@@ -7,17 +7,21 @@
 map<string, int> BLAST(set<string> seqs);
 
 
-void debug(vector<Crispr> crisprs)
+void debug(string genome, vector<Crispr> crisprs, unsigned int inclusive_start, unsigned int inclusive_end)
 {
     vector<Crispr> of_interest;
     for (Crispr crispr : crisprs)
     {
-        if (crispr.start > 1824000 && crispr.end < 1828000)
+        if (crispr.start >= inclusive_start && crispr.end <= inclusive_end)
         {
             of_interest.push_back(crispr);
         }
-    }
 
+    }
+    sort(of_interest.begin(), of_interest.end(), heuristic_comparison);
+    // print(genome, vector<Crispr>(of_interest.begin(), of_interest.begin() + 5));
+    print(genome, of_interest);
+    exit(0);
 }
 
 
@@ -32,6 +36,7 @@ class Profile
 
         Profile(string _name, string _path, int _k)
         {
+            name = _name;
             seq = parse_fasta(_path).begin()->second;
             kmers = get_kmers(seq, _k); 
         }
@@ -99,7 +104,6 @@ vector<Crispr> domain_best(vector<Crispr> crisprs)
     printf("filtering %zd crisprs... ", crisprs.size());
     clock_t start = clock();
 
-  
     
     // get the best of each domain
     vector<Crispr> crisprs_domain_best;
@@ -144,30 +148,6 @@ map<string, int> get_spacer_scores(vector<Crispr> crisprs)
     return spacer_scores;
 }
 
-vector<Crispr> spacer_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
-{
-    
-    vector<Crispr> crisprs_spacer_filtered;
-
-
-    for (Crispr crispr : crisprs)
-    {
-        // get the mean spacer score
-        double spacer_score_sum = 0;
-        for (string spacer : crispr.spacers)
-        {
-            spacer_score_sum += (double) spacer_scores[spacer] / (double) spacer.size();
-        }
-        double spacer_score_mean = spacer_score_sum / (double) crispr.spacers.size(); 
-
-        if (spacer_score_mean > 0.6)
-        {
-            crisprs_spacer_filtered.push_back(crispr);
-        }
-    }
-
-    return crisprs_spacer_filtered;
-}
 
 
 void run()
@@ -177,30 +157,41 @@ void run()
         {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
     };
 
-
     string genome = genomes["thermophilus"];
 
-
-
-
     vector<Crispr> crisprs = prospector_main(genome);
-
-
-
-
     vector<Crispr> crisprs_domain_best = domain_best(crisprs);
 
-
-    // debug(crisprs);
+    // debug(genome, crisprs, 1577776-1, 1578028-1);
 
 
     map<string, int> spacer_scores = get_spacer_scores(crisprs_domain_best);
 
-    vector<Crispr> crisprs_spacer_filtered = spacer_filtered(crisprs_domain_best, spacer_scores);
 
     print(genome, crisprs_domain_best, spacer_scores);
 
-    cas(genome, crisprs_spacer_filtered);
+
+    vector<Crispr> crisprs_filtered;
+    for (Crispr crispr : crisprs_domain_best)
+    {
+        vector<double> scores;
+        for (string spacer : crispr.spacers)
+        {
+            scores.push_back((double) spacer_scores[spacer] / (double) spacer.size());
+        }
+        
+        if (mean(scores) < 0.5 || crispr.overall_heuristic < 0.5)
+        {
+            continue;
+        }
+
+        crisprs_filtered.push_back(crispr);
+
+    }
+
+    print(genome, crisprs_filtered, spacer_scores);
+
+    cas(genome, crisprs_filtered);
 }
 
 int main()

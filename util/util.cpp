@@ -331,42 +331,45 @@ string most_frequent(vector<string> repeats)
 	return consensus;
 
 }
-
-
-double similarity(string a, string b)
-{
-	if (a.length() != b.length())
-	{
-		return -1;
-	}
+	// if (a.length() != b.length())
+	// {
+	// 	printf("you should not be doing this!!!!!!!!");
+	// 	return -1;
+	// }
 	
 
+
+
+double same_length_similarity(string a, string b)
+{
 	int matches = 0;
 	for (size_t i = 0; i < a.length(); i++)
 	{
 		matches += a[i] == b[i] ? 1 : 0; 
 	}
 	
-	
 	return (double) matches / (double) a.length();
 }
+
 
 
 double get_conservation_consensus(vector<string> repeats)
 {
 	string consensus = most_frequent(repeats);
 
-	double similarity_sum = 0;
+	// double similarity_sum = 0;
+	vector<double> similarties;
 	for (size_t i = 0; i < repeats.size(); i++)
 	{
-		similarity_sum += similarity(consensus, repeats[i]);
-
+		similarties.push_back(same_length_similarity(consensus, repeats[i]));
 	}
+	
 
-	return similarity_sum / (double) repeats.size();
+	// return median(similarties);
+	return mean(similarties);
 }
 
-double bp_match_score(string a, string b)
+double bp_match_score(string a, string b, bool differential)
 {
 	size_t a_len = a.length();
 	size_t b_len = b.length();
@@ -392,7 +395,16 @@ double bp_match_score(string a, string b)
 		matches += a[i] == b[i] ? 1 : 0;
 	}
 
-	int max_possible_matches = big_length;
+	int max_possible_matches;
+	if (differential)
+	{
+		max_possible_matches = big_length;
+	}
+	else
+	{
+		max_possible_matches = small_length;
+	}
+	
 
 	return (double) matches / (double) max_possible_matches;
 
@@ -412,12 +424,11 @@ double get_conservation_spacer(vector<string> spacers)
 		{
 			string a = spacers[i];
 			string b = spacers[j];
-			double score = bp_match_score(a, b);
+			double score = bp_match_score(a, b, true);
 			score_sum += score;
 			comparisons++;
 		}
 	}
-
 
 	double mean_score = score_sum / (double) comparisons;
 
@@ -537,10 +548,22 @@ void print_repeats(string genome, Crispr crispr, bool reverse_complements)
 		// 	start = temp;
 		// }
 
+		int dist;
+		if (i == 0)
+		{
+			dist = 0;
+		}
+		else
+		{
+			dist = crispr.genome_indices[i] - (crispr.genome_indices[i-1] + crispr.k);
+		}
+		
+
 		// cout << "\t\t" << matches << "/" << repeat.length() / 2 << " " << score << " " << start << " " << repeat << " " << end << endl;
 		printf("\t\t");
 		printf("%d/%zd", matches, repeat.length()/2);
 		printf(" %d %s %d", start, repeat.c_str(), end);
+		printf(" %d", dist);
 		printf(" %f\n", score);
 	}
 
@@ -632,6 +655,28 @@ bool repeat_subset(Crispr a, Crispr b)
 	return true;
 }
 
+// Perfect genome index subset. Is a a subset of b?
+bool perfect_genome_index_subset(Crispr a, Crispr b)
+{
+	if (a.k != b.k || a.conservation_repeats != b.conservation_repeats)
+	{
+		return false;
+	}
+
+	// check that all the genome indices of a are present in b
+	for (unsigned int index_a : a.genome_indices)
+	{
+		auto it = find(b.genome_indices.begin(), b.genome_indices.end(), index_a);
+		if (it == b.genome_indices.end())
+		{
+			return false;
+		}
+	}
+
+	return true;
+
+
+}
 
 bool any_overlap(Crispr a, Crispr b)
 {

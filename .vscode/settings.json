@@ -66,6 +66,7 @@
         "__tree": "cpp",
         "iterator": "cpp",
         "map": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "random": "cpp"
     }
 }
