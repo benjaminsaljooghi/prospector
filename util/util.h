@@ -2,6 +2,8 @@
 
 
 
+const int DEBUG_START = 1-1;
+const int DEBUG_END = 5e6-1;
 
 
 // general
@@ -111,7 +113,6 @@ class Crispr
 				unsigned int spacer_size = next_repeat_begin - current_repeat_end;
 				spacers.push_back(genome.substr(current_repeat_end, spacer_size));
 			}   
-
 
 			start = genome_indices[0];
 			end = genome_indices[genome_indices.size()-1] + k - 1;		

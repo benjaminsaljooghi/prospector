@@ -106,16 +106,19 @@ __device__ __host__ bool mutant(const char* genome, unsigned int start_a, unsign
 }
 
 
-__device__ __host__ bool is_dyad(const char* genome, size_t start_index, unsigned int k)
+__device__ __host__ bool is_dyad_debug_check(unsigned int start_index)
 {
-    // if (start_index < 1577776 - 1 || start_index > 1578028 )
-    // {
-        // return false;
-    // }
+    return start_index >= DEBUG_START && start_index <= DEBUG_END;
+}
+
+__device__ __host__ bool is_dyad(const char* genome, unsigned int start_index, unsigned int k)
+{
+    if (!is_dyad_debug_check(start_index))
+    {
+        return false;
+    }
 
     unsigned int end_index = start_index + k - 1;
-        
-
 
     unsigned int range = k/2;
     unsigned int mismatch_count = 0;
@@ -493,15 +496,15 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
             unsigned int pointer;
 
             // forward scan
-            for (int i = 0; i < countdown; i++)
-            {
-                pointer = crispr.end + i + SPACER_SKIP;
-                if (mutant(genome.c_str(), consensus, pointer, k))
-                {
-                    crispr.insert(genome, pointer);
-                    countdown = scan_domain;
-                }
-            }
+            // for (int i = 0; i < countdown; i++)
+            // {
+            //     pointer = crispr.end + i + SPACER_SKIP;
+            //     if (mutant(genome.c_str(), consensus, pointer, k))
+            //     {
+            //         crispr.insert(genome, pointer);
+            //         countdown = scan_domain;
+            //     }
+            // }
 
 
 

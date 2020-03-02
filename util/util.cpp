@@ -26,8 +26,6 @@ void done(clock_t begin)
 
 
 
-
-
 bool subset(vector<int> a, vector<int> b)
 {
 	for (int e : a)
