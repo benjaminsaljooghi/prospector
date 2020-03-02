@@ -2,9 +2,8 @@
 
 
 
-const int DEBUG_START = 1-1;
-const int DEBUG_END = 5e6-1;
-
+const int DEBUG_START = 0;
+const int DEBUG_END = 10e6;
 
 // general
 double duration(clock_t begin, clock_t end);
@@ -76,37 +75,53 @@ double get_conservation_spacer_2(vector<string> spacers);
 class Crispr
 {
 	public:
+
+		unsigned int* genome_indices;
+		// unsigned int* _end;
+		size_t size;
+
+
+
+
 		unsigned int k;
-		vector<unsigned int> genome_indices;
+		// vector<unsigned int> genome_indices;
 		unsigned int start;
 		unsigned int end;
+
 
 		vector<string> repeats;
 		vector<string> spacers;
 		double conservation_repeats;
 		double conservation_spacers;
-		double overall_heuristic; // higher the better
+		double overall_heuristic;
 
-		Crispr(string genome, unsigned int _k, vector<unsigned int> _genome_indices)
+		// Crispr(unsigned int _k, vector<unsigned int> _genome_indices)
+		// {
+		// 	k = _k;
+		// 	genome_indices = _genome_indices;
+		// }
+
+		Crispr (unsigned int _k, unsigned int* __start, unsigned int* __end)
 		{
 			k = _k;
-			genome_indices = _genome_indices;
-			update(genome);
+			genome_indices = __start;
+			// _end = __end;
+			size = __end - __start;
 		}
 
 		void update(string genome)
 		{
-			sort(genome_indices.begin(), genome_indices.end());
+			// sort(genome_indices.begin(), genome_indices.end());
 
-			repeats.clear();
-			spacers.clear();
+			// repeats.clear();
+			// spacers.clear();
 
-			for (size_t i = 0; i < genome_indices.size(); i++)
+			for (size_t i = 0; i < size; i++)
 			{
 				repeats.push_back(genome.substr(genome_indices[i], k).c_str());
 			}
 
-			for (size_t i = 0; i < genome_indices.size()-1; i++)
+			for (size_t i = 0; i < size - 1; i++)
 			{
 				unsigned int current_repeat_end = genome_indices[i] + k;
 				unsigned int next_repeat_begin = genome_indices[i+1];
@@ -114,49 +129,49 @@ class Crispr
 				spacers.push_back(genome.substr(current_repeat_end, spacer_size));
 			}   
 
-			start = genome_indices[0];
-			end = genome_indices[genome_indices.size()-1] + k - 1;		
+			start = *genome_indices;
+			end = (genome_indices[size-1]) + k - 1;		
 			
 			conservation_repeats = get_conservation_consensus(repeats);
 			conservation_spacers = get_conservation_spacer(spacers);
-			overall_heuristic = conservation_repeats - (conservation_spacers * 1.5); // high conservation_repeats and low conservation_spacers is ideal
+			overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
 		}
 
-		void insert(string genome, unsigned int repeat_index)
-		{
-			genome_indices.push_back(repeat_index);
-			update(genome);
-		}
+		// void insert(string genome, unsigned int repeat_index)
+		// {
+		// 	genome_indices.push_back(repeat_index);
+		// 	update(genome);
+		// }
 
-		unsigned int consensus(string genome)
-		{
-			map<string, int> frequencies;
-			for (size_t i = 0; i < genome_indices.size(); i++)
-			{
-				string repeat = repeats[i];
-				frequencies[repeat] += 1;
-			}
+		// unsigned int consensus(string genome)
+		// {
+		// 	map<string, int> frequencies;
+		// 	for (size_t i = 0; i < genome_indices.size(); i++)
+		// 	{
+		// 		string repeat = repeats[i];
+		// 		frequencies[repeat] += 1;
+		// 	}
 
-			int max_freq = 0;
-			string max_repeat;
-			for (auto const& pack : frequencies)
-			{
-				if (pack.second > max_freq)
-				{
-					max_freq = pack.second;
-					max_repeat = pack.first;
-				}	
-			}
+		// 	int max_freq = 0;
+		// 	string max_repeat;
+		// 	for (auto const& pack : frequencies)
+		// 	{
+		// 		if (pack.second > max_freq)
+		// 		{
+		// 			max_freq = pack.second;
+		// 			max_repeat = pack.first;
+		// 		}	
+		// 	}
 
-			auto it = find(repeats.begin(), repeats.end(), max_repeat);
-			if (it == repeats.end())
-			{
-				printf("something impossible just happened\n");
-			}
+		// 	auto it = find(repeats.begin(), repeats.end(), max_repeat);
+		// 	if (it == repeats.end())
+		// 	{
+		// 		printf("something impossible just happened\n");
+		// 	}
 
-			size_t repeat_index = it - repeats.begin();
-			return genome_indices[repeat_index];
-		}
+		// 	size_t repeat_index = it - repeats.begin();
+		// 	return genome_indices[repeat_index];
+		// }
 
 	private:
 

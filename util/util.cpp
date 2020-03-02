@@ -617,7 +617,7 @@ void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
 bool repeat_substring(Crispr b, unsigned int start, unsigned int end)
 {
-	for (size_t i = 0; i < b.genome_indices.size(); i++)
+	for (size_t i = 0; i < b.size; i++)
 	{
 		unsigned int repeat_start = b.genome_indices[i];
 		unsigned int repeat_end = b.genome_indices[i] + b.k - 1;
@@ -641,7 +641,7 @@ bool repeat_subset(Crispr a, Crispr b)
 		return false;
 	}
 
-	for (size_t i = 0; i < a.genome_indices.size(); i++)
+	for (size_t i = 0; i < a.size; i++)
 	{
 		if (!repeat_substring(b, a.genome_indices[i], a.genome_indices[i] + a.k - 1))
 		{
@@ -654,37 +654,35 @@ bool repeat_subset(Crispr a, Crispr b)
 }
 
 // Perfect genome index subset. Is a a subset of b?
-bool perfect_genome_index_subset(Crispr a, Crispr b)
-{
-	if (a.k != b.k || a.conservation_repeats != b.conservation_repeats)
-	{
-		return false;
-	}
+// bool perfect_genome_index_subset(Crispr a, Crispr b)
+// {
+// 	if (a.k != b.k || a.conservation_repeats != b.conservation_repeats)
+// 	{
+// 		return false;
+// 	}
 
-	// check that all the genome indices of a are present in b
-	for (unsigned int index_a : a.genome_indices)
-	{
-		auto it = find(b.genome_indices.begin(), b.genome_indices.end(), index_a);
-		if (it == b.genome_indices.end())
-		{
-			return false;
-		}
-	}
+// 	// check that all the genome indices of a are present in b
+// 	for (unsigned int index_a : a.genome_indices)
+// 	{
+// 		auto it = find(b.genome_indices.begin(), b.genome_indices.end(), index_a);
+// 		if (it == b.genome_indices.end())
+// 		{
+// 			return false;
+// 		}
+// 	}
 
-	return true;
+// 	return true;
 
-
-}
+// }
 
 bool any_overlap(Crispr a, Crispr b)
 {
 
 	unsigned int a_start = a.genome_indices[0];
-	unsigned int a_end = a.genome_indices[a.genome_indices.size() - 1] + a.k - 1;
+	unsigned int a_end = a.genome_indices[a.size - 1] + a.k - 1;
 
 	unsigned int b_start = b.genome_indices[0];
-	unsigned int b_end = b.genome_indices[b.genome_indices.size() - 1] + b.k - 1;
-
+	unsigned int b_end = b.genome_indices[b.size - 1] + b.k - 1;
 
 
 	bool a_before_b = a_start <= b_start;

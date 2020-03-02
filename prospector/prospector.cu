@@ -412,10 +412,10 @@ vector<vector<unsigned int>> dyad_gen(char* device_genome, size_t genome_len)
 
 
 
-bool comparison_routine(Crispr a, Crispr b)
-{
-    return a.genome_indices[0] < b.genome_indices[0];
-}
+// bool comparison_routine(Crispr a, Crispr b)
+// {
+//     return a.genome_indices[0] < b.genome_indices[0];
+// }
 
 
 void print_buffer(unsigned int total_dyad_count, unsigned int* crispr_buffer)
@@ -442,6 +442,8 @@ void print_buffer(unsigned int total_dyad_count, unsigned int* crispr_buffer)
 
 vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<unsigned int>> all_dyads)
 {
+    clock_t crispr_gen_start = clock();
+
     clock_t start;
 
     vector<Crispr> all_crisprs;
@@ -450,9 +452,9 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
     {     
         vector<unsigned int> dyads = all_dyads[dyad_set];
         
-        // printf("dyad sort..."); start = clock();
-        // sort(dyads.begin(), dyads.end());
-        // done(start);
+        printf("dyad sort..."); start = clock();
+        sort(dyads.begin(), dyads.end());
+        done(start);
 
         unsigned int k = K_START + dyad_set;
 
@@ -480,22 +482,22 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
         for (unsigned int d_index = 0; d_index < dyad_count; d_index++)
         {
 
-            unsigned int* start = crispr_buffer + (d_index * CRISPR_BUFFER);
+            unsigned int* __start = crispr_buffer + (d_index * CRISPR_BUFFER);
 
-            if (*(start + MIN_REPEATS) == 0)
+            if (*(__start + MIN_REPEATS) == 0)
                 continue;
 
             unsigned int i;
             for (i = 0; i < CRISPR_BUFFER; i++)
             {
-                if (*(start + i) == 0) break;
+                if (*(__start + i) == 0) break;
             }
 
-            vector<unsigned int> genome_indices(start, start + i);
-
-            Crispr crispr(genome, k, genome_indices);
-            k_crisprs.push_back(crispr);  
-
+            // vector<unsigned int> genome_indices(__start, __start + i);
+            Crispr crispr(k, __start, __start + i);
+            // Crispr crispr(genome, k, genome_indices);
+            k_crisprs.push_back(crispr); 
+            // printf("%u %lu %lu\n", k, (unsigned long) __start, (unsigned long) __start + i);
         }
 
         done(start);
@@ -505,9 +507,10 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
 
     }
 
-    
+    // done(crispr_gen_start, "crispr gen");
+    // exit(0);
+    // return vector<Crispr>();
     return all_crisprs;
-    
 }
 
 class Cluster
@@ -578,39 +581,39 @@ vector<Cluster> cluster_dyads(const char* genome, unsigned int k, vector<unsigne
 
 }
 
-vector<Crispr> prospector_main_cpu(string genome)
-{
-    const char* _genome = genome.c_str();
+// vector<Crispr> prospector_main_cpu(string genome)
+// {
+//     const char* _genome = genome.c_str();
 
-    unsigned int genome_len = (unsigned int) genome.size();
+//     unsigned int genome_len = (unsigned int) genome.size();
 
-    char* device_genome = cpush(genome.c_str(), genome_len);
-    vector<vector<unsigned int>> all_dyads = dyad_gen(device_genome, genome.length());
+//     char* device_genome = cpush(genome.c_str(), genome_len);
+//     vector<vector<unsigned int>> all_dyads = dyad_gen(device_genome, genome.length());
 
-    vector<Cluster> all_clusters;
-    for (size_t i = 0; i < all_dyads.size(); i++)
-    {
-        unsigned int k = K_START + i;
+//     vector<Cluster> all_clusters;
+//     for (size_t i = 0; i < all_dyads.size(); i++)
+//     {
+//         unsigned int k = K_START + i;
 
-        vector<unsigned int> dyad_set = all_dyads[i];
-        vector<Cluster> clusters = cluster_dyads(genome.c_str(), k, dyad_set);
+//         vector<unsigned int> dyad_set = all_dyads[i];
+//         vector<Cluster> clusters = cluster_dyads(genome.c_str(), k, dyad_set);
 
-        for (Cluster c : clusters)
-        {
-            if (c.dyads.size() > 2)
-            {
-                all_clusters.push_back(c);
-            }
-        }
-    }
+//         for (Cluster c : clusters)
+//         {
+//             if (c.dyads.size() > 2)
+//             {
+//                 all_clusters.push_back(c);
+//             }
+//         }
+//     }
 
-    vector<Crispr> crisprs;
-    for (Cluster c : all_clusters)
-    {
-        crisprs.emplace_back(genome, c.k, c.dyads);
-    }
-    return crisprs;
-}
+//     vector<Crispr> crisprs;
+//     for (Cluster c : all_clusters)
+//     {
+//         crisprs.emplace_back(genome, c.k, c.dyads);
+//     }
+//     return crisprs;
+// }
 
 
 vector<Crispr> prospector_main_gpu(string genome)
@@ -648,11 +651,8 @@ vector<Crispr> prospector_main_gpu(string genome)
 vector<Crispr> prospector_main(string genome)
 {
     clock_t start = clock();
-
     vector<Crispr> crisprs = prospector_main_gpu(genome);
-    sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
 	printf("prospector completed in %.3f seconds.\n", duration(start));
-    // exit(0);
     return crisprs;
 }
 

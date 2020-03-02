@@ -1,6 +1,5 @@
 #include "util/stdafx.h"
 #include "util/util.h"
-
 #include "prospector/prospector.h"
 
 
@@ -160,10 +159,21 @@ void run()
         {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
     };
 
-    string genome = genomes["pyogenes"];
+    string genome = genomes["thermophilus"];
 
     vector<Crispr> crisprs = prospector_main(genome);
     
+
+    printf("cache crispr information...");
+    clock_t cache_start = clock();
+    for (size_t i = 0; i < crisprs.size(); i++)
+    {
+        crisprs[i].update(genome);
+    }
+    done(cache_start);
+
+    sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
+
     // debug(genome, crisprs);
     
     vector<Crispr> crisprs_domain_best = domain_best(crisprs);
