@@ -442,27 +442,33 @@ void print_buffer(unsigned int total_dyad_count, unsigned int* crispr_buffer)
 
 vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<unsigned int>> all_dyads)
 {
-    
+    clock_t start;
+
     vector<Crispr> all_crisprs;
 
     for (size_t dyad_set = 0; dyad_set < all_dyads.size(); dyad_set++)
     {     
         vector<unsigned int> dyads = all_dyads[dyad_set];
-        sort(dyads.begin(), dyads.end());
+        
+        // printf("dyad sort..."); start = clock();
+        // sort(dyads.begin(), dyads.end());
+        // done(start);
 
         unsigned int k = K_START + dyad_set;
 
         unsigned int dyad_count = dyads.size(); printf("dyad count: %d\n", dyad_count);
 
+        printf("buffer..."); start = clock();
         unsigned int crispr_buffer_count = dyad_count * CRISPR_BUFFER; printf("crispr buffer: %d\n", crispr_buffer_count);
         unsigned int* crispr_buffer = new unsigned int[crispr_buffer_count];
         memset(crispr_buffer, 0, crispr_buffer_count * sizeof(unsigned int));
-
+        done(start);
 
         unsigned int* device_crispr_buffer = cpush(crispr_buffer, crispr_buffer_count);
         unsigned int* device_dyads = cpush(&dyads[0], dyad_count);
 
-        discover_crisprs_2 KERNEL_ARGS2(8, 256) (device_genome, genome_len, device_dyads, dyad_count, device_crispr_buffer, k);    
+        discover_crisprs_2 KERNEL_ARGS2(8, 256) 
+                (device_genome, genome_len, device_dyads, dyad_count, device_crispr_buffer, k);    
 
         cwait();
         cpull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
@@ -470,77 +476,32 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
 
         vector<Crispr> k_crisprs;
 
+        printf("extract..."); start = clock();
         for (unsigned int d_index = 0; d_index < dyad_count; d_index++)
         {
-            if (crispr_buffer[d_index * CRISPR_BUFFER + MIN_REPEATS] == 0)
+
+            unsigned int* start = crispr_buffer + (d_index * CRISPR_BUFFER);
+
+            if (*(start + MIN_REPEATS) == 0)
                 continue;
 
-            vector<unsigned int> genome_indices;
-            for (unsigned int i = 0; i < CRISPR_BUFFER; i++)
+            unsigned int i;
+            for (i = 0; i < CRISPR_BUFFER; i++)
             {
-                unsigned int val = crispr_buffer[d_index * CRISPR_BUFFER + i];
-                if (val == 0)
-                    break;
-                genome_indices.push_back(val);
+                if (*(start + i) == 0) break;
             }
 
+            vector<unsigned int> genome_indices(start, start + i);
 
-           Crispr crispr(genome, k, genome_indices);
-
-
-            // scan for any additional mutants at the beginning or end
-            const int scan_domain = 100;
-            int countdown = scan_domain;
-
-            unsigned int consensus = crispr.consensus(genome);
-            unsigned int pointer;
-
-            // forward scan
-            // for (int i = 0; i < countdown; i++)
-            // {
-            //     pointer = crispr.end + i + SPACER_SKIP;
-            //     if (mutant(genome.c_str(), consensus, pointer, k))
-            //     {
-            //         crispr.insert(genome, pointer);
-            //         countdown = scan_domain;
-            //     }
-            // }
-
-
-
-            // // backward scan     
-            // countdown = scan_domain;
-            // for (int i = 0; i < countdown; i++)
-            // {
-            //     pointer = crispr.start - 1 - i - k - SPACER_SKIP;
-            //     if (mutant(genome.c_str(), consensus, pointer, k))
-            //     {
-            //         crispr.insert(genome, pointer);
-            //         countdown = scan_domain;
-            //     }
-            // }
-            
-
-            // but do not add it if it is a perfect genome index subset of an existing crispr
-
-            bool superset_exists = false;
-            for (Crispr k_existing : k_crisprs)
-            {
-                if (perfect_genome_index_subset(crispr, k_existing))
-                {
-                    superset_exists = true;
-                    break;
-                }
-            }
-
-            if (!superset_exists)
-            {
-                k_crisprs.push_back(crispr);
-            }
+            Crispr crispr(genome, k, genome_indices);
+            k_crisprs.push_back(crispr);  
 
         }
 
+        done(start);
+        printf("insert..."); start = clock();
         all_crisprs.insert(all_crisprs.end(), k_crisprs.begin(), k_crisprs.end());
+        done(start);
 
     }
 
