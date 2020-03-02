@@ -509,16 +509,16 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
 
 
             // // backward scan     
-            countdown = scan_domain;
-            for (int i = 0; i < countdown; i++)
-            {
-                pointer = crispr.start - 1 - i - k - SPACER_SKIP;
-                if (mutant(genome.c_str(), consensus, pointer, k))
-                {
-                    crispr.insert(genome, pointer);
-                    countdown = scan_domain;
-                }
-            }
+            // countdown = scan_domain;
+            // for (int i = 0; i < countdown; i++)
+            // {
+            //     pointer = crispr.start - 1 - i - k - SPACER_SKIP;
+            //     if (mutant(genome.c_str(), consensus, pointer, k))
+            //     {
+            //         crispr.insert(genome, pointer);
+            //         countdown = scan_domain;
+            //     }
+            // }
             
 
             // but do not add it if it is a perfect genome index subset of an existing crispr
