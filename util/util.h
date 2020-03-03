@@ -2,8 +2,28 @@
 
 
 
+// const int DEBUG_START = 1085434-1;
+// const int DEBUG_END = 1086855;
 const int DEBUG_START = 0;
 const int DEBUG_END = 10e6;
+
+#define K_START 20
+#define K_END 55
+
+
+#define MUTANT_TOLERANCE_RATIO 5
+#define REPEAT_MIN 20
+#define REPEAT_MAX 60
+#define SPACER_MIN 21
+#define SPACER_MAX 72
+#define SPACER_SKIP 10
+#define REPEATS_MIN 3
+#define SCAN_DOMAIN SPACER_MAX
+#define ALLOW_DISCREPANT_LENGTHS false
+#define MIN_REPEATS 3
+#define CRISPR_BUFFER 50
+#define printf_BYTE_FORMAT_ALIGN 10
+
 
 // general
 double duration(clock_t begin, clock_t end);

@@ -23,22 +23,6 @@
 #endif
 
 
-#define MUTANT_TOLERANCE_RATIO 5
-#define REPEAT_MIN 20
-#define REPEAT_MAX 60
-#define SPACER_MIN 21
-#define SPACER_MAX 72
-#define SPACER_SKIP 10
-#define REPEATS_MIN 3
-#define SCAN_DOMAIN SPACER_MAX
-#define ALLOW_DISCREPANT_LENGTHS false
-#define MIN_REPEATS 3
-#define K_START 20
-#define K_END 55
-#define CRISPR_BUFFER 50
-#define printf_BYTE_FORMAT_ALIGN 10
-
-
 void cwait()
 {
 	printf("waiting for kernel... ");
@@ -179,7 +163,6 @@ __device__ __host__ bool is_dyad(const char* genome, unsigned int start_index, u
 }
 
 
-
 int atomicAdd(int* address, int val);
 unsigned int atomicAdd(unsigned int* address,
                        unsigned int val);
@@ -191,88 +174,171 @@ __half2 atomicAdd(__half2 *address, __half2 val);
 __half atomicAdd(__half *address, __half val);
 
 
-// https://devtalk.nvidia.com/default/topic/754830/atomic-counter-as-array-index-/
-
-__global__ void mykernel(int* nums, int* start) {
-    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int stride = blockDim.x * gridDim.x;
-    int i = atomicAdd (start, 1);
-    nums[i] = stride - i;
-}
 
 
-void foo()
-{
-    int grid = 2;
-    int block = 128;
-    int num = grid * block;
-
-    int* nums = new int[num];
-    memset(nums, 0, num * sizeof(int));
-
-    int* start = new int[1];
-    start[0] = 0;
-
-    int* device_nums = cpush(nums, num);
-    int* device_start = cpush(start, 1);
-
-    mykernel KERNEL_ARGS2(grid, block) (device_nums, device_start);
-
-    cwait();
-
-    cpull(nums, device_nums, num);
-
-    for (int i = 0; i < num; i++) printf("%d\n", nums[i]);
-
-}
-
-
-__device__ void write_crispr_buffer(const char* genome, size_t genome_len, unsigned int* dyads, unsigned int query_d_index, unsigned int dyad_count, unsigned int* buffer, unsigned int buffer_start, unsigned int k)
-{
-    unsigned int max_distance = 100;
-    unsigned int query_dyad = dyads[query_d_index];
-    unsigned int end_of_this_crispr = query_dyad + k;
-    unsigned int repeat_index = 0;
-    buffer[buffer_start + repeat_index++] = query_dyad;
-     
-    for (int target_d_index = query_d_index + 1; target_d_index < dyad_count; target_d_index++) // this for loop goes up to the dyad count but in practice this will never happen. May want to rewrite this. while loop? or for loop up to CRISPR_BUFFER?
-    {
-        unsigned int target_dyad = dyads[target_d_index];
-    
-        // add each dyad to this array if it can be?
-        // because I am using an unsigned int I need to check if the difference overflowed due to being WITHIN the dyad + k
-        // guard against overflow
-        bool within_crispr = target_dyad < end_of_this_crispr;
-
-        unsigned int distance = target_dyad - end_of_this_crispr;
-
-        bool too_close = distance < SPACER_SKIP; 
-
-        if (within_crispr || too_close) continue;
-        
-        // if distance is less than the min AND if the query is a mutant then add.
-        if (distance > max_distance) break;
-
-        if (mutant(genome, query_dyad, target_dyad, k))
-        {
-            buffer[buffer_start + repeat_index++] = target_dyad;
-            end_of_this_crispr = target_dyad + k;
-        }
-        
-    }
-}
-
-__global__ void discover_crisprs(const char* genome, size_t genome_len, unsigned int* dyads, unsigned int dyad_count, unsigned int* buffer, unsigned int k)
+__global__ void discover_crisprs(const char* genome, size_t genome_len, unsigned int* dyads, unsigned int dyad_count, unsigned int* buffer, unsigned int* buffer_index, unsigned int k)
 {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int stride = blockDim.x * gridDim.x;
 
     for (unsigned int query_d_index = thread_id; query_d_index < dyad_count; query_d_index += stride)
     {
-        unsigned int buffer_start = query_d_index * CRISPR_BUFFER;
-        write_crispr_buffer(genome, genome_len, dyads, query_d_index, dyad_count, buffer, buffer_start, k);
+        unsigned int query_dyad = dyads[query_d_index];
+        unsigned int bound = query_dyad + k + SPACER_SKIP;
+
+        unsigned int* local_crispr = new unsigned int[CRISPR_BUFFER];
+        memset(local_crispr, 0, CRISPR_BUFFER * sizeof(unsigned int));
+
+        local_crispr[0] = query_dyad;
+        unsigned int repeat_index = 1;
+
+        for (int target_d_index = query_d_index + 1; target_d_index < dyad_count; target_d_index++) // this for loop goes up to the dyad count but in practice this will never happen. May want to rewrite this. while loop? or for loop up to CRISPR_BUFFER?
+        {
+            unsigned int target_dyad = dyads[target_d_index];
+
+            if (target_dyad < bound) continue;
+            if (target_dyad - bound > SPACER_MAX) break;
+
+            if (mutant(genome, query_dyad, target_dyad, k))
+            {
+                local_crispr[repeat_index++] = target_dyad;
+                bound = target_dyad + k + SPACER_SKIP;
+            }
+        }
+
+        // repeat_index number represents count of elements in local_crispr
+        if (*(local_crispr + MIN_REPEATS) != 0)
+        {
+            // what we have are an array of dyads (local_crispr) which we need to "push_back" into a global crispr "vector".
+            int buffer_start = atomicAdd(buffer_index, repeat_index + 1); // plus 1 because we need to leave a gap of 0 to separate the crisprs
+            memcpy(buffer + buffer_start, local_crispr, sizeof(unsigned int) * repeat_index);
+            // *(buffer + repeat_index) = 0; this line isn't necessary because the initial memset for the global crispr sets the whole thing to 0
+        }
+
     }
 }
+
+
+
+
+
+// https://devtalk.nvidia.com/default/topic/754830/atomic-counter-as-array-index-/
+
+// __global__ void mykernel(int* nums, int* start)
+// {
+//     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+//     unsigned int stride = blockDim.x * gridDim.x;
+//     int i = atomicAdd (start, 1);
+//     nums[i] = stride - i;
+// }
+
+
+// void foo()
+// {
+//     int grid = 2;
+//     int block = 128;
+//     int num = grid * block;
+//     int* nums = new int[num];
+//     memset(nums, 0, num * sizeof(int));
+//     int* start = new int[1];
+//     start[0] = 0;
+//     int* device_nums = cpush(nums, num);
+//     int* device_start = cpush(start, 1);
+//     mykernel KERNEL_ARGS2(grid, block) (device_nums, device_start);
+//     cwait();
+//     cpull(nums, device_nums, num);
+//     for (int i = 0; i < num; i++) printf("%d\n", nums[i]);
+// }
+
+vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<unsigned int>> all_dyads)
+{
+    clock_t crispr_gen_start = clock();
+
+    clock_t start;
+
+    vector<Crispr> all_crisprs;
+
+    for (size_t dyad_set = 0; dyad_set < all_dyads.size(); dyad_set++)
+    {     
+        unsigned int k = K_START + dyad_set;
+        printf("for k %d\n", k);
+
+        vector<unsigned int> dyads = all_dyads[dyad_set];
+        printf("dyad sort..."); start = clock();
+        sort(dyads.begin(), dyads.end());
+        done(start);
+        unsigned int dyad_count = dyads.size(); printf("dyad count: %d\n", dyad_count);
+        unsigned int* device_dyads = cpush(&dyads[0], dyad_count);
+
+        printf("buffer..."); start = clock();
+        // unsigned int crispr_buffer_count = dyad_count * CRISPR_BUFFER; printf("crispr buffer: %d\n", crispr_buffer_count);
+        unsigned int crispr_buffer_count = 10000;
+        unsigned int* crispr_buffer = new unsigned int[crispr_buffer_count];
+        memset(crispr_buffer, 0, crispr_buffer_count * sizeof(unsigned int));
+        unsigned int* device_crispr_buffer = cpush(crispr_buffer, crispr_buffer_count);
+        done(start);
+
+        unsigned int* crispr_buffer_index = new unsigned int[1];
+        crispr_buffer_index[0] = 0;
+        unsigned int* device_crispr_buffer_index = cpush(crispr_buffer_index, 1);
+
+        discover_crisprs KERNEL_ARGS2(8, 256) 
+                (device_genome, genome_len, device_dyads, dyad_count, device_crispr_buffer, device_crispr_buffer_index, k);    
+
+        cwait();
+        cpull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
+        cpull(crispr_buffer_index, device_crispr_buffer_index, 1);
+        cufree(device_crispr_buffer);
+
+        vector<Crispr> k_crisprs;
+
+        // NEXT STEP: HIT BREAKPOINT HERE, INSPECT THE CRISPR_BUFFER THEN FIGURE OUT HOW TO DO THE EXTRACT ALGORITHM BELOW
+        printf("extract..."); start = clock(); 
+        for (unsigned int i = 0; i < crispr_buffer_index[0]; i++)
+        {
+            // find 0
+            unsigned int j;
+            for (j = i; j < crispr_buffer_index[0]; j++)
+            {
+                if (*(crispr_buffer + j) == 0) break;
+            }
+
+            Crispr crispr(k, crispr_buffer + i, crispr_buffer + j);
+            k_crisprs.push_back(crispr); 
+
+            i = j + 1;
+        }
+
+
+        // for (unsigned int d_index = 0; d_index < dyad_count; d_index++)
+        // {
+
+        //     unsigned int* __start = crispr_buffer + (d_index * CRISPR_BUFFER);
+
+        //     if (*(__start + MIN_REPEATS) == 0)
+        //         continue;
+
+        //     unsigned int i;
+        //     for (i = 0; i < CRISPR_BUFFER; i++)
+        //     {
+        //         if (*(__start + i) == 0) break;
+        //     }
+
+        //     Crispr crispr(k, __start, __start + i);
+        //     k_crisprs.push_back(crispr); 
+        // }
+
+        done(start);
+        printf("insert..."); start = clock();
+        all_crisprs.insert(all_crisprs.end(), k_crisprs.begin(), k_crisprs.end());
+        done(start);
+
+    }
+
+    return all_crisprs;
+}
+
+
 
 
 __device__ void dyad_discovery_single_index(const char* genome, size_t genome_len, unsigned int d_index, unsigned int* dyad_buffer)
@@ -288,6 +354,8 @@ __device__ void dyad_discovery_single_index(const char* genome, size_t genome_le
     }
 }
 
+
+
 __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned int* dyad_buffer)
 {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -295,6 +363,9 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned i
     for (unsigned int d_index = thread_id; d_index < genome_len; d_index += stride)
         dyad_discovery_single_index(genome, genome_len, d_index, dyad_buffer);
 }
+
+
+
 
 vector<unsigned int> dyad_lengths(vector<vector<unsigned int>> all_dyads)
 {
@@ -368,73 +439,6 @@ void print_buffer(unsigned int total_dyad_count, unsigned int* crispr_buffer)
 
 
 
-vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<unsigned int>> all_dyads)
-{
-    clock_t crispr_gen_start = clock();
-
-    clock_t start;
-
-    vector<Crispr> all_crisprs;
-
-    for (size_t dyad_set = 0; dyad_set < all_dyads.size(); dyad_set++)
-    {     
-        vector<unsigned int> dyads = all_dyads[dyad_set];
-        
-        printf("dyad sort..."); start = clock();
-        sort(dyads.begin(), dyads.end());
-        done(start);
-
-        unsigned int k = K_START + dyad_set;
-
-        unsigned int dyad_count = dyads.size(); printf("dyad count: %d\n", dyad_count);
-
-        printf("buffer..."); start = clock();
-        unsigned int crispr_buffer_count = dyad_count * CRISPR_BUFFER; printf("crispr buffer: %d\n", crispr_buffer_count);
-        unsigned int* crispr_buffer = new unsigned int[crispr_buffer_count];
-        memset(crispr_buffer, 0, crispr_buffer_count * sizeof(unsigned int));
-        done(start);
-
-        unsigned int* device_crispr_buffer = cpush(crispr_buffer, crispr_buffer_count);
-        unsigned int* device_dyads = cpush(&dyads[0], dyad_count);
-
-        discover_crisprs KERNEL_ARGS2(8, 256) 
-                (device_genome, genome_len, device_dyads, dyad_count, device_crispr_buffer, k);    
-
-        cwait();
-        cpull(crispr_buffer, device_crispr_buffer, crispr_buffer_count);
-        cufree(device_crispr_buffer);
-
-        vector<Crispr> k_crisprs;
-
-        printf("extract..."); start = clock();
-        for (unsigned int d_index = 0; d_index < dyad_count; d_index++)
-        {
-
-            unsigned int* __start = crispr_buffer + (d_index * CRISPR_BUFFER);
-
-            if (*(__start + MIN_REPEATS) == 0)
-                continue;
-
-            unsigned int i;
-            for (i = 0; i < CRISPR_BUFFER; i++)
-            {
-                if (*(__start + i) == 0) break;
-            }
-
-            Crispr crispr(k, __start, __start + i);
-            k_crisprs.push_back(crispr); 
-        }
-
-        done(start);
-        printf("insert..."); start = clock();
-        all_crisprs.insert(all_crisprs.end(), k_crisprs.begin(), k_crisprs.end());
-        done(start);
-
-    }
-
-    return all_crisprs;
-}
-
 
 vector<Crispr> prospector_main_gpu(string genome)
 {
@@ -458,9 +462,9 @@ vector<Crispr> prospector_main_gpu(string genome)
 
 vector<Crispr> prospector_main(string genome)
 {
-    foo();
+    // foo();
 
-    exit(0);
+    // exit(0);
 
     clock_t start;
     start = clock();
