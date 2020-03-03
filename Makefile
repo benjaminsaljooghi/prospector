@@ -7,7 +7,7 @@ CPP = g++
 CARGS = --std=c++17 -g -Wall -fopenmp -g
 
 NVCC = /usr/local/cuda/bin/nvcc
-NVCCARGS = -g -Xcompiler -fopenmp
+NVCCARGS = -g -G -Xcompiler -fopenmp 
 
 
 LIB_ARGS =  -Wl,-rpath,/home/ben/Documents/ncbi/GCC800-DebugMT64/lib -L. -Wl,--enable-new-dtags -Wl,-export-dynamic -pthread -g
@@ -21,7 +21,6 @@ OBJS = invoker.o dlinked.o prospector.o blast.o util.o
 
 run: invoker.out
 	./invoker.out
-
 
 invoker.out: $(OBJS)
 	$(CPP) $(OPTIMIZATION) $(CARGS) $(OBJS) $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -o invoker.out

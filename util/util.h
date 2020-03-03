@@ -2,13 +2,16 @@
 
 
 
-// const int DEBUG_START = 1085434-1;
-// const int DEBUG_END = 1086855;
-const int DEBUG_START = 0;
-const int DEBUG_END = 10e6;
+const unsigned int DEBUG_START = 0;
+const unsigned int DEBUG_END = 10e7;
 
-#define K_START 20
-#define K_END 55
+// const unsigned int DEBUG_START = 1085434-1;
+// const unsigned int DEBUG_END = 1086855;
+
+
+
+#define K_START 30
+#define K_END 45
 
 
 #define MUTANT_TOLERANCE_RATIO 5
