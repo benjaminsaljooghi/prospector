@@ -65,7 +65,7 @@ void cufree(void* device_ptr)
     done(start);
 }
 
-template <typename T> void cpull(T* h, const T* d, unsigned int count)
+template <typename T> void cpull(T* host, const T* device, unsigned int count)
 {
 	size_t bytes = count * sizeof(T);
 
@@ -73,7 +73,7 @@ template <typename T> void cpull(T* h, const T* d, unsigned int count)
 
 	printf("memcpy %*zd bytes from device... ", printf_BYTE_FORMAT_ALIGN, bytes);
     clock_t start = clock();
-	err = cudaMemcpy(h, d, bytes, cudaMemcpyDeviceToHost);
+	err = cudaMemcpy(host, device, bytes, cudaMemcpyDeviceToHost);
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "failed to copy from device to host (error code %s)!\n", cudaGetErrorString(err));
@@ -176,6 +176,54 @@ __device__ __host__ bool is_dyad(const char* genome, unsigned int start_index, u
 
     double mismatch_ratio = (double) mismatch_count / (double) range;
     return mismatch_ratio < 0.75;
+}
+
+
+
+int atomicAdd(int* address, int val);
+unsigned int atomicAdd(unsigned int* address,
+                       unsigned int val);
+unsigned long long int atomicAdd(unsigned long long int* address,
+                                 unsigned long long int val);
+float atomicAdd(float* address, float val);
+double atomicAdd(double* address, double val);
+__half2 atomicAdd(__half2 *address, __half2 val);
+__half atomicAdd(__half *address, __half val);
+
+
+// https://devtalk.nvidia.com/default/topic/754830/atomic-counter-as-array-index-/
+
+__global__ void mykernel(int* nums, int* start) {
+    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int stride = blockDim.x * gridDim.x;
+    int i = atomicAdd (start, 1);
+    nums[i] = stride - i;
+}
+
+
+void foo()
+{
+    int grid = 2;
+    int block = 128;
+    int num = grid * block;
+
+    int* nums = new int[num];
+    memset(nums, 0, num * sizeof(int));
+
+    int* start = new int[1];
+    start[0] = 0;
+
+    int* device_nums = cpush(nums, num);
+    int* device_start = cpush(start, 1);
+
+    mykernel KERNEL_ARGS2(grid, block) (device_nums, device_start);
+
+    cwait();
+
+    cpull(nums, device_nums, num);
+
+    for (int i = 0; i < num; i++) printf("%d\n", nums[i]);
+
 }
 
 
@@ -410,6 +458,10 @@ vector<Crispr> prospector_main_gpu(string genome)
 
 vector<Crispr> prospector_main(string genome)
 {
+    foo();
+
+    exit(0);
+
     clock_t start;
     start = clock();
     vector<Crispr> crisprs = prospector_main_gpu(genome);
