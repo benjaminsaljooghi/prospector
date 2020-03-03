@@ -65,75 +65,6 @@ void cufree(void* device_ptr)
     done(start);
 }
 
-
-__device__ __host__ char complement(char nuc)
-{
-    switch (nuc)
-    {
-    case 'A':
-        return 'T';
-    case 'T':
-        return 'A';
-    case 'C':
-        return 'G';
-    case 'G':
-        return 'C';
-    case 'N':
-        return 'N';
-    case 'n':
-        return 'n';
-    default:
-        return 'n';
-    }
-}
-
-
-__device__ __host__ bool mutant(const char* genome, unsigned int start_a, unsigned int start_b, unsigned int k)
-{
-	unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
-
-	unsigned int mutations = 0;
-
-	for (unsigned int i = 0; i < k; i++)
-	{
-        mutations += genome[start_a + i] == genome[start_b + i] ? 0 : 1;
-		if (mutations > allowed_mutations)
-        {
-			return false;
-        }
-	}
-	return true;
-}
-
-
-__device__ __host__ bool is_dyad_debug_check(unsigned int start_index)
-{
-    return start_index >= DEBUG_START && start_index <= DEBUG_END;
-}
-
-__device__ __host__ bool is_dyad(const char* genome, unsigned int start_index, unsigned int k)
-{
-    if (!is_dyad_debug_check(start_index))
-    {
-        return false;
-    }
-
-    unsigned int end_index = start_index + k - 1;
-
-    unsigned int range = k/2;
-    unsigned int mismatch_count = 0;
-    for (unsigned int i = 0; i < range; i++)
-	{
-		char upstream = genome[start_index + i];
-		char downstream = genome[end_index - i];
-        mismatch_count += upstream == complement(downstream) ? 0 : 1;
-	}
-
-    double mismatch_ratio = (double) mismatch_count / (double) range;
-    return mismatch_ratio < 0.75;
-}
-
-
 template <typename T> void cpull(T* h, const T* d, unsigned int count)
 {
 	size_t bytes = count * sizeof(T);
@@ -151,7 +82,6 @@ template <typename T> void cpull(T* h, const T* d, unsigned int count)
     done(start);
     
 }
-
 
 template <typename T> T* cpush(const T* src, unsigned int count)
 {
@@ -184,140 +114,100 @@ template <typename T> T* cpush(const T* src, unsigned int count)
 }
 
 
-// __device__ __host__ void discover_crispr(const char* genome, size_t genome_len, unsigned int k, unsigned int dyad, unsigned int* buffer, unsigned int buffer_start)
-// {
-//     // Search for repeats of this dyad
-//     unsigned int candidate_upstream = dyad + k + SPACER_SKIP;
-    
-//     unsigned int repeat_index = 0;
+__device__ __host__ char complement(char nuc)
+{
+    switch (nuc)
+    {
+    case 'A':
+        return 'T';
+    case 'T':
+        return 'A';
+    case 'C':
+        return 'G';
+    case 'G':
+        return 'C';
+    case 'N':
+        return 'N';
+    case 'n':
+        return 'n';
+    default:
+        return 'n';
+    }
+}
 
-//     // Save this dyad as the beginning of a CRISPR
-//     buffer[buffer_start] = dyad;
+__device__ __host__ bool mutant(const char* genome, unsigned int start_a, unsigned int start_b, unsigned int k)
+{
+	unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
 
+	unsigned int mutations = 0;
 
-//     unsigned int countdown = SCAN_DOMAIN;
-//     while (true)
-//     {
+	for (unsigned int i = 0; i < k; i++)
+	{
+        mutations += genome[start_a + i] == genome[start_b + i] ? 0 : 1;
+		if (mutations > allowed_mutations)
+        {
+			return false;
+        }
+	}
+	return true;
+}
 
-//         if (candidate_upstream + k > genome_len) 
-//         {
-//             break;
-//         }
+__device__ __host__ bool is_dyad_debug_check(unsigned int start_index)
+{
+    return start_index >= DEBUG_START && start_index <= DEBUG_END;
+}
 
-//         if (countdown-- == 0)
-//         {
-//             break;
-//         }
+__device__ __host__ bool is_dyad(const char* genome, unsigned int start_index, unsigned int k)
+{
+    if (!is_dyad_debug_check(start_index))
+    {
+        return false;
+    }
 
-//         // Is this candidate a repeat?
-//         if (mutant(genome, dyad, candidate_upstream, k))
-//         {
-//             buffer[buffer_start + repeat_index++] = candidate_upstream;
-//             candidate_upstream += k + SPACER_SKIP;
-//             countdown = SCAN_DOMAIN;
-//         }
-//         else
-//         {
-//             candidate_upstream++;
-//         }
-        
-//     }
+    unsigned int end_index = start_index + k - 1;
 
+    unsigned int range = k/2;
+    unsigned int mismatch_count = 0;
+    for (unsigned int i = 0; i < range; i++)
+	{
+		char upstream = genome[start_index + i];
+		char downstream = genome[end_index - i];
+        mismatch_count += upstream == complement(downstream) ? 0 : 1;
+	}
 
-//     unsigned int candidate_downstream = dyad - k - SPACER_SKIP;
-//     countdown = SCAN_DOMAIN;
-//     while(true)
-//     {
-//         if (candidate_downstream > candidate_upstream)
-//         {
-//             break;
-//         }
-
-//         if (countdown-- == 0)
-//         {
-//             break;
-//         }
-
-//         if (mutant(genome, dyad, candidate_downstream, k))
-//         {
-//             buffer[buffer_start + repeat_index++] = candidate_downstream;
-//             candidate_downstream -= k + SPACER_SKIP;
-//             countdown = SCAN_DOMAIN;
-//         }
-//         else
-//         {
-//             candidate_downstream--;
-//         }
-//     }
-
-// }
-
-
-// __global__ void discover_crisprs(unsigned int total_dyad_count, const char* genome, size_t genome_len, unsigned int* dyads, unsigned int* buffer, unsigned int* k_map)
-// {
-//     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-//     unsigned int stride = blockDim.x * gridDim.x;
-
-//     for (unsigned int d_index = thread_id; d_index < total_dyad_count; d_index += stride)
-//     {
-//         unsigned int k = k_map[d_index];
-//         unsigned int dyad = dyads[d_index];
-//         unsigned int buffer_start = d_index * CRISPR_BUFFER;
-
-//         discover_crispr(genome, genome_len, k, dyad, buffer, buffer_start);
-//     }
-// }
+    double mismatch_ratio = (double) mismatch_count / (double) range;
+    return mismatch_ratio < 0.75;
+}
 
 
 __device__ void write_crispr_buffer(const char* genome, size_t genome_len, unsigned int* dyads, unsigned int query_d_index, unsigned int dyad_count, unsigned int* buffer, unsigned int buffer_start, unsigned int k)
 {
     unsigned int max_distance = 100;
-
-
     unsigned int query_dyad = dyads[query_d_index];
-    
-
     unsigned int end_of_this_crispr = query_dyad + k;
-
     unsigned int repeat_index = 0;
-
     buffer[buffer_start + repeat_index++] = query_dyad;
      
     for (int target_d_index = query_d_index + 1; target_d_index < dyad_count; target_d_index++) // this for loop goes up to the dyad count but in practice this will never happen. May want to rewrite this. while loop? or for loop up to CRISPR_BUFFER?
     {
         unsigned int target_dyad = dyads[target_d_index];
-        
+    
         // add each dyad to this array if it can be?
-
-        
         // because I am using an unsigned int I need to check if the difference overflowed due to being WITHIN the dyad + k
-
         // guard against overflow
         bool within_crispr = target_dyad < end_of_this_crispr;
-
 
         unsigned int distance = target_dyad - end_of_this_crispr;
 
         bool too_close = distance < SPACER_SKIP; 
 
-        // printf("%d (%d) against %d: %d\n", query_dyad, within_crispr, target_dyad, distance);
-        
-        if (within_crispr || too_close)
-        {
-            continue;
-        }
+        if (within_crispr || too_close) continue;
         
         // if distance is less than the min AND if the query is a mutant then add.
-        if (distance > max_distance)
-        {
-            // printf("break")
-            break;
-        }
+        if (distance > max_distance) break;
 
         if (mutant(genome, query_dyad, target_dyad, k))
         {
-            
-            // printf("writing %d %d \n", query_dyad, target_dyad);
             buffer[buffer_start + repeat_index++] = target_dyad;
             end_of_this_crispr = target_dyad + k;
         }
@@ -325,7 +215,7 @@ __device__ void write_crispr_buffer(const char* genome, size_t genome_len, unsig
     }
 }
 
-__global__ void discover_crisprs_2(const char* genome, size_t genome_len, unsigned int* dyads, unsigned int dyad_count, unsigned int* buffer, unsigned int k)
+__global__ void discover_crisprs(const char* genome, size_t genome_len, unsigned int* dyads, unsigned int dyad_count, unsigned int* buffer, unsigned int k)
 {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int stride = blockDim.x * gridDim.x;
@@ -335,9 +225,7 @@ __global__ void discover_crisprs_2(const char* genome, size_t genome_len, unsign
         unsigned int buffer_start = query_d_index * CRISPR_BUFFER;
         write_crispr_buffer(genome, genome_len, dyads, query_d_index, dyad_count, buffer, buffer_start, k);
     }
-
 }
-
 
 
 __device__ void dyad_discovery_single_index(const char* genome, size_t genome_len, unsigned int d_index, unsigned int* dyad_buffer)
@@ -411,13 +299,6 @@ vector<vector<unsigned int>> dyad_gen(char* device_genome, size_t genome_len)
 }
 
 
-
-// bool comparison_routine(Crispr a, Crispr b)
-// {
-//     return a.genome_indices[0] < b.genome_indices[0];
-// }
-
-
 void print_buffer(unsigned int total_dyad_count, unsigned int* crispr_buffer)
 {    
     unsigned int count = 0;
@@ -469,7 +350,7 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
         unsigned int* device_crispr_buffer = cpush(crispr_buffer, crispr_buffer_count);
         unsigned int* device_dyads = cpush(&dyads[0], dyad_count);
 
-        discover_crisprs_2 KERNEL_ARGS2(8, 256) 
+        discover_crisprs KERNEL_ARGS2(8, 256) 
                 (device_genome, genome_len, device_dyads, dyad_count, device_crispr_buffer, k);    
 
         cwait();
@@ -493,11 +374,8 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
                 if (*(__start + i) == 0) break;
             }
 
-            // vector<unsigned int> genome_indices(__start, __start + i);
             Crispr crispr(k, __start, __start + i);
-            // Crispr crispr(genome, k, genome_indices);
             k_crisprs.push_back(crispr); 
-            // printf("%u %lu %lu\n", k, (unsigned long) __start, (unsigned long) __start + i);
         }
 
         done(start);
@@ -507,133 +385,19 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
 
     }
 
-    // done(crispr_gen_start, "crispr gen");
-    // exit(0);
-    // return vector<Crispr>();
     return all_crisprs;
 }
-
-class Cluster
-{   
-
-    public:
-
-        unsigned int k;
-        vector<unsigned int> dyads;
-
-        Cluster(unsigned int __k)
-        {
-            k = __k;
-        }
-
-        void insert(unsigned int dyad)
-        {
-            dyads.push_back(dyad);
-            // sort(dyads.begin(), dyads.end());
-        }
-
-        unsigned int start()
-        {
-            return dyads[0];
-        }
-
-        unsigned int end()
-        {
-            return dyads[dyads.size() - 1] + k - 1;
-        }
-    private:
-
-};
-
-
-vector<Cluster> cluster_dyads(const char* genome, unsigned int k, vector<unsigned int> dyads)
-{
-
-    int min_distance = 100;
-    sort(dyads.begin(), dyads.end());
-    vector<Cluster> clusters;
-    for (unsigned int dyad : dyads)
-    {
-        bool registered = false;
-        for (size_t i = 0; i < clusters.size(); i++)
-        {
-            Cluster* cluster = &(clusters[i]);
-            bool close_to_end = dyad > (*cluster).end() && dyad - (*cluster).end() < min_distance;
-            bool close_to_start = dyad < (*cluster).start() && (*cluster).start() - dyad < min_distance; // I don't think this bool is ever true
-            
-            if ((close_to_end || close_to_start) && mutant(genome, (*cluster).dyads[0], dyad, k))
-            {
-                (*cluster).insert(dyad);
-                registered = true;
-                break;
-            }
-        }
-
-        if (!registered)
-        {
-            Cluster new_cluster = Cluster(k);
-            new_cluster.insert(dyad);
-            clusters.push_back(new_cluster);
-        }
-    }
-
-    return clusters;
-
-}
-
-// vector<Crispr> prospector_main_cpu(string genome)
-// {
-//     const char* _genome = genome.c_str();
-
-//     unsigned int genome_len = (unsigned int) genome.size();
-
-//     char* device_genome = cpush(genome.c_str(), genome_len);
-//     vector<vector<unsigned int>> all_dyads = dyad_gen(device_genome, genome.length());
-
-//     vector<Cluster> all_clusters;
-//     for (size_t i = 0; i < all_dyads.size(); i++)
-//     {
-//         unsigned int k = K_START + i;
-
-//         vector<unsigned int> dyad_set = all_dyads[i];
-//         vector<Cluster> clusters = cluster_dyads(genome.c_str(), k, dyad_set);
-
-//         for (Cluster c : clusters)
-//         {
-//             if (c.dyads.size() > 2)
-//             {
-//                 all_clusters.push_back(c);
-//             }
-//         }
-//     }
-
-//     vector<Crispr> crisprs;
-//     for (Cluster c : all_clusters)
-//     {
-//         crisprs.emplace_back(genome, c.k, c.dyads);
-//     }
-//     return crisprs;
-// }
 
 
 vector<Crispr> prospector_main_gpu(string genome)
 {
-    // clock_t start;
-
-
     char* device_genome = cpush(genome.c_str(), genome.length());
 
     clock_t dyad_start = clock();
     vector<vector<unsigned int>> all_dyads = dyad_gen(device_genome, genome.length());
     clock_t dyad_end = clock();
 
-    // vector<unsigned int> all_dyads_flat = flatten(all_dyads);
-
-    // printf("all_dyads_flat.size(): %zd\n", all_dyads_flat.size());
-
     printf("dyad_gen completed in %.3f seconds.\n", duration(dyad_start, dyad_end));
-
-
 
     clock_t crispr_start = clock();
     vector<Crispr> crisprs = crispr_gen(genome, device_genome, genome.length(), all_dyads);
