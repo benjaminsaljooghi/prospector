@@ -113,7 +113,6 @@ template <typename T> T* cpush(const T* src, unsigned int count)
 	return (T*)ptr;
 }
 
-
 __device__ __host__ char complement(char nuc)
 {
     switch (nuc)
@@ -264,7 +263,7 @@ vector<vector<unsigned int>> dyad_gen(char* device_genome, size_t genome_len)
 {
     size_t buffer_count = genome_len * (K_END - K_START);
     unsigned int* dyad_buffer = new unsigned int[buffer_count];
-	fill_n(dyad_buffer, buffer_count, 0);
+    memset(dyad_buffer, 0, buffer_count * sizeof(unsigned int));
 
     unsigned int* device_dyad_buffer = cpush(dyad_buffer, buffer_count);
     
@@ -391,32 +390,30 @@ vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len,
 
 vector<Crispr> prospector_main_gpu(string genome)
 {
+    clock_t start;
+
     char* device_genome = cpush(genome.c_str(), genome.length());
 
-    clock_t dyad_start = clock();
+    start = clock();
     vector<vector<unsigned int>> all_dyads = dyad_gen(device_genome, genome.length());
-    clock_t dyad_end = clock();
-
-    printf("dyad_gen completed in %.3f seconds.\n", duration(dyad_start, dyad_end));
-
-    clock_t crispr_start = clock();
-    vector<Crispr> crisprs = crispr_gen(genome, device_genome, genome.length(), all_dyads);
-    clock_t crispr_end = clock();
+    done(start, "dyad_gen");
     
+    start = clock();
+    vector<Crispr> crisprs = crispr_gen(genome, device_genome, genome.length(), all_dyads);
+    done(start, "crispr_gen");
+
     cufree(device_genome);
 
-    printf("crispr_gen completed in %.3f seconds.\n", duration(crispr_start, crispr_end));
-
     return crisprs;
-
 }
 
 
 vector<Crispr> prospector_main(string genome)
 {
-    clock_t start = clock();
+    clock_t start;
+    start = clock();
     vector<Crispr> crisprs = prospector_main_gpu(genome);
-	printf("prospector completed in %.3f seconds.\n", duration(start));
+    done(start, "prospector");
     return crisprs;
 }
 
