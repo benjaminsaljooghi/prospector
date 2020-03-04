@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 project(crispr LANGUAGES CXX CUDA)
 
+
+include_directories(
+        /usr/local/cuda/include
+        /home/ben/Documents/ncbi/include
+        /home/ben/Documents/ncbi/GCC800-DebugMT64/inc
+        /home/ben/Documents/ncbi/GCC800-DebugMT64/lib
+)
+
+
 add_library(util STATIC util/util.cpp util/util.h)
 add_library(prospector STATIC prospector/prospector.cu prospector/prospector.h)
 add_library(blast STATIC blast/blast.cpp)
