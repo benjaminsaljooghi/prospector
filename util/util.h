@@ -10,8 +10,8 @@ const unsigned int DEBUG_END = 10e7;
 
 
 
-#define K_START 35
-#define K_END 40
+#define K_START 20
+#define K_END 50
 
 
 #define MUTANT_TOLERANCE_RATIO 5
