@@ -1,4 +1,4 @@
-#include "../util/stdafx.h"
+#include "../util/util.h"
 
 
-vector<Crispr> prospector_main(string);
+vector<Crispr> prospector_main(const string&);

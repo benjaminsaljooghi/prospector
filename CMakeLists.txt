@@ -3,6 +3,12 @@ cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 project(crispr LANGUAGES CXX CUDA)
 
 
+
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G -g")
+set(CMAKE_BUILD_TYPE Debug)
+
+
+
 include_directories(
         /usr/local/cuda/include
         /home/ben/Documents/ncbi/include
@@ -26,6 +32,8 @@ target_include_directories(
 
 
 target_compile_features(prospector PUBLIC cxx_std_11)
+
+
 set_target_properties(prospector PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 add_executable(invoker invoker.cpp)

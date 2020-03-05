@@ -10,8 +10,8 @@ const unsigned int DEBUG_END = 10e7;
 
 
 
-#define K_START 30
-#define K_END 45
+#define K_START 35
+#define K_END 40
 
 
 #define MUTANT_TOLERANCE_RATIO 5
@@ -124,12 +124,11 @@ class Crispr
 		// 	genome_indices = _genome_indices;
 		// }
 
-		Crispr (unsigned int _k, unsigned int* __start, unsigned int* __end)
+		Crispr (unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
 		{
 			k = _k;
-			genome_indices = __start;
-			// _end = __end;
-			size = __end - __start;
+			genome_indices = inclusive;
+			size = exclusive - inclusive;
 		}
 
 		void update(string genome)

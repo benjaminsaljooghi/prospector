@@ -1,9 +1,10 @@
 // C
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 
 // C++
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -19,6 +20,7 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
+
 
 
 

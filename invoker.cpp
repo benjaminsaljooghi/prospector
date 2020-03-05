@@ -1,5 +1,5 @@
-#include "util/stdafx.h"
-#include "util/util.h"
+//#include "util/stdafx.h"
+//#include "util/util.h"
 #include "prospector/prospector.h"
 
 
@@ -137,12 +137,12 @@ vector<Crispr> domain_best(vector<Crispr> crisprs)
     return crisprs_domain_best;
 }
 
-map<string, int> get_spacer_scores(vector<Crispr> crisprs)
+map<string, int> get_spacer_scores(const vector<Crispr>& crisprs)
 {
     set<string> all_spacers;
-    for (Crispr crispr : crisprs)
+    for (const Crispr& crispr : crisprs)
     {
-        for (string spacer : crispr.spacers)
+        for (const string& spacer : crispr.spacers)
             all_spacers.insert(spacer);
     }
 
@@ -162,9 +162,8 @@ void run()
     string genome = genomes["thermophilus"];
 
     vector<Crispr> crisprs = prospector_main(genome);
-    
 
-    printf("cache crispr information...");
+    printf("cache crispr information of %zd crisprs...", crisprs.size());
     clock_t cache_start = clock();
     for (size_t i = 0; i < crisprs.size(); i++)
     {
