@@ -175,9 +175,9 @@ __half2 atomicAdd(__half2 *address, __half2 val);
 __half atomicAdd(__half *address, __half val);
 
 
-#define THREAD_BUFFER_SIZE 100000
+#define THREAD_BUFFER_SIZE 10000
 #define C_GRID 16
-#define C_BLOCK 64
+#define C_BLOCK 256
 #define CRISPR_BUFFER_COUNT THREAD_BUFFER_SIZE * C_GRID * C_BLOCK
 
 
@@ -218,10 +218,10 @@ __global__ void discover_crisprs(const char* genome, size_t genome_len, const un
         buffer_pointer += crispr_size;
         *(sizes + query_d_index) = crispr_size;
 
-//        if (buffer_pointer  >= buffer_pointer_limit)
-//        {
-//            printf("uh oh... stinky...\n");
-//        }
+        if (buffer_pointer  >= buffer_pointer_limit)
+        {
+            printf("uh oh... stinky...\n");
+        }
     }
 
 
