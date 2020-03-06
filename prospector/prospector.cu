@@ -180,99 +180,230 @@ __half atomicAdd(__half *address, __half val);
 #define C_BLOCK 256
 #define CRISPR_BUFFER_COUNT THREAD_BUFFER_SIZE * C_GRID * C_BLOCK
 
-__global__ void discover_crisprs(const char* genome, size_t genome_len, const unsigned int* dyads, unsigned int dyad_count, unsigned int* buffer, unsigned int k, unsigned int* starts, unsigned char* sizes)
+__global__ void discover_crisprs(const char* genome, unsigned int** dyads, const size_t* dyad_sizes, unsigned int** buffer, unsigned int** starts, unsigned char** sizes)
 {
+
+
+
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int stride = blockDim.x * gridDim.x;
 
-    const unsigned int initial_buffer_pointer = thread_id * THREAD_BUFFER_SIZE;
-    const unsigned int buffer_pointer_limit = initial_buffer_pointer + THREAD_BUFFER_SIZE; // exclusive limit
-    unsigned int buffer_pointer = initial_buffer_pointer;
 
-    for (unsigned int query_d_index = thread_id; query_d_index < dyad_count; query_d_index += stride)
+    for (unsigned int i = 0; i < K_COUNT; i++)
     {
-        unsigned int query_dyad = dyads[query_d_index];
-        unsigned int bound = query_dyad + k + SPACER_SKIP;
+        unsigned int k = K_START + i;
 
-        *(buffer + buffer_pointer) = query_dyad;
-        *(starts + query_d_index) = buffer_pointer;
-        unsigned int crispr_size = 1;
 
-        for (unsigned int target_d_index = query_d_index + 1; target_d_index < dyad_count; target_d_index++) // this for loop goes up to the dyad count but in practice this will never happen. May want to rewrite this. while loop? or for loop up to CRISPR_BUFFER?
+        const unsigned int initial_buffer_pointer = thread_id * THREAD_BUFFER_SIZE;
+        const unsigned int buffer_pointer_limit = initial_buffer_pointer + THREAD_BUFFER_SIZE; // exclusive limit
+        unsigned int buffer_pointer = initial_buffer_pointer;
+
+        for (unsigned int query_d_index = thread_id; query_d_index < dyad_sizes[i]; query_d_index += stride)
         {
-            unsigned int target_dyad = dyads[target_d_index];
-            if (target_dyad < bound) continue;
-            if (target_dyad - bound > SPACER_MAX) break;
-            if (mutant(genome, query_dyad, target_dyad, k))
+            unsigned int query_dyad = dyads[i][query_d_index];
+            unsigned int bound = query_dyad + k + SPACER_SKIP;
+
+            *(starts[i] + query_d_index) = buffer_pointer;
+            *(buffer[i] + buffer_pointer) = query_dyad;
+            unsigned int crispr_size = 1;
+
+            for (unsigned int target_d_index = query_d_index + 1; target_d_index < dyad_sizes[i]; target_d_index++) // this for loop goes up to the dyad count but in practice this will never happen. May want to rewrite this. while loop? or for loop up to CRISPR_BUFFER?
             {
-                *(buffer + buffer_pointer + crispr_size++) = target_dyad;
-                bound = target_dyad + k + SPACER_SKIP;
+                unsigned int target_dyad = dyads[i][target_d_index];
+                if (target_dyad < bound) continue;
+                if (target_dyad - bound > SPACER_MAX) break;
+                if (mutant(genome, query_dyad, target_dyad, k))
+                {
+                    *(buffer[i] + buffer_pointer + crispr_size++) = target_dyad;
+                    bound = target_dyad + k + SPACER_SKIP;
+                }
+            }
+
+            buffer_pointer += crispr_size;
+            *(sizes[i] + query_d_index) = crispr_size;
+
+            if (buffer_pointer  >= buffer_pointer_limit)
+            {
+                printf("uh oh... stinky...\n");
             }
         }
-
-        buffer_pointer += crispr_size;
-        *(sizes + query_d_index) = crispr_size;
-
-        if (buffer_pointer  >= buffer_pointer_limit)
-        {
-            printf("uh oh... stinky...\n");
-        }
     }
+
+
 //    printf("final buffer_pointer: %d\n", (buffer_pointer - initial_buffer_pointer));
 }
 
 
-vector<Crispr> crispr_gen(string genome, char* device_genome, size_t genome_len, vector<vector<unsigned int>> all_dyads)
+
+
+
+//cublasHandle_t handle;
+//cudaError_t cudaerr;
+//cudaEvent_t start, stop;
+//cublasStatus_t stat;
+//const float alpha = 1.0f;
+//const float beta = 0.0f;
+//
+//float *h_A = new float[5];
+//float *h_B = new float[5];
+//float *h_C = new float[6];
+//for (int i = 0; i < 5; i++)
+//{
+//h_A[i] = i;
+//h_B[i] = i;
+//}
+//
+//
+//
+//float **h_AA, **h_BB, **h_CC;
+//h_AA = (float**)malloc(6* sizeof(float*));
+//h_BB = (float**)malloc(6 * sizeof(float*));
+//h_CC = (float**)malloc(6 * sizeof(float*));
+//for (int i = 0; i < 6; i++){
+//cudaMalloc((void **)&h_AA[i], 5 * sizeof(float));
+//cudaMalloc((void **)&h_BB[i], 5 * sizeof(float));
+//cudaMalloc((void **)&h_CC[i], sizeof(float));
+//cudaMemcpy(h_AA[i], h_A, 5 * sizeof(float), cudaMemcpyHostToDevice);
+//cudaMemcpy(h_BB[i], h_B, 5 * sizeof(float), cudaMemcpyHostToDevice);
+//}
+//float **d_AA, **d_BB, **d_CC;
+//cudaMalloc(&d_AA, 6 * sizeof(float*));
+//cudaMalloc(&d_BB, 6 * sizeof(float*));
+//cudaMalloc(&d_CC, 6 * sizeof(float*));
+//cudaerr = cudaMemcpy(d_AA, h_AA, 6 * sizeof(float*), cudaMemcpyHostToDevice);
+//cudaerr = cudaMemcpy(d_BB, h_BB, 6 * sizeof(float*), cudaMemcpyHostToDevice);
+//cudaerr = cudaMemcpy(d_CC, h_CC, 6 * sizeof(float*), cudaMemcpyHostToDevice);
+//stat = cublasCreate(&handle);
+//stat = cublasSgemmBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, 1, 1, 5, &alpha,
+//                          (const float**)d_AA, 1, (const float**)d_BB, 5, &beta, d_CC, 1, 6);
+//cudaerr = cudaMemcpy(h_CC, d_CC, sizeof(float), cudaMemcpyDeviceToHost);
+//for (int i = 0; i < 6;i++)
+//cudaMemcpy(h_C+i, h_CC[i], sizeof(float), cudaMemcpyDeviceToHost);
+//cublasDestroy(handle);
+
+
+
+vector<Crispr> crispr_gen(const char* device_genome, vector<vector<unsigned int>> all_dyads)
 {
     clock_t start;
     vector<Crispr> all_crisprs;
 
-    for (size_t dyad_set = 0; dyad_set < all_dyads.size(); dyad_set++)
-    {     
-        unsigned int k = K_START + dyad_set;
-        printf("for k %d\n", k);
 
-        vector<unsigned int> dyads = all_dyads[dyad_set];
-        unsigned int dyad_count = dyads.size(); printf("dyad count: %d\n", dyad_count);
-        unsigned int* device_dyads = cpush(&dyads[0], dyad_count);
+    size_t size_buffer = CRISPR_BUFFER_COUNT * sizeof(unsigned int);
 
-        unsigned int* crispr_buffer = (unsigned int*) calloc(CRISPR_BUFFER_COUNT, sizeof(unsigned int));
-        unsigned int* crispr_starts = (unsigned int*) calloc(dyad_count, sizeof(unsigned int));
-        unsigned char* crispr_sizes = (unsigned char*) calloc(dyad_count, sizeof(unsigned char));
+    unsigned int k_vals[K_COUNT];
 
-        unsigned int* device_crispr_buffer = cpush(crispr_buffer, CRISPR_BUFFER_COUNT);
-        unsigned int* device_crispr_starts = cpush(crispr_starts, dyad_count);
-        unsigned char* device_crispr_sizes = cpush(crispr_sizes, dyad_count);
+    size_t* dyad_sizes = (size_t*) malloc(K_COUNT * sizeof(size_t));
+    size_t* d_dyad_sizes;
+    cudaMalloc(&d_dyad_sizes, K_COUNT * sizeof(size_t));
 
-        discover_crisprs KERNEL_ARGS2(C_GRID, C_BLOCK) (device_genome, genome_len, device_dyads, dyad_count, device_crispr_buffer, k, device_crispr_starts, device_crispr_sizes);
+    unsigned int** dyads = (unsigned int**) malloc(K_COUNT * sizeof(unsigned int*));
+    unsigned int** buffers = (unsigned int**) malloc(K_COUNT * sizeof(unsigned int*));
+    unsigned int** starts = (unsigned int**) malloc(K_COUNT * sizeof(unsigned int*));
+    unsigned char** sizes = (unsigned char**) malloc(K_COUNT * sizeof(unsigned char*));
 
-        cwait();
-        cpull(crispr_buffer, device_crispr_buffer, CRISPR_BUFFER_COUNT);
-        cpull(crispr_starts, device_crispr_starts, dyad_count);
-        cpull(crispr_sizes, device_crispr_sizes, dyad_count);
+    for (unsigned int i = 0; i < K_COUNT; i++)
+    {
+        k_vals[i] = K_START + i;
+        dyad_sizes[i] = all_dyads[i].size();
+        printf("dyad count: %zd\n", dyad_sizes[i]);
+        dyads[i] = all_dyads[i].data();
 
-        cufree(device_crispr_buffer);
-        cufree(device_crispr_starts);
-
-        vector<Crispr> k_crisprs;
+        buffers[i] = (unsigned int *) calloc(CRISPR_BUFFER_COUNT, sizeof(unsigned int));
+        starts[i] = (unsigned int *) calloc(dyad_sizes[i], sizeof(unsigned int));
+        sizes[i] = (unsigned char *) calloc(dyad_sizes[i], sizeof(unsigned char));
+    }
 
 
-        printf("extract..."); start = clock();
-        for (unsigned int dyad_index = 0; dyad_index < dyad_count; dyad_index++)
+    // in order to create device array of pointers to device arrays (for batched functions),
+    // one should first create host array of pointers to device arrays,
+    unsigned int** h_d_dyads = (unsigned int**) malloc(K_COUNT * 8) ;
+    unsigned int** h_d_buffers = (unsigned int**) malloc(K_COUNT * 8);
+    unsigned int** h_d_starts = (unsigned int**) malloc(K_COUNT * 8);
+    unsigned char** h_d_sizes = (unsigned char**) malloc(K_COUNT * 8);
+    for (unsigned int i = 0; i < K_COUNT; i++)
+    {
+        cudaMalloc(&h_d_dyads[i], dyad_sizes[i] * sizeof(unsigned int));
+        cudaMalloc(&h_d_buffers[i], size_buffer);
+        cudaMalloc(&h_d_starts[i], dyad_sizes[i] * sizeof(unsigned int));
+        cudaMalloc(&h_d_sizes[i], dyad_sizes[i] * sizeof(unsigned char));
+
+        cudaMemcpy(h_d_dyads[i], dyads[i], dyad_sizes[i] * sizeof(unsigned int), cudaMemcpyHostToDevice);
+        cudaMemcpy(h_d_buffers[i], buffers[i], size_buffer, cudaMemcpyHostToDevice);
+        cudaMemcpy(h_d_starts[i], starts[i], dyad_sizes[i] * sizeof(unsigned int), cudaMemcpyHostToDevice);
+        cudaMemcpy(h_d_sizes[i], sizes[i], dyad_sizes[i] * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    }
+
+
+    // and after that copy it into device array of pointers to device arrays.
+    unsigned int** d_d_dyads;
+    unsigned int** d_d_buffers;
+    unsigned int** d_d_starts;
+    unsigned char** d_d_sizes;
+
+    cudaMalloc(&d_d_dyads, K_COUNT * 8);
+    cudaMalloc(&d_d_buffers, K_COUNT * 8);
+    cudaMalloc(&d_d_starts, K_COUNT * 8);
+    cudaMalloc(&d_d_sizes, K_COUNT * 8);
+
+    // copy device pointers to device array of device pointers
+    cudaMemcpy(d_d_dyads, h_d_dyads, K_COUNT * 8, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_d_buffers, h_d_buffers, K_COUNT * 8, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_d_starts, h_d_starts, K_COUNT * 8, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_d_sizes, h_d_sizes, K_COUNT * 8, cudaMemcpyHostToDevice);
+
+
+    discover_crisprs KERNEL_ARGS2(C_GRID, C_BLOCK) (device_genome, d_d_dyads, d_dyad_sizes, d_d_buffers, d_d_starts, d_d_sizes);
+    cwait();
+
+    // backwards
+
+//    cudaerr = cudaMemcpy(h_CC, d_CC, sizeof(float), cudaMemcpyDeviceToHost);
+//    for (int i = 0; i < 6;i++)
+//        cudaMemcpy(h_C+i, h_CC[i], sizeof(float), cudaMemcpyDeviceToHost);
+
+    for (unsigned int i = 0; i < K_COUNT; i++)
+    {
+        cudaMemcpy(buffers + i, d_d_buffers[i], size_buffer, cudaMemcpyDeviceToHost);
+        cudaMemcpy(starts + i, d_d_starts[i], dyad_sizes[i] * 4, cudaMemcpyDeviceToHost);
+        cudaMemcpy(sizes + i, d_d_sizes[i], dyad_sizes[i] * 1, cudaMemcpyDeviceToHost);
+    }
+
+
+    // The same is true about transfering back to host: one should use intermediate host array of pointers to device arrays.
+
+
+//    cufree(d_dyads);
+//    cufree(d_dyad_sizes);
+//    cufree(d_buffers);
+//    cufree(d_sizes);
+
+    printf("extract..."); start = clock();
+
+    for (unsigned int i = 0; i < K_COUNT; i++)
+    {
+        vector<Crispr> crisprs;
+
+        for (unsigned int dyad_index = 0; dyad_index < dyad_sizes[i]; dyad_index++)
         {
-            unsigned char __size = crispr_sizes[dyad_index];
+            unsigned char __size = sizes[i][dyad_index];
             if (__size >= MIN_REPEATS)
             {
-                unsigned int* _s = crispr_buffer + crispr_starts[dyad_index];
+                unsigned int* _s = buffers[i] + sizes[i][dyad_index];
                 unsigned int* _e = _s + __size;
-                Crispr crispr(k, _s, _e);
-                k_crisprs.push_back(crispr);
+                Crispr crispr(k_vals[i], _s, _e);
+                crisprs.push_back(crispr);
             }
         }
-        done(start);
 
-        all_crisprs.insert(all_crisprs.end(), k_crisprs.begin(), k_crisprs.end());
+        all_crisprs.insert(all_crisprs.end(), crisprs.begin(), crisprs.end());
     }
+
+    done(start);
+
+
+
+
 
     return all_crisprs;
 }
@@ -398,7 +529,7 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     done(start, "dyad_gen");
     
     start = clock();
-    vector<Crispr> crisprs = crispr_gen(genome, device_genome, genome.length(), all_dyads);
+    vector<Crispr> crisprs = crispr_gen(device_genome, all_dyads);
     done(start, "crispr_gen");
 
     cufree(device_genome);
