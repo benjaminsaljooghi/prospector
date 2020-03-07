@@ -5,8 +5,6 @@
 #include "cuda_fp16.h"
 
 
-//#include "../util/stdafx.h"
-//#include "../util/util.h"
 #include "prospector.h"
 
 
@@ -26,7 +24,7 @@
 void cwait()
 {
 	printf("waiting for kernel... ");
-	clock_t start = clock();
+	double start = omp_get_wtime();
 	cudaError err = cudaDeviceSynchronize();
 	printf("done in %.3f seconds\n", duration(start));
 	if (err != cudaSuccess)
@@ -34,67 +32,6 @@ void cwait()
 		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
 		exit(err);
 	}
-}
-
-void cufree(void* device_ptr)
-{
-	printf("executing cudafree... ");
-    clock_t start = clock();
-	cudaError err = cudaFree(device_ptr);
-	if (err != cudaSuccess)
-	{
-		fprintf(stderr, "failed to free device ptr (error code %s)!\n", cudaGetErrorString(err));
-		exit(err);
-	}
-    done(start);
-}
-
-template <typename T> void cpull(T* host, const T* device, unsigned int count)
-{
-	size_t bytes = count * sizeof(T);
-
-	cudaError err;
-
-	printf("memcpy %*zd bytes from device... ", printf_BYTE_FORMAT_ALIGN, bytes);
-    clock_t start = clock();
-	err = cudaMemcpy(host, device, bytes, cudaMemcpyDeviceToHost);
-	if (err != cudaSuccess)
-	{
-		fprintf(stderr, "failed to copy from device to host (error code %s)!\n", cudaGetErrorString(err));
-		exit(err);
-	}
-    done(start);
-    
-}
-
-template <typename T> T* cpush(const T* src, unsigned int count)
-{
-	size_t bytes = count * sizeof(T);
-
-	cudaError err;
-	T* ptr = nullptr;
-
-	printf("malloc+memcpy %*zd bytes to device... ", printf_BYTE_FORMAT_ALIGN, bytes);
-    clock_t start = clock();
-	err = cudaMalloc((void**)& ptr, bytes);
-	if (err != cudaSuccess)
-	{
-		fprintf(stderr, "failed to malloc device (error code %s)!\n", cudaGetErrorString(err));
-		exit(err);
-	}
-    // done(start);
-
-	// printf("memcpy %*zd bytes to device... ", printf_BYTE_FORMAT_ALIGN, bytes);
-    // start = clock();
-	err = cudaMemcpy(ptr, src, bytes, cudaMemcpyHostToDevice);
-	if (err != cudaSuccess)
-	{
-		fprintf(stderr, "failed to copy from host to device (error code %s)!\n", cudaGetErrorString(err));
-		exit(err);
-	}
-    done(start);
-
-	return (T*)ptr;
 }
 
 __device__ char complement(char nuc)
@@ -143,10 +80,12 @@ __device__ bool is_dyad_debug_check(unsigned int start_index)
 
 __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned int k)
 {
+#if DEBUG_START != 0
     if (!is_dyad_debug_check(start_index))
     {
         return false;
     }
+#endif
 
     unsigned int end_index = start_index + k - 1;
 
@@ -162,17 +101,6 @@ __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned i
     double mismatch_ratio = (double) mismatch_count / (double) range;
     return mismatch_ratio < 0.75;
 }
-
-//
-//int atomicAdd(int* address, int val);
-//unsigned int atomicAdd(unsigned int* address,
-//                       unsigned int val);
-//unsigned long long int atomicAdd(unsigned long long int* address,
-//                                 unsigned long long int val);
-//float atomicAdd(float* address, float val);
-//double atomicAdd(double* address, double val);
-//__half2 atomicAdd(__half2 *address, __half2 val);
-//__half atomicAdd(__half *address, __half val);
 
 
 
@@ -190,7 +118,6 @@ __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const 
     const unsigned int k = K_START + i;
     const unsigned int thread_buffer_start = buffer_start + (thread_id * THREAD_BUFFER_COUNT);
     const unsigned int thread_buffer_limit = thread_buffer_start + THREAD_BUFFER_COUNT;
-
 
 
     unsigned int buffer_pointer = thread_buffer_start;
@@ -244,9 +171,10 @@ cudaError_t checkCuda(cudaError_t result)
 
 vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t* dyad_counts, size_t total_dyad_count)
 {
-    clock_t start_time;
-    cudaError er;
+    double start_time;
+    start_time = omp_get_wtime();
 
+    cudaError er;
 
     size_t count_dyads = total_dyad_count;
     size_t count_dyad_counts = K_COUNT;
@@ -259,9 +187,6 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
     size_t bytes_buffer = 4 * count_buffer;
     size_t bytes_starts = 4 * count_starts;
     size_t bytes_sizes = 1 * count_sizes;
-
-
-
 
     // dyad info
     unsigned int* d_dyads;
@@ -290,6 +215,7 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
     er = cudaMemset(buffer, 1, bytes_buffer); checkCuda(er);
     er = cudaMemset(starts, 1, bytes_starts); checkCuda(er);
     er = cudaMemset(sizes, 1, bytes_sizes); checkCuda(er);
+    done(start_time, "crispr_gen init");
 
     // stream init
 
@@ -298,11 +224,9 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
         cudaStreamCreate(&stream[i]);
 
     // kernel executions
-
-
     unsigned int buffer_start = 0;
     unsigned int dyad_start = 0;
-    start_time = clock();
+    start_time = omp_get_wtime();
     for (int i = 0; i < K_COUNT; i++)
     {
         discover_crisprs KERNEL_ARGS4(C_GRID, C_BLOCK, 0, stream[i]) (device_genome, d_dyads, d_dyad_counts, d_buffer, d_starts, d_sizes, buffer_start, dyad_start, i);
@@ -314,19 +238,13 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
         dyad_start += dyad_counts[i];
     }
 
-
-    // need to wait for everything to finish
-    cwait(); // is there a better way to do this?
+    cwait();
     done(start_time, "crispr kernels");
 
-    // let's examine the buffer
-    vector<unsigned int> v_buffer(buffer, buffer + count_buffer);
-    vector<unsigned int> v_starts(starts, starts + count_starts);
-    vector<unsigned int> v_sizes(sizes, sizes + count_sizes);
 
+    start_time = omp_get_wtime();
 
     vector<Crispr> all_crisprs;
-
 
     unsigned int __dyad_start = 0;
     for (unsigned int i = 0; i < K_COUNT; i++)
@@ -351,6 +269,7 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
         __dyad_start += dyad_counts[i];
     }
 
+    done(start_time, "crispr extract");
 
 
     return all_crisprs;
@@ -358,39 +277,22 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
 
 
 
-//        vector<unsigned int> starts(crispr_starts, crispr_starts + dyad_count);
-//         printf("----begin crispr buffer-------\n");
-//         for (unsigned int i = 0; i < CRISPR_BUFFER_COUNT; i++)
-//         {
-//             printf("%d %d/%d %d\n", k, i, CRISPR_BUFFER_COUNT, crispr_buffer[i]);
-//             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-//         }
-//         printf("------end crispr buffer-----\n");
-
-
-
-
-
-__device__ void dyad_discovery_single_index(const char* genome, size_t genome_len, unsigned int d_index, unsigned int* dyad_buffer)
-{
-    for (unsigned int k = K_START; k < K_END; k++)
-    {
-        if (d_index + k < genome_len && is_dyad(genome, d_index, k))
-        {
-            unsigned int k_jump = genome_len;
-            unsigned int k_index = k - K_START;
-            dyad_buffer[k_index * k_jump + d_index] = d_index;
-        }
-    }
-}
-
-
 __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned int* dyad_buffer)
 {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int stride = blockDim.x * gridDim.x;
     for (unsigned int d_index = thread_id; d_index < genome_len; d_index += stride)
-        dyad_discovery_single_index(genome, genome_len, d_index, dyad_buffer);
+    {
+        for (unsigned int k = K_START; k < K_END; k++)
+        {
+            if (d_index + k < genome_len && is_dyad(genome, d_index, k))
+            {
+                unsigned int k_jump = genome_len;
+                unsigned int k_index = k - K_START;
+                dyad_buffer[k_index * k_jump + d_index] = d_index;
+            }
+        }
+    }
 }
 
 
@@ -398,7 +300,7 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned i
 vector<unsigned int> dyad_lengths(const vector<vector<unsigned int>>& all_dyads)
 {
 	printf("compute dyad lengths... ");
-	clock_t start = clock();
+	double start = omp_get_wtime();
     vector<unsigned int> lengths;
 	lengths.reserve(all_dyads.size());
     for (const auto& vec : all_dyads)
@@ -412,68 +314,55 @@ vector<unsigned int> dyad_lengths(const vector<vector<unsigned int>>& all_dyads)
 vector<vector<unsigned int>> dyad_gen(char* device_genome, size_t genome_len)
 {
     size_t buffer_count = genome_len * (K_END - K_START);
-    unsigned int* dyad_buffer = new unsigned int[buffer_count];
-    memset(dyad_buffer, 0, buffer_count * sizeof(unsigned int));
+    size_t buffer_bytes = 4 * buffer_count;
 
-    unsigned int* device_dyad_buffer = cpush(dyad_buffer, buffer_count);
-    
-    dyad_discovery KERNEL_ARGS2(32, 256) (device_genome, genome_len, device_dyad_buffer);
+    unsigned int *buffer, *d_buffer;
+
+    cudaMallocHost(&buffer, buffer_bytes);
+    cudaMalloc(&d_buffer, buffer_bytes);
+    cudaMemset(d_buffer, 0, buffer_bytes);
+
+    dyad_discovery KERNEL_ARGS2(32, 256) (device_genome, genome_len, d_buffer);
     cwait();
 
-    cpull(dyad_buffer, device_dyad_buffer, buffer_count);
-    cufree(device_dyad_buffer);
+    cudaMemcpy(buffer, d_buffer, buffer_bytes, cudaMemcpyDeviceToHost);
+    cudaFree(d_buffer);
 
-    printf("extract dyads... ");
-    clock_t start = clock();
-    vector<vector<unsigned int>> all_dyads;
-    for (unsigned int k = K_START; k < K_END; k++)
+    double start = omp_get_wtime();
+    vector<vector<unsigned int>> all_dyads(K_COUNT);
+
+    #pragma omp parallel for
+    for (unsigned int i = 0; i < K_COUNT; i++)
     {
+        unsigned int k = K_START + i;
         unsigned int hopscotch = genome_len * (k - K_START);
         vector<unsigned int> dyads;
-        for (unsigned int i = 0; i < genome_len; i++)
+        for (unsigned int j = 0; j < genome_len; j++)
         {
-            unsigned int hopscotch_leap = hopscotch + i;
-            unsigned int dyad = dyad_buffer[hopscotch_leap];
+            unsigned int dyad = *(buffer + hopscotch + j);
             
             if (dyad != 0)
                 dyads.push_back(dyad);
         }
-        all_dyads.push_back(dyads);
+        all_dyads[i] = dyads;
     }
-    done(start);
+    done(start, "dyad extraction");
 
+    cudaFreeHost(buffer);
     return all_dyads;
 }
 
-//
-//void print_buffer(unsigned int total_dyad_count, unsigned int* crispr_buffer)
-//{
-//    unsigned int count = 0;
-//    for (unsigned int d_index = 0; d_index < total_dyad_count; d_index++)
-//    {
-//        if (crispr_buffer[d_index * CRISPR_BUFFER + 1] == 0)
-//        {
-//            continue;
-//        }
-//        count += 1;
-//
-//        printf("%d: ", d_index);
-//        for (unsigned int i = 0; i < CRISPR_BUFFER; i++)
-//        {
-//            printf("%d ", crispr_buffer[d_index * CRISPR_BUFFER + i]);
-//        }
-//        printf("\n");
-//    }
-//}
 
 vector<Crispr> prospector_main_gpu(const string& genome)
 {
-    clock_t start;
+    double start;
 
-    char* device_genome = cpush(genome.c_str(), genome.length());
+    char* d_genome;
+    cudaMalloc(&d_genome, 1 * genome.length());
+    cudaMemcpy(d_genome, genome.c_str(), 1 * genome.length(), cudaMemcpyHostToDevice);
 
-    start = clock();
-    vector<vector<unsigned int>> all_dyads = dyad_gen(device_genome, genome.length());
+    start = omp_get_wtime();
+    vector<vector<unsigned int>> all_dyads = dyad_gen(d_genome, genome.length());
     vector<unsigned int> all_dyads_flat = flatten(all_dyads);
     unsigned int* dyads = &all_dyads_flat[0];
     size_t total_dyad_count = 0;
@@ -482,14 +371,12 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     for (unsigned int i = 0; i < K_COUNT; i++) *(dyad_counts + i) = all_dyads[i].size();
     done(start, "dyad_gen");
 
-
-    start = clock();
-    vector<Crispr> crisprs = crispr_gen(device_genome, dyads, dyad_counts, total_dyad_count);
+    start = omp_get_wtime();
+    vector<Crispr> crisprs = crispr_gen(d_genome, dyads, dyad_counts, total_dyad_count);
     done(start, "crispr_gen");
 
-
     free(dyad_counts);
-    cufree(device_genome);
+    cudaFree(d_genome);
 
     return crisprs;
 }
@@ -499,8 +386,8 @@ vector<Crispr> prospector_main(const string& genome)
 {
     printf("genome has size %zd\n", genome.size());
     
-    clock_t start;
-    start = clock();
+    double start;
+    start = omp_get_wtime();
     vector<Crispr> crisprs = prospector_main_gpu(genome);
     done(start, "prospector");
     return crisprs;

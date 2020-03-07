@@ -69,7 +69,7 @@ class Profile
 
 void cas(string genome, vector<Crispr> crisprs)
 {
-    clock_t start = clock();
+    double start = omp_get_wtime();
 
     int k = 5;
     int upstream_size = 10000;    
@@ -79,7 +79,7 @@ void cas(string genome, vector<Crispr> crisprs)
         Profile("pyogenes", "/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta", k)
     };
 
-    #pragma omp parallel for      
+//    #pragma omp parallel for
     for (Crispr crispr : crisprs)
     {
         string upstream = genome.substr(crispr.start - upstream_size, upstream_size);
@@ -104,7 +104,7 @@ vector<Crispr> domain_best(vector<Crispr> crisprs)
 {
 
     printf("filtering %zd crisprs... ", crisprs.size());
-    clock_t start = clock();
+    double start = omp_get_wtime();
 
     
     // get the best of each domain
@@ -153,7 +153,11 @@ map<string, int> get_spacer_scores(const vector<Crispr>& crisprs)
 
 
 void run()
-{        
+{
+    double start;
+    double end;
+
+
     map<string, string> genomes = {
         {"thermophilus", parse_fasta("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta").begin()->second},
         {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
@@ -163,22 +167,18 @@ void run()
 
     vector<Crispr> crisprs = prospector_main(genome);
 
-    printf("cache crispr information of %zd crisprs...", crisprs.size());
-    clock_t cache_start = clock();
+    start = omp_get_wtime();
+    #pragma omp parallel for default(none) shared(crisprs) shared(genome)
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         crisprs[i].update(genome);
     }
-    done(cache_start);
+    done(start, "cache crispr information");
 
     sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
 
-    // debug(genome, crisprs);
-    
     vector<Crispr> crisprs_domain_best = domain_best(crisprs);
-    
     map<string, int> spacer_scores = get_spacer_scores(crisprs_domain_best);
-
     vector<Crispr> crisprs_filtered;
     for (Crispr crispr : crisprs_domain_best)
     {
@@ -205,7 +205,7 @@ void run()
 int main()
 {
     printf("running invoker...\n");
-    clock_t start = clock();
+    double start = omp_get_wtime();
     
     run();
 

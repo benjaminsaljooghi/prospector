@@ -4,24 +4,24 @@
 
 // general
 
-double duration(clock_t begin, clock_t end)
+double duration(double start, double end)
 {
-	return (end - begin) / (double)CLOCKS_PER_SEC;
+	return end - start;
 }
 
-double duration(clock_t begin)
+double duration(double begin)
 {
-	return duration(begin, clock());
+	return duration(begin, omp_get_wtime());
 }
 
-void done(clock_t begin, string out)
+void done(double start, string out)
 {
-	printf("%s done in %.3f seconds\n", out.c_str(), duration(begin));
+	printf("%s done in %.3f seconds\n", out.c_str(), duration(start));
 }
 
-void done(clock_t begin)
+void done(double start)
 {
-	done(begin, "");
+	done(start, "");
 }
 
 
@@ -48,7 +48,7 @@ map<char, char> complement_table;
 map<string, string> parse_fasta(string file_path)
 {
 	printf("reading %s... ", file_path.c_str());
-	clock_t start = clock();
+	double start = omp_get_wtime();
 	ifstream input(file_path);
 	if (!input.good())
 	{

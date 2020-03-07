@@ -58,7 +58,7 @@ map<string, int> BLAST(set<string> _seqs)
 
 
     printf("instantiating blast... ");
-    clock_t start = clock();
+    double start = omp_get_wtime();
 
     EProgram program = ProgramNameToEnum("blastn"); 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
@@ -85,7 +85,7 @@ map<string, int> BLAST(set<string> _seqs)
     done(start);
 
     printf("blasting... ");
-    start = clock();
+    start = omp_get_wtime();
 
     CSearchResultSet results = *blaster.Run();
     

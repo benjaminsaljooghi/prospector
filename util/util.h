@@ -33,10 +33,10 @@ const unsigned int DEBUG_END = 10e7;
 
 
 // general
-double duration(clock_t begin, clock_t end);
-double duration(clock_t begin);
-void done(clock_t begin, string out);
-void done(clock_t begin);
+double duration(double, double);
+double duration(double);
+void done(double, string);
+void done(double);
 
 
 template <typename T> vector<T> flatten(vector<vector<T>> vecs)
@@ -104,29 +104,18 @@ class Crispr
 	public:
 
 		unsigned int* genome_indices;
-		// unsigned int* _end;
 		size_t size;
 
-
-
-
 		unsigned int k;
-		// vector<unsigned int> genome_indices;
 		unsigned int start;
 		unsigned int end;
 
-
 		vector<string> repeats;
 		vector<string> spacers;
-		double conservation_repeats;
+        double conservation_repeats;
 		double conservation_spacers;
 		double overall_heuristic;
 
-		// Crispr(unsigned int _k, vector<unsigned int> _genome_indices)
-		// {
-		// 	k = _k;
-		// 	genome_indices = _genome_indices;
-		// }
 
 		Crispr (unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
 		{
@@ -136,68 +125,32 @@ class Crispr
 		}
 
 		void update(string genome)
-		{
-			// sort(genome_indices.begin(), genome_indices.end());
+        {
+		    repeats = vector<string>(size);
+            spacers = vector<string>(size-1);
 
-			// repeats.clear();
-			// spacers.clear();
+            for (size_t i = 0; i < size; i++)
+            {
+                repeats[i] = genome.substr(genome_indices[i], k).c_str();
+            }
 
-			for (size_t i = 0; i < size; i++)
-			{
-				repeats.push_back(genome.substr(genome_indices[i], k).c_str());
-			}
+            for (size_t i = 0; i < size - 1; i++)
+            {
+                unsigned int current_repeat_end = genome_indices[i] + k;
+                unsigned int next_repeat_begin = genome_indices[i+1];
+                unsigned int spacer_size = next_repeat_begin - current_repeat_end;
+                spacers[i] = genome.substr(current_repeat_end, spacer_size);
+            }
 
-			for (size_t i = 0; i < size - 1; i++)
-			{
-				unsigned int current_repeat_end = genome_indices[i] + k;
-				unsigned int next_repeat_begin = genome_indices[i+1];
-				unsigned int spacer_size = next_repeat_begin - current_repeat_end;
-				spacers.push_back(genome.substr(current_repeat_end, spacer_size));
-			}   
+            start = *genome_indices;
+            end = (genome_indices[size-1]) + k - 1;
 
-			start = *genome_indices;
-			end = (genome_indices[size-1]) + k - 1;		
-			
-			conservation_repeats = get_conservation_consensus(repeats);
-			conservation_spacers = get_conservation_spacer(spacers);
-			overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
-		}
+            conservation_repeats = get_conservation_consensus(repeats);
+            conservation_spacers = get_conservation_spacer(spacers);
+            overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
 
-		// void insert(string genome, unsigned int repeat_index)
-		// {
-		// 	genome_indices.push_back(repeat_index);
-		// 	update(genome);
-		// }
+        }
 
-		// unsigned int consensus(string genome)
-		// {
-		// 	map<string, int> frequencies;
-		// 	for (size_t i = 0; i < genome_indices.size(); i++)
-		// 	{
-		// 		string repeat = repeats[i];
-		// 		frequencies[repeat] += 1;
-		// 	}
-
-		// 	int max_freq = 0;
-		// 	string max_repeat;
-		// 	for (auto const& pack : frequencies)
-		// 	{
-		// 		if (pack.second > max_freq)
-		// 		{
-		// 			max_freq = pack.second;
-		// 			max_repeat = pack.first;
-		// 		}	
-		// 	}
-
-		// 	auto it = find(repeats.begin(), repeats.end(), max_repeat);
-		// 	if (it == repeats.end())
-		// 	{
-		// 		printf("something impossible just happened\n");
-		// 	}
-
-		// 	size_t repeat_index = it - repeats.begin();
-		// 	return genome_indices[repeat_index];
-		// }
 
 	private:
 
