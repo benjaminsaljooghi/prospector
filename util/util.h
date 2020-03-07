@@ -10,6 +10,9 @@ const unsigned int DEBUG_END = 10e7;
 
 
 
+#define DEBUG 1
+
+
 #define K_START 20
 #define K_END 50
 #define K_COUNT (K_END - K_START)
@@ -25,7 +28,7 @@ const unsigned int DEBUG_END = 10e7;
 #define SCAN_DOMAIN SPACER_MAX
 #define ALLOW_DISCREPANT_LENGTHS false
 #define MIN_REPEATS 3
-#define CRISPR_BUFFER 50
+//#define CRISPR_BUFFER 50
 #define printf_BYTE_FORMAT_ALIGN 10
 
 
