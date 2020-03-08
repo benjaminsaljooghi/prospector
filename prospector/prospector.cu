@@ -302,6 +302,8 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     return all_crisprs;
 }
 
+#define DGRID 128
+#define DBLOCK 512
 
 
 __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned int* dyad_buffer)
@@ -325,6 +327,8 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned i
 
 }
 
+
+//#include <concurrent_vector>
 
 
 vector<unsigned int> dyad_lengths(const vector<vector<unsigned int>>& all_dyads)
@@ -362,37 +366,51 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
     cwait();
     done(start_time, "dyad kernel");
 
+    start_time = omp_get_wtime();
     cudaMemcpy(buffer, d_buffer, buffer_bytes, cudaMemcpyDeviceToHost);
     cudaFree(d_buffer);
 
-    double start = omp_get_wtime();
-    vector<unsigned int> dyads;
-    size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
-    size_t total_dyad_count = 0;
-    for (unsigned int i = 0; i < K_COUNT; i++)
-    {
-        unsigned int hopscotch = genome_len * i;
-        size_t count = 0;
-        for (unsigned int j = 0; j < genome_len; j++)
-        {
-            unsigned int dyad = *(buffer + hopscotch + j);
-            if (dyad != 0)
-            {
-                dyads.push_back(dyad);
-                count++;
-            }
-        }
-        *(dyad_counts + i) = count;
-        total_dyad_count += count;
-    }
-    done(start, "dyad extraction");
+    done(start_time, "dyad memcpy");
 
-    cudaFreeHost(buffer);
+    start_time = omp_get_wtime();
+    vector<unsigned int> buffer_inspection(buffer, buffer + buffer_count);
+    done(start_time, "vec_a");
+    start_time = omp_get_wtime();
+    buffer_inspection.erase(std::remove(buffer_inspection.begin(), buffer_inspection.end(), 0), buffer_inspection.end());
+
+    done(start_time, "vec_b");
+
+//    start_time = omp_get_wtime();
+//    vector<unsigned int> dyads;
+//    size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
+//    size_t total_dyad_count = 0;
+//
+//    for (unsigned int i = 0; i < K_COUNT; i++)
+//    {
+//        unsigned int hopscotch = genome_len * i;
+//        size_t count = 0;
+//        for (unsigned int j = 0; j < genome_len; j++)
+//        {
+//            unsigned int dyad = *(buffer + hopscotch + j);
+//            if (dyad != 0)
+//            {
+//                dyads.push_back(dyad);
+//                count++;
+//            }
+//        }
+//        *(dyad_counts + i) = count;
+//        total_dyad_count += count;
+//    }
+//    done(start_time, "dyad extraction");
+//
+//    cudaFreeHost(buffer);
+
+    exit(0);
 
     Dyad_Info info;
-    info.dyads = dyads;
-    info.dyad_counts = dyad_counts;
-    info.total_dyad_count = total_dyad_count;
+//    info.dyads = dyads;
+//    info.dyad_counts = dyad_counts;
+//    info.total_dyad_count = total_dyad_count;
     return info;
 }
 
