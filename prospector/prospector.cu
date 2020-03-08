@@ -342,17 +342,17 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
     cudaFree(d_buffer);
     done(start_time, "dyad memcpy");
 
-
     start_time = omp_get_wtime();
     vector<unsigned int> dyads;
     size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
-    bool* buffer_start = buffer;
+
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
+        bool* buffer_pointer = buffer + (i * genome_len);
         size_t count_before = dyads.size();
         for (unsigned int j = 0; j < genome_len; j++)
         {
-            if (*(buffer_start++) == 1)
+            if (*(buffer_pointer++) == 1)
             {
                 dyads.push_back(j);
             }
@@ -360,7 +360,6 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
         dyad_counts[i] = dyads.size() - count_before;
     }
     done(start_time, "extract");
-
 
     cudaFreeHost(buffer);
     cudaFree(d_buffer);

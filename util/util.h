@@ -49,6 +49,119 @@ template <typename T> vector<T> flatten(vector<vector<T>> vecs)
 }
 
 
+// Crispr
+double get_conservation_consensus(vector<string> repeats);
+double get_conservation_spacer(vector<string> spacers);
+double get_conservation_spacer_2(vector<string> spacers);
+
+
+// seq
+map<string, string> parse_fasta(string file_path);
+char _complement(char a);
+string reverse_complement(string seq);
+int mismatch_count(string repeat);
+string seqs_to_fasta(vector<string> seqs);
+vector<string> get_kmers(string seq, unsigned int k);
+vector<string> get_kmers_amino(string dna, unsigned int k);
+vector<string> sixwaytranslation(string dna);
+
+
+
+class Crispr
+{
+public:
+
+    // computed by constructor
+    unsigned int* genome_indices;
+    size_t size;
+    unsigned int k;
+
+    // computed by update
+    unsigned int start;
+    unsigned int end;
+    vector<string> repeats;
+    vector<string> spacers;
+    double conservation_repeats;
+    double conservation_spacers;
+    double overall_heuristic;
+
+    // computed by update2
+    vector<string> target_kmers;
+
+    Crispr (unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
+    {
+        k = _k;
+        genome_indices = inclusive;
+        size = exclusive - inclusive;
+    }
+
+    void update(string genome)
+    {
+        repeats = vector<string>(size);
+        spacers = vector<string>(size-1);
+
+        for (size_t i = 0; i < size; i++)
+        {
+            repeats[i] = genome.substr(genome_indices[i], k).c_str();
+        }
+
+        for (size_t i = 0; i < size - 1; i++)
+        {
+            unsigned int current_repeat_end = genome_indices[i] + k;
+            unsigned int next_repeat_begin = genome_indices[i+1];
+            unsigned int spacer_size = next_repeat_begin - current_repeat_end;
+            spacers[i] = genome.substr(current_repeat_end, spacer_size);
+        }
+
+        start = *genome_indices;
+        end = (genome_indices[size-1]) + k - 1;
+
+        conservation_repeats = get_conservation_consensus(repeats);
+        conservation_spacers = get_conservation_spacer(spacers);
+        overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
+
+    }
+
+    void update2(string genome, size_t upstream_size)
+    {
+        string upstream = genome.substr(start - upstream_size, upstream_size);
+        target_kmers = get_kmers_amino(upstream, k);
+    }
+
+
+private:
+
+};
+
+
+
+
+class Profile
+{
+    public:
+        string name;
+        string seq;
+        vector<string> kmers;
+        Profile(string _name, string _path, int _k);
+};
+
+class ProfileExecution
+{
+    public:
+        Profile* profile;
+        Crispr* crispr;
+        vector<int> ordered_positions;
+        map<string, vector<int>> locations_present;
+        int hits;
+        int hits_possible;
+
+        ProfileExecution(Profile*, Crispr*);
+        void to_string();
+};
+
+
+
+
 template <typename T> T median(vector<T> scores)
 {
   size_t size = scores.size();
@@ -85,78 +198,8 @@ template <typename T> T mean(vector<T> scores)
 bool subset(vector<int> a, vector<int> b);
 
 
-// seq
-map<string, string> parse_fasta(string file_path);
-char _complement(char a);
-string reverse_complement(string seq);
-int mismatch_count(string repeat);
-string seqs_to_fasta(vector<string> seqs);
-vector<string> get_kmers(string seq, unsigned int k);
-vector<string> get_kmers_amino(string dna, unsigned int k);
-vector<string> sixwaytranslation(string dna);
-
-// Crispr
-double get_conservation_consensus(vector<string> repeats);
-double get_conservation_spacer(vector<string> spacers);
-double get_conservation_spacer_2(vector<string> spacers);
 
 
-class Crispr
-{
-	public:
-
-		unsigned int* genome_indices;
-		size_t size;
-
-		unsigned int k;
-		unsigned int start;
-		unsigned int end;
-
-		vector<string> repeats;
-		vector<string> spacers;
-        double conservation_repeats;
-		double conservation_spacers;
-		double overall_heuristic;
-
-
-		Crispr (unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
-		{
-			k = _k;
-			genome_indices = inclusive;
-			size = exclusive - inclusive;
-		}
-
-		void update(string genome)
-        {
-		    repeats = vector<string>(size);
-            spacers = vector<string>(size-1);
-
-            for (size_t i = 0; i < size; i++)
-            {
-                repeats[i] = genome.substr(genome_indices[i], k).c_str();
-            }
-
-            for (size_t i = 0; i < size - 1; i++)
-            {
-                unsigned int current_repeat_end = genome_indices[i] + k;
-                unsigned int next_repeat_begin = genome_indices[i+1];
-                unsigned int spacer_size = next_repeat_begin - current_repeat_end;
-                spacers[i] = genome.substr(current_repeat_end, spacer_size);
-            }
-
-            start = *genome_indices;
-            end = (genome_indices[size-1]) + k - 1;
-
-            conservation_repeats = get_conservation_consensus(repeats);
-            conservation_spacers = get_conservation_spacer(spacers);
-            overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
-
-        }
-
-
-	private:
-
-};
 
 // Crispr
 bool repeat_substring(Crispr crispr, unsigned int _start, unsigned int _end);

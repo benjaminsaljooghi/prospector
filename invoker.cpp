@@ -27,44 +27,6 @@ void debug(string genome, vector<Crispr> crisprs)
 
 
 
-class Profile
-{
-
-    public:
-
-        string name;
-        string seq;
-        vector<string> kmers;
-
-        Profile(string _name, string _path, int _k)
-        {
-            name = _name;
-            seq = parse_fasta(_path).begin()->second;
-            kmers = get_kmers(seq, _k); 
-        }
-
-        int check_against(vector<string> target_kmers)
-        {
-            int present = 0;
-            for (string query_kmer : kmers)
-            {
-                for (string target_kmer : target_kmers)
-                {
-                    int comparison = query_kmer.compare(target_kmer);
-                    if (comparison == 0)
-                    {
-                        present += 1;
-                        break;
-                    }
-                }
-            }
-            return present;
-        }
-
-    private:
-
-};
-
 
 
 void cas(string genome, vector<Crispr> crisprs)
@@ -79,17 +41,17 @@ void cas(string genome, vector<Crispr> crisprs)
         Profile("pyogenes", "/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta", k)
     };
 
-//    #pragma omp parallel for
-    for (Crispr crispr : crisprs)
+    #pragma omp parallel for
+    for (int i = 0; i < crisprs.size(); i++)
     {
-        string upstream = genome.substr(crispr.start - upstream_size, upstream_size);
-        vector<string> target_kmers = get_kmers_amino(upstream, k);
+        Crispr* crispr = &crisprs[i];
+        crispr->update2(genome, upstream_size);
 
-        for (Profile profile : profiles)
+        for (int j = 0; j < profiles.size(); j++)
         {
-            int present = profile.check_against(target_kmers);
-            printf("profile %s; CRISPR %d %d: %d/%zd\n", profile.name.c_str(), crispr.start, crispr.k, present, profile.kmers.size());
-
+            Profile* profile = &profiles[j];
+            ProfileExecution result = ProfileExecution(profile, crispr);
+            result.to_string();
         }
     }
 
