@@ -114,7 +114,6 @@ __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned i
 #define TOTAL_BUFFER_COUNT (K_COUNT * K_BUFFER_COUNT)
 
 
-
 __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const size_t* dyad_counts, unsigned int* buffer, unsigned int* starts, unsigned char* sizes, unsigned int buffer_start, unsigned int dyad_start, unsigned int i)
 {
     const unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -124,7 +123,6 @@ __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const 
     const unsigned int thread_buffer_start = buffer_start + (thread_id * THREAD_BUFFER_COUNT);
     const unsigned int thread_buffer_limit = thread_buffer_start + THREAD_BUFFER_COUNT;
 
-
     unsigned int buffer_pointer = thread_buffer_start;
     for (unsigned int query_d_index = thread_id; query_d_index < dyad_count; query_d_index += stride)
     {
@@ -133,7 +131,7 @@ __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const 
 
         *(starts + dyad_start + query_d_index) = buffer_pointer;
         *(buffer + buffer_pointer) = query_dyad;
-        unsigned int crispr_size = 1;
+        unsigned char crispr_size = 1;
 
         for (unsigned int target_d_index = query_d_index + 1; target_d_index < dyad_count; target_d_index++) // this for loop goes up to the dyad count but in practice this will never happen. May want to rewrite this. while loop? or for loop up to CRISPR_BUFFER?
         {
@@ -234,7 +232,6 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     done(start_time, "cudaMemsets");
 
     // stream init
-
     unsigned int buffer_starts[K_COUNT];
     unsigned int dyad_starts[K_COUNT];
     buffer_starts[0] = 0; dyad_starts[0] = 0;
@@ -245,20 +242,14 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     }
 
     cudaStream_t stream[K_COUNT];
-    for (int i = 0; i < K_COUNT; i++) cudaStreamCreate(&stream[i]);
+    for (unsigned int i = 0; i < K_COUNT; i++) cudaStreamCreate(&stream[i]);
 
-    // kernel executions
     start_time = omp_get_wtime();
-    for (int i = 0; i < K_COUNT; i++)
-    {
+    for (unsigned int i = 0; i < K_COUNT; i++)
         discover_crisprs KERNEL_ARGS4(C_GRID, C_BLOCK, 0, stream[i]) (device_genome, d_dyads, d_dyad_counts, d_buffer, d_starts, d_sizes, buffer_starts[i], dyad_starts[i], i);
-    }
-    cwait();
-    done(start_time, "crispr kernel");
 
 
-    start_time = omp_get_wtime();
-    for (int i = 0; i < K_COUNT; i++)
+    for (unsigned int i = 0; i < K_COUNT; i++)
     {
         er = cudaMemcpyAsync(&buffer[buffer_starts[i]], &d_buffer[buffer_starts[i]], K_BUFFER_COUNT * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
         er = cudaMemcpyAsync(&starts[dyad_starts[i]], &d_starts[dyad_starts[i]], dyad_counts[i] * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
@@ -266,13 +257,11 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     }
 
     cwait();
-    done(start_time, "crispr copies");
+    done(start_time, "crispr kernels and copies");
 
 
     start_time = omp_get_wtime();
-
     vector<Crispr> all_crisprs;
-
     unsigned int __dyad_start = 0;
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
@@ -311,13 +300,15 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, bool* dyad
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
         const unsigned int k = K_START + i;
-        const unsigned int k_skip = i * genome_len;
+        bool* buffer_pointer = dyad_buffer + (i * genome_len);
         for (unsigned int dyad = thread_id; dyad + k < genome_len; dyad += stride)
         {
-            *(dyad_buffer + k_skip + dyad) = is_dyad(genome, dyad, k);
+            *(buffer_pointer + dyad) = is_dyad(genome, dyad, k);
         }
     }
 }
+
+
 
 
 Dyad_Info dyad_gen(char* device_genome, size_t genome_len)

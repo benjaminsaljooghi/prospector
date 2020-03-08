@@ -191,7 +191,7 @@ class ProfileExecution
     void to_string()
     {
         printf("profile %s; CRISPR %d %d", profile->name.c_str(), crispr->start, crispr->k);
-        printf(": %d/%d\n", hits, hits_possible);
+        printf(": %zd/%zd\n", hits, hits_possible);
     }
 
 };

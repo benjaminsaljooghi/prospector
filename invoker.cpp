@@ -77,18 +77,15 @@ void cas(string genome, vector<Crispr> crisprs)
 
 vector<Crispr> domain_best(vector<Crispr> crisprs)
 {
-
     printf("filtering %zd crisprs... ", crisprs.size());
     double start = omp_get_wtime();
 
-    
     // get the best of each domain
     vector<Crispr> crisprs_domain_best;
     for (size_t i = 0; i < crisprs.size(); i++)
     {        
         // if there are no overlaps for this crispr (it is unique), then it is a new crispr_best. We have to iterate through all crisprs to find all unique domains.
         Crispr crispr = crisprs[i];
-
 
         // check if the domain exists
         bool best_already_exists = false;
@@ -112,68 +109,64 @@ vector<Crispr> domain_best(vector<Crispr> crisprs)
     return crisprs_domain_best;
 }
 
-map<string, int> get_spacer_scores(const vector<Crispr>& crisprs)
-{
-    set<string> all_spacers;
-    for (const Crispr& crispr : crisprs)
-    {
-        for (const string& spacer : crispr.spacers)
-            all_spacers.insert(spacer);
-    }
 
-    map<string, int> spacer_scores = BLAST(all_spacers);
-    return spacer_scores;
+vector<Crispr> score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
+{
+    vector<Crispr> crisprs_filtered;
+    for (Crispr crispr : crisprs)
+    {
+        vector<double> scores;
+        for (string spacer : crispr.spacers)
+            scores.push_back((double) spacer_scores[spacer] / (double) spacer.size());
+
+        if (mean(scores) < 0.5 || crispr.overall_heuristic < 0.5)
+            continue;
+
+        crisprs_filtered.push_back(crispr);
+    }
+    return crisprs_filtered;
 }
 
 
+map<string, int> get_spacer_scores(vector<Crispr>& crisprs)
+{
+    set<string> all_spacers;
+    for (Crispr& crispr : crisprs)
+        all_spacers.insert(crispr.spacers.begin(), crispr.spacers.end());
+    return BLAST(all_spacers);
+}
+
+
+void cache_crispr_information(vector<Crispr>& crisprs, string genome)
+{
+    double start = omp_get_wtime();
+    #pragma omp parallel for default(none) shared(crisprs) shared(genome)
+    for (Crispr& crispr : crisprs)
+        crispr.update(genome);
+    done(start, "cache crispr information");
+}
 
 void run()
 {
-    double start;
-    double end;
-
-
     map<string, string> genomes = {
         {"thermophilus", parse_fasta("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta").begin()->second},
         {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
     };
 
     string genome = genomes["thermophilus"];
-
     vector<Crispr> crisprs = prospector_main(genome);
 
-    start = omp_get_wtime();
-    #pragma omp parallel for default(none) shared(crisprs) shared(genome)
-    for (size_t i = 0; i < crisprs.size(); i++)
-    {
-        crisprs[i].update(genome);
-    }
-    done(start, "cache crispr information");
+    cache_crispr_information(crisprs, genome);
 
     sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
 
     vector<Crispr> crisprs_domain_best = domain_best(crisprs);
+
     map<string, int> spacer_scores = get_spacer_scores(crisprs_domain_best);
-    vector<Crispr> crisprs_filtered;
-    for (Crispr crispr : crisprs_domain_best)
-    {
-        vector<double> scores;
-        for (string spacer : crispr.spacers)
-        {
-            scores.push_back((double) spacer_scores[spacer] / (double) spacer.size());
-        }
-        
-        if (mean(scores) < 0.5 || crispr.overall_heuristic < 0.5)
-        {
-            continue;
-        }
 
-        crisprs_filtered.push_back(crispr);
-
-    }
+    vector<Crispr> crisprs_filtered = score_filtered(crisprs_domain_best, spacer_scores);
 
     print(genome, crisprs_filtered, spacer_scores);
-
     cas(genome, crisprs_filtered);
 }
 
