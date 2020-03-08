@@ -41,8 +41,10 @@ void done(double);
 
 template <typename T> vector<T> flatten(vector<vector<T>> vecs)
 {
+    double start = omp_get_wtime();
 	vector<T> flattened;
 	for (vector<T> v : vecs) flattened.insert(flattened.end(), v.begin(), v.end());
+	done(start, "flatten");
 	return flattened;
 }
 

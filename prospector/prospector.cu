@@ -23,10 +23,10 @@
 
 void cwait()
 {
-	printf("waiting for kernel... ");
-	double start = omp_get_wtime();
+//	printf("waiting for kernel... ");
+//	double start = omp_get_wtime();
 	cudaError err = cudaDeviceSynchronize();
-	printf("done in %.3f seconds\n", duration(start));
+//	printf("done in %.3f seconds\n", duration(start));
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
@@ -73,10 +73,13 @@ __device__ bool mutant(const char* genome, unsigned int start_a, unsigned int st
 	return true;
 }
 
+#if DEBUG_START != 0
 __device__ bool is_dyad_debug_check(unsigned int start_index)
 {
     return start_index >= DEBUG_START && start_index <= DEBUG_END;
 }
+#endif
+
 
 __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned int k)
 {
@@ -104,11 +107,13 @@ __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned i
 
 
 
-#define C_GRID 16
-#define C_BLOCK 256
-#define THREAD_BUFFER_COUNT 1000
+#define C_GRID 64
+#define C_BLOCK 512
+#define THREAD_BUFFER_COUNT 100 // this can be brought lower and lower until FATAL messages are received
 #define K_BUFFER_COUNT (THREAD_BUFFER_COUNT * C_GRID * C_BLOCK)
 #define TOTAL_BUFFER_COUNT (K_COUNT * K_BUFFER_COUNT)
+
+
 
 __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const size_t* dyad_counts, unsigned int* buffer, unsigned int* starts, unsigned char* sizes, unsigned int buffer_start, unsigned int dyad_start, unsigned int i)
 {
@@ -169,10 +174,21 @@ cudaError_t checkCuda(cudaError_t result)
 }
 
 
-vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t* dyad_counts, size_t total_dyad_count)
+struct Dyad_Info
+{
+    vector<unsigned int> dyads;
+    size_t* dyad_counts;
+    size_t total_dyad_count;
+};
+
+
+vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
 {
     double start_time;
-    start_time = omp_get_wtime();
+
+    unsigned int* dyads = &dyad_info.dyads[0];
+    size_t* dyad_counts = dyad_info.dyad_counts;
+    size_t total_dyad_count = dyad_info.total_dyad_count;
 
     cudaError er;
 
@@ -193,9 +209,10 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
     size_t* d_dyad_counts;
     er = cudaMalloc(&d_dyads, bytes_dyads); checkCuda(er);
     er = cudaMalloc(&d_dyad_counts, bytes_dyad_counts); checkCuda(er);
+    start_time = omp_get_wtime();
     er = cudaMemcpy(d_dyads, dyads, bytes_dyads, cudaMemcpyHostToDevice); checkCuda(er);
     er = cudaMemcpy(d_dyad_counts, dyad_counts, bytes_dyad_counts, cudaMemcpyHostToDevice); checkCuda(er);
-
+    done(start_time, "dyad memcpies");
 
     // buffer info
     unsigned int* buffer, *d_buffer;
@@ -206,40 +223,50 @@ vector<Crispr> crispr_gen(const char* device_genome, unsigned int* dyads, size_t
     er = cudaMallocHost(&starts, bytes_starts); checkCuda(er);
     er = cudaMallocHost(&sizes, bytes_sizes); checkCuda(er);
 
-    memset(buffer, 1, TOTAL_BUFFER_COUNT);
-
     er = cudaMalloc(&d_buffer, bytes_buffer); checkCuda(er);
     er = cudaMalloc(&d_starts, bytes_starts); checkCuda(er);
     er = cudaMalloc(&d_sizes, bytes_sizes); checkCuda(er);
 
-    er = cudaMemset(buffer, 1, bytes_buffer); checkCuda(er);
-    er = cudaMemset(starts, 1, bytes_starts); checkCuda(er);
-    er = cudaMemset(sizes, 1, bytes_sizes); checkCuda(er);
-    done(start_time, "crispr_gen init");
+    start_time = omp_get_wtime();
+    er = cudaMemset(buffer, 0, bytes_buffer); checkCuda(er);
+    er = cudaMemset(starts, 0, bytes_starts); checkCuda(er);
+    er = cudaMemset(sizes, 0, bytes_sizes); checkCuda(er);
+    done(start_time, "cudaMemsets");
 
     // stream init
 
+    unsigned int buffer_starts[K_COUNT];
+    unsigned int dyad_starts[K_COUNT];
+    buffer_starts[0] = 0; dyad_starts[0] = 0;
+    for (int i = 1; i < K_COUNT; i++)
+    {
+        buffer_starts[i] = buffer_starts[i-1] + K_BUFFER_COUNT;
+        dyad_starts[i] = dyad_starts[i-1] + dyad_counts[i-1];
+    }
+
     cudaStream_t stream[K_COUNT];
-    for (int i = 0; i < K_COUNT; i++)
-        cudaStreamCreate(&stream[i]);
+    for (int i = 0; i < K_COUNT; i++) cudaStreamCreate(&stream[i]);
 
     // kernel executions
-    unsigned int buffer_start = 0;
-    unsigned int dyad_start = 0;
     start_time = omp_get_wtime();
     for (int i = 0; i < K_COUNT; i++)
     {
-        discover_crisprs KERNEL_ARGS4(C_GRID, C_BLOCK, 0, stream[i]) (device_genome, d_dyads, d_dyad_counts, d_buffer, d_starts, d_sizes, buffer_start, dyad_start, i);
-        er = cudaMemcpyAsync(&buffer[buffer_start], &d_buffer[buffer_start], K_BUFFER_COUNT * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
-        er = cudaMemcpyAsync(&starts[dyad_start], &d_starts[dyad_start], dyad_counts[i] * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
-        er = cudaMemcpyAsync(&sizes[dyad_start], &d_sizes[dyad_start], dyad_counts[i] * 1, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
+        discover_crisprs KERNEL_ARGS4(C_GRID, C_BLOCK, 0, stream[i]) (device_genome, d_dyads, d_dyad_counts, d_buffer, d_starts, d_sizes, buffer_starts[i], dyad_starts[i], i);
+    }
+    cwait();
+    done(start_time, "crispr kernel");
 
-        buffer_start += K_BUFFER_COUNT;
-        dyad_start += dyad_counts[i];
+
+    start_time = omp_get_wtime();
+    for (int i = 0; i < K_COUNT; i++)
+    {
+        er = cudaMemcpyAsync(&buffer[buffer_starts[i]], &d_buffer[buffer_starts[i]], K_BUFFER_COUNT * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
+        er = cudaMemcpyAsync(&starts[dyad_starts[i]], &d_starts[dyad_starts[i]], dyad_counts[i] * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
+        er = cudaMemcpyAsync(&sizes[dyad_starts[i]], &d_sizes[dyad_starts[i]], dyad_counts[i] * 1, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
     }
 
     cwait();
-    done(start_time, "crispr kernels");
+    done(start_time, "crispr copies");
 
 
     start_time = omp_get_wtime();
@@ -281,18 +308,21 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned i
 {
     unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int stride = blockDim.x * gridDim.x;
-    for (unsigned int d_index = thread_id; d_index < genome_len; d_index += stride)
+    unsigned int k_jump = genome_len;
+
+    for (unsigned int i = 0; i < K_COUNT; i++)
     {
-        for (unsigned int k = K_START; k < K_END; k++)
+        unsigned int k = K_START + i;
+
+        for (unsigned int d_index = thread_id; d_index + k < genome_len; d_index += stride)
         {
-            if (d_index + k < genome_len && is_dyad(genome, d_index, k))
+            if (is_dyad(genome, d_index, k))
             {
-                unsigned int k_jump = genome_len;
-                unsigned int k_index = k - K_START;
-                dyad_buffer[k_index * k_jump + d_index] = d_index;
+                dyad_buffer[i * k_jump + d_index] = d_index;
             }
         }
     }
+
 }
 
 
@@ -311,8 +341,12 @@ vector<unsigned int> dyad_lengths(const vector<vector<unsigned int>>& all_dyads)
 	return lengths;
 }
 
-vector<vector<unsigned int>> dyad_gen(char* device_genome, size_t genome_len)
+
+Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
 {
+    double start_time;
+
+
     size_t buffer_count = genome_len * (K_END - K_START);
     size_t buffer_bytes = 4 * buffer_count;
 
@@ -322,34 +356,44 @@ vector<vector<unsigned int>> dyad_gen(char* device_genome, size_t genome_len)
     cudaMalloc(&d_buffer, buffer_bytes);
     cudaMemset(d_buffer, 0, buffer_bytes);
 
-    dyad_discovery KERNEL_ARGS2(32, 256) (device_genome, genome_len, d_buffer);
+    start_time = omp_get_wtime();
+
+    dyad_discovery KERNEL_ARGS2(128, 512) (device_genome, genome_len, d_buffer);
     cwait();
+    done(start_time, "dyad kernel");
 
     cudaMemcpy(buffer, d_buffer, buffer_bytes, cudaMemcpyDeviceToHost);
     cudaFree(d_buffer);
 
     double start = omp_get_wtime();
-    vector<vector<unsigned int>> all_dyads(K_COUNT);
-
-    #pragma omp parallel for
+    vector<unsigned int> dyads;
+    size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
+    size_t total_dyad_count = 0;
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
-        unsigned int k = K_START + i;
-        unsigned int hopscotch = genome_len * (k - K_START);
-        vector<unsigned int> dyads;
+        unsigned int hopscotch = genome_len * i;
+        size_t count = 0;
         for (unsigned int j = 0; j < genome_len; j++)
         {
             unsigned int dyad = *(buffer + hopscotch + j);
-            
             if (dyad != 0)
+            {
                 dyads.push_back(dyad);
+                count++;
+            }
         }
-        all_dyads[i] = dyads;
+        *(dyad_counts + i) = count;
+        total_dyad_count += count;
     }
     done(start, "dyad extraction");
 
     cudaFreeHost(buffer);
-    return all_dyads;
+
+    Dyad_Info info;
+    info.dyads = dyads;
+    info.dyad_counts = dyad_counts;
+    info.total_dyad_count = total_dyad_count;
+    return info;
 }
 
 
@@ -362,20 +406,14 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     cudaMemcpy(d_genome, genome.c_str(), 1 * genome.length(), cudaMemcpyHostToDevice);
 
     start = omp_get_wtime();
-    vector<vector<unsigned int>> all_dyads = dyad_gen(d_genome, genome.length());
-    vector<unsigned int> all_dyads_flat = flatten(all_dyads);
-    unsigned int* dyads = &all_dyads_flat[0];
-    size_t total_dyad_count = 0;
-    size_t* dyad_counts = (size_t*) malloc(all_dyads.size() * sizeof(size_t));
-    for (unsigned int i = 0; i < K_COUNT; i++) total_dyad_count += all_dyads[i].size();
-    for (unsigned int i = 0; i < K_COUNT; i++) *(dyad_counts + i) = all_dyads[i].size();
+    Dyad_Info dyad_info = dyad_gen(d_genome, genome.length());
     done(start, "dyad_gen");
 
+
     start = omp_get_wtime();
-    vector<Crispr> crisprs = crispr_gen(d_genome, dyads, dyad_counts, total_dyad_count);
+    vector<Crispr> crisprs = crispr_gen(d_genome, dyad_info);
     done(start, "crispr_gen");
 
-    free(dyad_counts);
     cudaFree(d_genome);
 
     return crisprs;
