@@ -34,28 +34,41 @@ void cas(string genome, vector<Crispr> crisprs)
     double start = omp_get_wtime();
 
     int k = 5;
-    int upstream_size = 10000;    
+    size_t upstream_size = 10000;
 
     vector<Profile> profiles = {
-        Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
+//        Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
         Profile("pyogenes", "/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta", k)
     };
 
     #pragma omp parallel for
     for (int i = 0; i < crisprs.size(); i++)
     {
-        Crispr* crispr = &crisprs[i];
-        crispr->update2(genome, upstream_size);
+        crisprs[i].update2(genome, upstream_size, k);
+    }
+
+
+
+    vector<ProfileExecution> executions;
+
+    #pragma omp parallel for
+    for (int i = 0; i < crisprs.size(); i++)
+    {
+        Crispr* crispr = &crisprs[i];;
 
         for (int j = 0; j < profiles.size(); j++)
         {
             Profile* profile = &profiles[j];
-            ProfileExecution result = ProfileExecution(profile, crispr);
-            result.to_string();
+            executions.push_back(ProfileExecution(profile, crispr));
+
         }
     }
 
 
+    for (ProfileExecution execution : executions)
+    {
+        execution.to_string();
+    }
 
     done(start, "cas detection");
 
