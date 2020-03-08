@@ -148,10 +148,12 @@ __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const 
         buffer_pointer += crispr_size;
         *(sizes + dyad_start + query_d_index) = crispr_size;
 
+#if DEBUG == 1
         if (buffer_pointer  >= thread_buffer_limit)
         {
             printf("FATAL: exceeded thread buffer limit. %d/%d\n", buffer_pointer, thread_buffer_limit);
         }
+#endif
     }
 
 }
@@ -162,7 +164,7 @@ __global__ void discover_crisprs(const char* genome, unsigned int* dyads, const 
 inline
 cudaError_t checkCuda(cudaError_t result)
 {
-#if defined(DEBUG) || defined(_DEBUG)
+#if DEBUG == 1
     if (result != cudaSuccess) {
     fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
     assert(result == cudaSuccess);
@@ -180,7 +182,7 @@ struct Dyad_Info
 };
 
 
-vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
+vector<Crispr> crispr_formation(const char* device_genome, Dyad_Info dyad_info)
 {
     double start_time;
 
@@ -210,7 +212,7 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     start_time = omp_get_wtime();
     er = cudaMemcpy(d_dyads, dyads, bytes_dyads, cudaMemcpyHostToDevice); checkCuda(er);
     er = cudaMemcpy(d_dyad_counts, dyad_counts, bytes_dyad_counts, cudaMemcpyHostToDevice); checkCuda(er);
-    done(start_time, "dyad memcpies");
+    done(start_time, "\t\tmemcpies");
 
     // buffer info
     unsigned int* buffer, *d_buffer;
@@ -229,7 +231,7 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     er = cudaMemset(buffer, 0, bytes_buffer); checkCuda(er);
     er = cudaMemset(starts, 0, bytes_starts); checkCuda(er);
     er = cudaMemset(sizes, 0, bytes_sizes); checkCuda(er);
-    done(start_time, "cudaMemsets");
+    done(start_time, "\t\tmemsets");
 
     // stream init
     unsigned int buffer_starts[K_COUNT];
@@ -246,19 +248,15 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
 
     start_time = omp_get_wtime();
     for (unsigned int i = 0; i < K_COUNT; i++)
-        discover_crisprs KERNEL_ARGS4(C_GRID, C_BLOCK, 0, stream[i]) (device_genome, d_dyads, d_dyad_counts, d_buffer, d_starts, d_sizes, buffer_starts[i], dyad_starts[i], i);
-
-
-    for (unsigned int i = 0; i < K_COUNT; i++)
     {
+        discover_crisprs KERNEL_ARGS4(C_GRID, C_BLOCK, 0, stream[i]) (device_genome, d_dyads, d_dyad_counts, d_buffer, d_starts, d_sizes, buffer_starts[i], dyad_starts[i], i);
         er = cudaMemcpyAsync(&buffer[buffer_starts[i]], &d_buffer[buffer_starts[i]], K_BUFFER_COUNT * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
         er = cudaMemcpyAsync(&starts[dyad_starts[i]], &d_starts[dyad_starts[i]], dyad_counts[i] * 4, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
         er = cudaMemcpyAsync(&sizes[dyad_starts[i]], &d_sizes[dyad_starts[i]], dyad_counts[i] * 1, cudaMemcpyDeviceToHost, stream[i]); checkCuda(er);
     }
 
     cwait();
-    done(start_time, "crispr kernels and copies");
-
+    done(start_time, "\t\tasync kernels and memcpies");
 
     start_time = omp_get_wtime();
     vector<Crispr> all_crisprs;
@@ -285,7 +283,7 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
         __dyad_start += dyad_counts[i];
     }
 
-    done(start_time, "crispr extract");
+    done(start_time, "\t\textract");
 
 
     return all_crisprs;
@@ -311,7 +309,7 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, bool* dyad
 
 
 
-Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
+Dyad_Info dyad_discovery(char* device_genome, size_t genome_len)
 {
     double start_time;
 
@@ -326,17 +324,16 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
     start_time = omp_get_wtime();
     dyad_discovery KERNEL_ARGS2(128, 512) (device_genome, genome_len, d_buffer);
     cwait();
-    done(start_time, "dyad kernel");
+    done(start_time, "\t\tkernel");
 
     start_time = omp_get_wtime();
     cudaMemcpy(buffer, d_buffer, buffer_bytes, cudaMemcpyDeviceToHost);
     cudaFree(d_buffer);
-    done(start_time, "dyad memcpy");
+    done(start_time, "\t\tmemcpy");
 
     start_time = omp_get_wtime();
     vector<unsigned int> dyads;
     size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
-
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
         bool* buffer_pointer = buffer + (i * genome_len);
@@ -350,7 +347,7 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
         }
         dyad_counts[i] = dyads.size() - count_before;
     }
-    done(start_time, "extract");
+    done(start_time, "\t\textract");
 
     cudaFreeHost(buffer);
     cudaFree(d_buffer);
@@ -365,6 +362,8 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
 
 vector<Crispr> prospector_main_gpu(const string& genome)
 {
+    cudaDeviceReset();
+
     double start;
 
     char* d_genome;
@@ -372,13 +371,15 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     cudaMemcpy(d_genome, genome.c_str(), 1 * genome.length(), cudaMemcpyHostToDevice);
 
     start = omp_get_wtime();
-    Dyad_Info dyad_info = dyad_gen(d_genome, genome.length());
-    done(start, "dyad_gen");
+    printf("\tdyad discovery\n");
+    Dyad_Info dyad_info = dyad_discovery(d_genome, genome.length());
+    done(start, "\tdyad discovery");
 
 
+    printf("\tcrispr formation\n");
     start = omp_get_wtime();
-    vector<Crispr> crisprs = crispr_gen(d_genome, dyad_info);
-    done(start, "crispr_gen");
+    vector<Crispr> crisprs = crispr_formation(d_genome, dyad_info);
+    done(start, "\tcrispr formation");
 
     cudaFree(d_genome);
 
@@ -391,6 +392,7 @@ vector<Crispr> prospector_main(const string& genome)
     printf("genome has size %zd\n", genome.size());
     
     double start;
+    printf("prospector\n");
     start = omp_get_wtime();
     vector<Crispr> crisprs = prospector_main_gpu(genome);
     done(start, "prospector");

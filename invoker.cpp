@@ -37,17 +37,15 @@ void cas(string genome, vector<Crispr> crisprs)
     size_t upstream_size = 10000;
 
     vector<Profile> profiles = {
-//        Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
+        Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
         Profile("pyogenes", "/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta", k)
     };
 
     #pragma omp parallel for
     for (int i = 0; i < crisprs.size(); i++)
     {
-        crisprs[i].update2(genome, upstream_size, k);
+        crisprs[i].cache_upstream_kmers(genome, upstream_size, k);
     }
-
-
 
     vector<ProfileExecution> executions;
 
@@ -112,6 +110,7 @@ vector<Crispr> domain_best(vector<Crispr> crisprs)
 
 vector<Crispr> score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
 {
+    double start_time = omp_get_wtime();
     vector<Crispr> crisprs_filtered;
     for (Crispr crispr : crisprs)
     {
@@ -124,6 +123,7 @@ vector<Crispr> score_filtered(vector<Crispr> crisprs, map<string, int> spacer_sc
 
         crisprs_filtered.push_back(crispr);
     }
+    done(start_time, "final filtering");
     return crisprs_filtered;
 }
 
@@ -140,17 +140,22 @@ map<string, int> get_spacer_scores(vector<Crispr>& crisprs)
 void cache_crispr_information(vector<Crispr>& crisprs, string genome)
 {
     double start = omp_get_wtime();
-    #pragma omp parallel for default(none) shared(crisprs) shared(genome)
+    #pragma omp parallel for
     for (Crispr& crispr : crisprs)
         crispr.update(genome);
     done(start, "cache crispr information");
 }
 
-void run()
+
+int main()
 {
+    printf("running invoker...\n");
+    double start = omp_get_wtime();
+
+
     map<string, string> genomes = {
-        {"thermophilus", parse_fasta("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta").begin()->second},
-        {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
+            {"thermophilus", parse_fasta("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta").begin()->second},
+            {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
     };
 
     string genome = genomes["thermophilus"];
@@ -168,14 +173,8 @@ void run()
 
     print(genome, crisprs_filtered, spacer_scores);
     cas(genome, crisprs_filtered);
-}
 
-int main()
-{
-    printf("running invoker...\n");
-    double start = omp_get_wtime();
-    
-    run();
+
 
     done(start, "invoker");
 

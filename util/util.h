@@ -8,8 +8,6 @@ const unsigned int DEBUG_END = 10e7;
 // const unsigned int DEBUG_START = 1085434-1;
 // const unsigned int DEBUG_END = 1086855;
 
-
-
 #define DEBUG 1
 
 
@@ -85,7 +83,7 @@ public:
     double conservation_spacers;
     double overall_heuristic;
 
-    // computed by update2
+    // computed by cache_upstream_kmers
     vector<string> target_kmers;
 
     Crispr (unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
@@ -122,7 +120,7 @@ public:
 
     }
 
-    void update2(string genome, size_t upstream_size, int _k)
+    void cache_upstream_kmers(string genome, size_t upstream_size, unsigned int _k)
     {
         string upstream = genome.substr(start - upstream_size, upstream_size);
         target_kmers = get_kmers_amino(upstream, _k);
@@ -143,7 +141,7 @@ class Profile
         string seq;
         vector<string> kmers;
 
-        Profile(string _name, string _path, int _k)
+        Profile(string _name, string _path, unsigned int _k)
         {
             name = _name;
             seq = parse_fasta(_path).begin()->second;

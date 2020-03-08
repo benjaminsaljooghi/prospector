@@ -2,7 +2,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
-// #include <corelib/ncbiargs.hpp>
 
 #include <objmgr/object_manager.hpp>
 
@@ -22,43 +21,30 @@
 
 
 
-// #include "../prospector/stdafx.h"
 #include "../util/util.h"
-// #include "../prospector/prospector.h"
 
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 
 
-
-
 map<string, int> BLAST(set<string> _seqs)
 {
-
+    double start = omp_get_wtime();
 
     vector<string> seqs;
     size_t max = 0;
     for (string seq : _seqs)
     {
-        // if (seq.length() > 100)
-        // {
-        //     continue;
-        // }
-        // printf("%zd\n", seq.length());
         seqs.push_back(seq);
         if (seq.length() > max)
         {
             max = seq.length();
         }
     }
-    
-    printf("blasting %zd sequences of max length %zd...\n", _seqs.size(), max);
 
+    printf("blasting %zd sequences of max length %zd... ", _seqs.size(), max);
 
-
-    printf("instantiating blast... ");
-    double start = omp_get_wtime();
 
     EProgram program = ProgramNameToEnum("blastn"); 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
@@ -81,16 +67,8 @@ map<string, int> BLAST(set<string> _seqs)
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
     CLocalBlast blaster(query_factory, opts, target_db);
 
-	// printf("blas program instantiated in %.3f seconds.\n", duration(start));
-    done(start);
-
-    printf("blasting... ");
-    start = omp_get_wtime();
-
     CSearchResultSet results = *blaster.Run();
-    
-    // printf("BLAST program completed in %.3f seconds.\n", duration(start));
-    done(start);
+
 
     map<string, int> seq_max_scores;
     for (unsigned int i = 0; i < results.GetNumResults(); i++)
@@ -109,5 +87,7 @@ map<string, int> BLAST(set<string> _seqs)
         }
         seq_max_scores[seqs[i]] = max_score;
     }
+
+    done(start);
     return seq_max_scores;
 }
