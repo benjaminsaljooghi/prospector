@@ -302,47 +302,21 @@ vector<Crispr> crispr_gen(const char* device_genome, Dyad_Info dyad_info)
     return all_crisprs;
 }
 
-#define DGRID 128
-#define DBLOCK 512
 
-
-__global__ void dyad_discovery(const char* genome, size_t genome_len, unsigned int* dyad_buffer)
+__global__ void dyad_discovery(const char* genome, size_t genome_len, bool* dyad_buffer)
 {
-    unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int stride = blockDim.x * gridDim.x;
-    unsigned int k_jump = genome_len;
+    const unsigned int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int stride = blockDim.x * gridDim.x;
 
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
-        unsigned int k = K_START + i;
-
-        for (unsigned int d_index = thread_id; d_index + k < genome_len; d_index += stride)
+        const unsigned int k = K_START + i;
+        const unsigned int k_skip = i * genome_len;
+        for (unsigned int dyad = thread_id; dyad + k < genome_len; dyad += stride)
         {
-            if (is_dyad(genome, d_index, k))
-            {
-                dyad_buffer[i * k_jump + d_index] = d_index;
-            }
+            *(dyad_buffer + k_skip + dyad) = is_dyad(genome, dyad, k);
         }
     }
-
-}
-
-
-//#include <concurrent_vector>
-
-
-vector<unsigned int> dyad_lengths(const vector<vector<unsigned int>>& all_dyads)
-{
-	printf("compute dyad lengths... ");
-	double start = omp_get_wtime();
-    vector<unsigned int> lengths;
-	lengths.reserve(all_dyads.size());
-    for (const auto& vec : all_dyads)
-    {
-        lengths.push_back((unsigned int) vec.size());
-    }
-    done(start);
-	return lengths;
 }
 
 
@@ -350,18 +324,15 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
 {
     double start_time;
 
+    size_t buffer_count = genome_len * K_COUNT;
+    size_t buffer_bytes = 1 * buffer_count;
 
-    size_t buffer_count = genome_len * (K_END - K_START);
-    size_t buffer_bytes = 4 * buffer_count;
-
-    unsigned int *buffer, *d_buffer;
-
+    bool *buffer, *d_buffer;
     cudaMallocHost(&buffer, buffer_bytes);
     cudaMalloc(&d_buffer, buffer_bytes);
     cudaMemset(d_buffer, 0, buffer_bytes);
 
     start_time = omp_get_wtime();
-
     dyad_discovery KERNEL_ARGS2(128, 512) (device_genome, genome_len, d_buffer);
     cwait();
     done(start_time, "dyad kernel");
@@ -369,48 +340,35 @@ Dyad_Info dyad_gen(char* device_genome, size_t genome_len)
     start_time = omp_get_wtime();
     cudaMemcpy(buffer, d_buffer, buffer_bytes, cudaMemcpyDeviceToHost);
     cudaFree(d_buffer);
-
     done(start_time, "dyad memcpy");
 
+
     start_time = omp_get_wtime();
-    vector<unsigned int> buffer_inspection(buffer, buffer + buffer_count);
-    done(start_time, "vec_a");
-    start_time = omp_get_wtime();
-    buffer_inspection.erase(std::remove(buffer_inspection.begin(), buffer_inspection.end(), 0), buffer_inspection.end());
+    vector<unsigned int> dyads;
+    size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
+    bool* buffer_start = buffer;
+    for (unsigned int i = 0; i < K_COUNT; i++)
+    {
+        size_t count_before = dyads.size();
+        for (unsigned int j = 0; j < genome_len; j++)
+        {
+            if (*(buffer_start++) == 1)
+            {
+                dyads.push_back(j);
+            }
+        }
+        dyad_counts[i] = dyads.size() - count_before;
+    }
+    done(start_time, "extract");
 
-    done(start_time, "vec_b");
 
-//    start_time = omp_get_wtime();
-//    vector<unsigned int> dyads;
-//    size_t* dyad_counts = (size_t*) malloc(K_COUNT * 8);
-//    size_t total_dyad_count = 0;
-//
-//    for (unsigned int i = 0; i < K_COUNT; i++)
-//    {
-//        unsigned int hopscotch = genome_len * i;
-//        size_t count = 0;
-//        for (unsigned int j = 0; j < genome_len; j++)
-//        {
-//            unsigned int dyad = *(buffer + hopscotch + j);
-//            if (dyad != 0)
-//            {
-//                dyads.push_back(dyad);
-//                count++;
-//            }
-//        }
-//        *(dyad_counts + i) = count;
-//        total_dyad_count += count;
-//    }
-//    done(start_time, "dyad extraction");
-//
-//    cudaFreeHost(buffer);
-
-    exit(0);
+    cudaFreeHost(buffer);
+    cudaFree(d_buffer);
 
     Dyad_Info info;
-//    info.dyads = dyads;
-//    info.dyad_counts = dyad_counts;
-//    info.total_dyad_count = total_dyad_count;
+    info.dyads = dyads;
+    info.dyad_counts = dyad_counts;
+    info.total_dyad_count = dyads.size();
     return info;
 }
 
