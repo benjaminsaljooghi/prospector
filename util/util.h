@@ -186,7 +186,7 @@ class ProfileExecution
         hits_possible = profile->kmers.size();
     }
 
-    void to_string()
+    void print()
     {
         printf("profile %s; CRISPR %d %d", profile->name.c_str(), crispr->start, crispr->k);
         printf(": %zd/%zd\n", hits, hits_possible);

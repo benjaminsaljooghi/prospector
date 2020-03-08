@@ -307,8 +307,6 @@ __global__ void dyad_discovery(const char* genome, size_t genome_len, bool* dyad
 }
 
 
-
-
 Dyad_Info dyad_discovery(char* device_genome, size_t genome_len)
 {
     double start_time;
@@ -396,6 +394,7 @@ vector<Crispr> prospector_main(const string& genome)
     start = omp_get_wtime();
     vector<Crispr> crisprs = prospector_main_gpu(genome);
     done(start, "prospector");
+
     return crisprs;
 }
 
