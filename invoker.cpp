@@ -26,13 +26,9 @@ void debug(string genome, vector<Crispr> crisprs)
 
 
 
-
-
-
 void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size)
 {
     double start = omp_get_wtime();
-
 
     vector<Profile> profiles = {
         Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
@@ -59,8 +55,6 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
         }
     }
 
-
-
     for (ProfileExecution& execution : executions)
         execution.print();
 
@@ -68,7 +62,7 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
 }
 
 
-vector<Crispr> domain_best(vector<Crispr> crisprs)
+vector<Crispr> get_domain_best(vector<Crispr> crisprs)
 {
     printf("filtering %zd crisprs... ", crisprs.size());
     double start = omp_get_wtime();
@@ -153,25 +147,14 @@ int main()
     };
     string genome = genomes["thermophilus"];
 
-
-
     vector<Crispr> crisprs = prospector_main(genome);
-
     cache_crispr_information(crisprs, genome);
-
     sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
-
-    vector<Crispr> crisprs_domain_best = domain_best(crisprs);
-
-    map<string, int> spacer_scores = get_spacer_scores(crisprs_domain_best);
-
-    vector<Crispr> crisprs_filtered = score_filtered(crisprs_domain_best, spacer_scores);
-
-    print(genome, crisprs_filtered, spacer_scores);
-    cas(genome, crisprs_filtered, 5, 10000);
-
-
-
+    vector<Crispr> domain_best = get_domain_best(crisprs);
+    map<string, int> spacer_scores = get_spacer_scores(domain_best);
+    vector<Crispr> final = score_filtered(domain_best, spacer_scores);
+    print(genome, final, spacer_scores);
+    cas(genome, final, 5, 10000);
     done(start, "invoker");
     return 0;
 }
