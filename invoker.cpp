@@ -4,6 +4,8 @@
 #include "crispr.h"
 #include "seq.h"
 #include "util.h"
+#include "profile.h"
+#include "prospector.h"
 
 
 

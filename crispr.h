@@ -30,3 +30,5 @@ class Crispr
         bool operator<(const Crispr&);
         void cache_upstream_kmers(string, size_t, unsigned int);
 };
+
+bool any_overlap(Crispr, Crispr);
