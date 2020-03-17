@@ -6,8 +6,8 @@
 
 #include "stdafx.h"
 #include "util.h"
-#include "seq.h"
 #include "crispr.h"
+#include "prospector.h"
 
 
 #ifdef __CUDACC__

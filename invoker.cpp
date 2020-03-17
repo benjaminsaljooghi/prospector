@@ -2,9 +2,7 @@
 
 #include "stdafx.h"
 #include "crispr.h"
-#include "seq.h"
 #include "util.h"
-#include "profile.h"
 #include "prospector.h"
 
 
@@ -37,8 +35,8 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
     double start = omp_get_wtime();
 
     vector<Profile> profiles = {
-        Profile("thermophilus", "/home/ben/Documents/crispr-data/cas9_amino_thermophilus.fasta", k),
-        Profile("pyogenes", "/home/ben/Documents/crispr-data/cas9_amino_pyogenes.fasta", k)
+        Profile("thermophilus", "crispr-data/cas9_amino_thermophilus.fasta", k),
+        Profile("pyogenes", "crispr-data/cas9_amino_pyogenes.fasta", k)
     };
 
     #pragma omp parallel for default(none) shared(crisprs, genome, upstream_size, k)
@@ -151,8 +149,8 @@ int main()
     double start = omp_get_wtime();
 
     map<string, string> genomes = {
-            {"thermophilus", parse_fasta("/home/ben/Documents/crispr-data/streptococcus_thermophilus.fasta").begin()->second},
-            {"pyogenes", parse_fasta("/home/ben/Documents/crispr-data/pyogenes.fasta").begin()->second}
+            {"thermophilus", parse_fasta("crispr-data/streptococcus_thermophilus.fasta").begin()->second},
+            {"pyogenes", parse_fasta("crispr-data/pyogenes.fasta").begin()->second}
     };
     string genome = genomes["thermophilus"];
 

@@ -20,38 +20,28 @@ OBJS = $(BUILD)/invoker.o $(BUILD)/dlinked.o $(BUILD)/prospector.o $(BUILD)/blas
 SRC = *.cpp
 
 
-headers: $(SRC)
-	lzz *.cpp -o build
-
-
-clean_build:
-	rm -fv *
-
-
 run: $(BUILD)/invoker.out
 	./$(BUILD)/invoker.out
 
-$(BUILD)/invoker.out: $(OBJS)
-	$(CPP) $(OPTIMIZATION) $(CARGS) $(OBJS) $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -o invoker.out
 
-$(BUILD)/invoker.o: invoker.cpp
-	$(CPP) $(OPTIMIZATION) $(CARGS) -c invoker.cpp -o $(BUILD)/invoker.o
-
-$(BUILD)/blast.o: blast.cpp
+.PHONY: all_objs
+all_objs: *.cpp *.h
+	
+	$(CPP) $(OPTIMIZATION) $(CARGS) -c util.cpp -o $(BUILD)/util.o
+	$(CPP) $(OPTIMIZATION) $(CARGS) -c crispr.cpp -o $(BUILD)/crispr.o
 	$(CPP) $(OPTIMZATION) $(CARGS) $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(BUILD)/blast.o
-
-$(BUILD)/dlinked.o: $(BUILD)/prospector.o
+	$(NVCC) $(NVCCARGS) -dc prospector.cu -o $(BUILD)/prospector.o
 	$(NVCC) $(NVCCARGS) -dlink $(BUILD)/prospector.o -o $(BUILD)/dlinked.o
-
-$(BUILD)/prospector.o: prospector/prospector.cu prospector/prospector.h
-	$(NVCC) $(NVCCARGS) -dc prospector/prospector.cu -o $(BUILD)/prospector.o
-
-# headers: $(SRC)
-# 	makeheaders *.cpp
-# 	mv *.hpp build
+	$(CPP) $(OPTIMIZATION) $(CARGS) -c invoker.cpp -o $(BUILD)/invoker.o
+	$(CPP) $(OPTIMIZATION) $(CARGS) $(BUILD)/*.o $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -o invoker.out
 
 
 
 
+
+
+
+
+.PHONY: clean
 clean:
-	rm -fv *.o *.out
+	rm -fv $(BUILD)/*.o $(BUILD)/*.out

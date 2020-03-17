@@ -30,6 +30,104 @@ const unsigned int DEBUG_END = 10e7;
 #define printf_BYTE_FORMAT_ALIGN 10
 
 
+
+
+
+
+
+
+
+const map <string, string> codon_table = {
+    {"TTT", "F"},
+    {"TTC", "F"},
+    {"TTA", "L"},
+    {"TTG", "L"},
+    {"CTT", "L"},
+    {"CTC", "L"},
+    {"CTA", "L"},
+    {"CTG", "L"},
+    {"ATT", "I"},
+    {"ATC", "I"},
+    {"ATA", "I"},
+    {"ATG", "M"},
+    {"GTT", "V"},
+    {"GTC", "V"},
+    {"GTA", "V"},
+    {"GTG", "V"},
+    {"TCT", "S"},
+    {"TCC", "S"},
+    {"TCA", "S"},
+    {"TCG", "S"},
+    {"CCT", "P"},
+    {"CCC", "P"},
+    {"CCA", "P"},
+    {"CCG", "P"},
+    {"ACT", "T"},
+    {"ACC", "T"},
+    {"ACA", "T"},
+    {"ACG", "T"},
+    {"GCT", "A"},
+    {"GCC", "A"},
+    {"GCA", "A"},
+    {"GCG", "A"},
+    {"TAT", "Y"},
+    {"TAC", "Y"},
+    {"TAA", "STOP"},
+    {"TAG", "STOP"},
+    {"CAT", "H"},
+    {"CAC", "H"},
+    {"CAA", "Q"},
+    {"CAG", "Q"},
+    {"AAT", "N"},
+    {"AAC", "N"},
+    {"AAA", "K"},
+    {"AAG", "K"},
+    {"GAT", "D"},
+    {"GAC", "D"},
+    {"GAA", "E"},
+    {"GAG", "E"},
+    {"TGT", "C"},
+    {"TGC", "C"},
+    {"TGA", "STOP"},
+    {"TGG", "W"},
+    {"CGT", "R"},
+    {"CGC", "R"},
+    {"CGA", "R"},
+    {"CGG", "R"},
+    {"AGT", "S"},
+    {"AGC", "S"},
+    {"AGA", "R"},
+    {"AGG", "R"},
+    {"GGT", "G"},
+    {"GGC", "G"},
+    {"GGA", "G"},
+    {"GGG", "G"}
+};
+
+const map <char, char> complement_table = {
+	{'A', 'T'},
+	{'T', 'A'},
+	{'C', 'G'},
+	{'G', 'C'},
+	{'N', 'N'},
+	{'n', 'n'},
+};
+
+
+
+
+
+
+
+double duration (double);
+void done(double, string);
+void done(double);
+bool subset(vector<int>, vector<int>);
+
+
+
+
+
 template <typename T> T mean(vector<T> scores)
 {
 	T sum = 0;
@@ -68,7 +166,11 @@ template <typename T> T most_frequent(vector<T> elements)
 	return consensus;
 }
 
-double duration (double);
-void done(double, string);
-void done(double);
-bool subset(vector<int>, vector<int>);
+
+
+map<string, string> parse_fasta(string);
+string reverse_complement(string);
+int mismatch_count(string);
+string seqs_to_fasta(vector<string>);
+vector<string> get_kmers(string, unsigned int);
+map<string, string*> sixwaytranslation(string);
