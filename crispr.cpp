@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "util.h"
 #include "seq.h"
+#include "crispr.h"
 
 double bp_match_score(string a, string b, bool differential)
 {
@@ -78,129 +79,105 @@ double get_conservation_spacer(vector<string> spacers)
 }
 
 
-
-
-
-class Crispr
+Crispr::Crispr(unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
 {
-    public:
-
-        // computed by constructor
-        unsigned int* genome_indices;
-        size_t size;
-        unsigned int k;
-
-        // computed by update
-        unsigned int start;
-        unsigned int end;
-        vector<string> repeats;
-        vector<string> spacers;
-        double conservation_repeats;
-        double conservation_spacers;
-        double overall_heuristic;
-
-        // computed by cache_upstream_kmers
-        vector<string> target_kmers;
-
-        
-		Crispr(unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
-		{
-			k = _k;
-			genome_indices = inclusive;
-			size = exclusive - inclusive;
-		}
-				
-		void update(string& genome)
-		{
-			this->repeats = vector<string>(size);
-			this->spacers = vector<string>(size-1);
-
-			for (size_t i = 0; i < size; i++)
-			{
-				repeats[i] = genome.substr(genome_indices[i], k).c_str();
-			}
-
-			for (size_t i = 0; i < size - 1; i++)
-			{
-				unsigned int current_repeat_end = genome_indices[i] + k;
-				unsigned int next_repeat_begin = genome_indices[i+1];
-				unsigned int spacer_size = next_repeat_begin - current_repeat_end;
-				spacers[i] = genome.substr(current_repeat_end, spacer_size);
-			}
-
-			this->start = *genome_indices;
-			this->end = (genome_indices[size-1]) + k - 1;
-
-			this->conservation_repeats = get_conservation_consensus(repeats);
-			this->conservation_spacers = get_conservation_spacer(spacers);
-			this->overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
-		}
-
-        // void cache_upstream_kmers(string& genome, size_t upstream_size, unsigned int _k);
-        
-		void print(string& genome, map<string, int> spacer_scores)
-		{
-			// header
-			printf("%d - %d %d\n\n", start, end, k);
-			printf("\t%fh %fr %fs\n\n", overall_heuristic, conservation_repeats, conservation_spacers);
-
-
-			// repeats
-			printf("\trepeats (%zd)\n", repeats.size());
-
-			for (size_t i = 0; i < repeats.size(); i++)
-			{
-				string repeat = repeats[i];
-
-				int mismatches = mismatch_count(repeat);
-				int matches = repeat.length() / 2 - mismatches;
-				double score = (double) matches / (double) (repeat.length() / 2);
-
-				int start = genome_indices[i];
-				int end = start + k - 1;
-
-				int dist = i == 0 ? 0 : genome_indices[i] - (genome_indices[i-1] + k);
-				
-				printf("\t\t");
-				printf("%d/%zd", matches, repeat.length()/2);
-				printf(" %d %s %d", start, repeat.c_str(), end);
-				printf(" %d", dist);
-				printf(" %f\n", score);
-			}
-			cout << endl;
-			
-			
-			// spacers
-			printf("\tspacers (%zd)\n", spacers.size());
-			
-			for (string spacer : spacers)
-			{
-				printf("\t\t");
-				printf("%d/%zd", spacer_scores[spacer], spacer.length());
-				printf(" %s\n", spacer.c_str());
-			}
+	k = _k;
+	genome_indices = inclusive;
+	size = exclusive - inclusive;
+}
 		
-			cout << endl;
-		}
+void Crispr::update(string& genome)
+{
+	this->repeats = vector<string>(size);
+	this->spacers = vector<string>(size-1);
 
-		bool operator>(const Crispr& obj)
-		{
-			return this->overall_heuristic > obj.overall_heuristic;
-		}
+	for (size_t i = 0; i < size; i++)
+	{
+		repeats[i] = genome.substr(genome_indices[i], k).c_str();
+	}
 
-		bool operator<(const Crispr& obj)
-		{
-			return this->overall_heuristic < obj.overall_heuristic;
-		}
+	for (size_t i = 0; i < size - 1; i++)
+	{
+		unsigned int current_repeat_end = genome_indices[i] + k;
+		unsigned int next_repeat_begin = genome_indices[i+1];
+		unsigned int spacer_size = next_repeat_begin - current_repeat_end;
+		spacers[i] = genome.substr(current_repeat_end, spacer_size);
+	}
 
-		void cache_upstream_kmers(string genome, size_t upstream_size, unsigned int _k)
-		{
-			string upstream = genome.substr(start - upstream_size, upstream_size);
-			// this->target_kmers = get_kmers_amino(upstream, _k);
+	this->start = *genome_indices;
+	this->end = (genome_indices[size-1]) + k - 1;
 
-		}
+	this->conservation_repeats = get_conservation_consensus(repeats);
+	this->conservation_spacers = get_conservation_spacer(spacers);
+	this->overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
+}
 
-};
+// void cache_upstream_kmers(string& genome, size_t upstream_size, unsigned int _k);
+
+void Crispr::print(string& genome, map<string, int> spacer_scores)
+{
+	// header
+	printf("%d - %d %d\n\n", start, end, k);
+	printf("\t%fh %fr %fs\n\n", overall_heuristic, conservation_repeats, conservation_spacers);
+
+
+	// repeats
+	printf("\trepeats (%zd)\n", repeats.size());
+
+	for (size_t i = 0; i < repeats.size(); i++)
+	{
+		string repeat = repeats[i];
+
+		int mismatches = mismatch_count(repeat);
+		int matches = repeat.length() / 2 - mismatches;
+		double score = (double) matches / (double) (repeat.length() / 2);
+
+		int start = genome_indices[i];
+		int end = start + k - 1;
+
+		int dist = i == 0 ? 0 : genome_indices[i] - (genome_indices[i-1] + k);
+		
+		printf("\t\t");
+		printf("%d/%zd", matches, repeat.length()/2);
+		printf(" %d %s %d", start, repeat.c_str(), end);
+		printf(" %d", dist);
+		printf(" %f\n", score);
+	}
+	cout << endl;
+	
+	
+	// spacers
+	printf("\tspacers (%zd)\n", spacers.size());
+	
+	for (string spacer : spacers)
+	{
+		printf("\t\t");
+		printf("%d/%zd", spacer_scores[spacer], spacer.length());
+		printf(" %s\n", spacer.c_str());
+	}
+
+	cout << endl;
+}
+
+bool Crispr::operator>(const Crispr& obj)
+{
+	return this->overall_heuristic > obj.overall_heuristic;
+}
+
+bool Crispr::operator<(const Crispr& obj)
+{
+	return this->overall_heuristic < obj.overall_heuristic;
+}
+
+void Crispr::cache_upstream_kmers(string genome, size_t upstream_size, unsigned int _k)
+{
+	string upstream = genome.substr(start - upstream_size, upstream_size);
+	// this->target_kmers = get_kmers_amino(upstream, _k);
+
+}
+
+
+
 
 
 void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores)

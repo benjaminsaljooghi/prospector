@@ -1,7 +1,5 @@
 #pragma once
 
-#hdr
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -24,9 +22,6 @@
 #include <omp.h>
 
 
-
-
-#end
 
 using namespace std;
 

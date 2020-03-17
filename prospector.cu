@@ -5,7 +5,9 @@
 #include "cuda_fp16.h"
 
 #include "stdafx.h"
-
+#include "util.h"
+#include "seq.h"
+#include "crispr.h"
 
 
 #ifdef __CUDACC__
