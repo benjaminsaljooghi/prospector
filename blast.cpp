@@ -1,3 +1,4 @@
+#hdr
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -19,16 +20,16 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
+#end
 
 
-#include "../util/util.h"
-
+#include "build/util.h"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 
 
-map<string, int> BLAST(set<string> _seqs)
+map <string, int> BLAST (set <string> _seqs)
 {
     double start = omp_get_wtime();
 
@@ -91,3 +92,4 @@ map<string, int> BLAST(set<string> _seqs)
     done(start);
     return seq_max_scores;
 }
+#undef LZZ_INLINE

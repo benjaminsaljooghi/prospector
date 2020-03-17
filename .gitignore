@@ -1,4 +1,6 @@
+crispr-data
 cmake-build-debug
+build
 
 # Prerequisites
 *.d

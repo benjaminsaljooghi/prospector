@@ -4,8 +4,8 @@
 #include "device_launch_parameters.h"
 #include "cuda_fp16.h"
 
+#include "stdafx.h"
 
-#include "prospector.h"
 
 
 #ifdef __CUDACC__

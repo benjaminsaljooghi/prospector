@@ -1,7 +1,7 @@
-// C
+#pragma once
 
+#hdr
 
-// C++
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -24,6 +24,9 @@
 #include <omp.h>
 
 
+
+
+#end
 
 using namespace std;
 

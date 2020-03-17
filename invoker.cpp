@@ -1,6 +1,10 @@
-//#include "util/stdafx.h"
-//#include "util/util.h"
-#include "prospector/prospector.h"
+
+
+#include "stdafx.h"
+#include "crispr.h"
+#include "seq.h"
+#include "util.h"
+
 
 
 map<string, int> BLAST(set<string> seqs);
@@ -18,8 +22,8 @@ void debug(string genome, vector<Crispr> crisprs)
         }
 
     }
-    sort(of_interest.begin(), of_interest.end(), heuristic_comparison);
-    print(genome, vector<Crispr>(of_interest.begin(), of_interest.begin() + 5));
+    sort(of_interest.begin(), of_interest.end());
+    // print(genome, vector<Crispr>(of_interest.begin(), of_interest.begin() + 5));
     // print(genome, of_interest);
     exit(0);
 }
@@ -36,10 +40,11 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
     };
 
     #pragma omp parallel for default(none) shared(crisprs, genome, upstream_size, k)
-    for (Crispr& crispr : crisprs)
-        crispr.cache_upstream_kmers(genome, upstream_size, k);
-
-    size_t size = crisprs.size() * profiles.size();
+    // for (Crispr& crispr : crisprs)
+    for (size_t i = 0; i < crisprs.size(); i++)
+    {
+        crisprs[i].cache_upstream_kmers(genome, upstream_size, k);
+    }
     vector<ProfileExecution> executions;
 
     #pragma omp parallel for default(none) shared(crisprs, profiles, executions)
@@ -130,8 +135,10 @@ void cache_crispr_information(vector<Crispr>& crisprs, string genome)
 {
     double start = omp_get_wtime();
     #pragma omp parallel for
-    for (Crispr& crispr : crisprs)
-        crispr.update(genome);
+    for (size_t i = 0; i < crisprs.size(); i++)
+    {
+        crisprs[i].update(genome);
+    }
     done(start, "cache crispr information");
 }
 
@@ -149,11 +156,11 @@ int main()
 
     vector<Crispr> crisprs = prospector_main(genome);
     cache_crispr_information(crisprs, genome);
-    sort(crisprs.begin(), crisprs.end(), heuristic_comparison);
+    sort(crisprs.begin(), crisprs.end());
     vector<Crispr> domain_best = get_domain_best(crisprs);
     map<string, int> spacer_scores = get_spacer_scores(domain_best);
     vector<Crispr> final = score_filtered(domain_best, spacer_scores);
-    print(genome, final, spacer_scores);
+    // print(genome, final, spacer_scores);
     cas(genome, final, 5, 10000);
     done(start, "invoker");
     return 0;
