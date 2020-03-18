@@ -8,7 +8,7 @@
             "name": "(gdb) Launch invoker",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/invoker.out",
+            "program": "${workspaceFolder}/build/invoker.out",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

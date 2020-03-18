@@ -31,8 +31,6 @@ class Crispr
         void print_generic(string& genome, function<void(string)>& print_spacer);
         void print(string&, map<string, int>);
         void print(string&);
-        bool operator>(const Crispr& obj);
-        bool operator<(const Crispr&);
         void cache_upstream_kmers(string, size_t, unsigned int);
 };
 
@@ -73,5 +71,8 @@ namespace CrisprUtil
     void cache_crispr_information(vector<Crispr>& crisprs, string genome);
     void debug(string genome, vector<Crispr> crisprs);
     map<string, int> get_spacer_scores(vector<Crispr>& crisprs);
+
+    bool heuristic_less(const Crispr& a, const Crispr& b);
+    bool heuristic_greater(const Crispr& a, const Crispr& b);
 }
 

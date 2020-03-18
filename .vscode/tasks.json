@@ -6,7 +6,7 @@
         {
             "label": "build invoker",
             "type": "shell",
-            "command": "make invoker.out",
+            "command": "make",
             "options": {
                 "cwd": "${workspaceRoot}"
             }

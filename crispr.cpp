@@ -157,32 +157,35 @@ void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 
 void Crispr::print(string& genome, map<string, int> spacer_scores)
 {
-	function<void(string)> lambda = [&](string spacer) {
+	function<void(string)> print_spacer = [&](string spacer) {
 		printf("%d/%zd", spacer_scores[spacer], spacer.length());
 	};
 
-	print_generic(genome, lambda);
+	print_generic(genome, print_spacer);
 }
 
 void Crispr::print(string& genome)
 {
-	function<void(string)> lambda = [](string spacer) {
+	function<void(string)> print_spacer = [](string spacer) {
 		printf("%d/%zd", -1, spacer.length());
 	};
 
-	print_generic(genome, lambda);
+	print_generic(genome, print_spacer);
 }
 
 
-bool Crispr::operator>(const Crispr& obj)
+
+bool CrisprUtil::heuristic_less(const Crispr& a, const Crispr& b)
 {
-	return this->overall_heuristic > obj.overall_heuristic;
+	return a.overall_heuristic < b.overall_heuristic;
 }
 
-bool Crispr::operator<(const Crispr& obj)
+bool CrisprUtil::heuristic_greater(const Crispr& a, const Crispr& b)
 {
-	return this->overall_heuristic < obj.overall_heuristic;
+	return a.overall_heuristic > b.overall_heuristic;
 }
+
+
 
 void Crispr::cache_upstream_kmers(string genome, size_t upstream_size, unsigned int _k)
 {
@@ -351,6 +354,8 @@ void CrisprUtil::cas(string genome, vector<Crispr> crisprs, const unsigned int k
 
 vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
 {
+	// this function expects the crisprs to be sorted
+
     printf("filtering %zd crisprs... ", crisprs.size());
     double start = omp_get_wtime();
 
@@ -413,20 +418,20 @@ void CrisprUtil::cache_crispr_information(vector<Crispr>& crisprs, string genome
     done(start, "cache crispr information");
 }
 
-void CrisprUtil::debug(string genome, vector<Crispr> crisprs)
-{
-    vector<Crispr> of_interest;
-    for (Crispr crispr : crisprs)
-    {
-        if (crispr.start >= DEBUG_START && crispr.end <= DEBUG_END)
-        {
-            of_interest.push_back(crispr);
-        }
+// void CrisprUtil::debug(string genome, vector<Crispr> crisprs)
+// {
+//     vector<Crispr> of_interest;
+//     for (Crispr crispr : crisprs)
+//     {
+//         if (crispr.start >= DEBUG_START && crispr.end <= DEBUG_END)
+//         {
+//             of_interest.push_back(crispr);
+//         }
 
-    }
-    sort(of_interest.begin(), of_interest.end());
-    exit(0);
-}
+//     }
+//     sort(of_interest.begin(), of_interest.end(), greater<Crispr>());
+//     exit(0);
+// }
 
 map<string, int> CrisprUtil::get_spacer_scores(vector<Crispr>& crisprs)
 {
