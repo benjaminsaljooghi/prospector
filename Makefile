@@ -1,7 +1,4 @@
-OPTIMIZATION = -O0
-
-CPP = clang++
-CARGS = --std=c++17 -g -Wall -fopenmp -g
+CPP = clang++ -O0 --std=c++17 -g -Wall -fopenmp -g
 
 NVCC = /usr/local/cuda/bin/nvcc
 NVCCARGS = --std=c++14 -g -G -Xcompiler -fopenmp
@@ -16,29 +13,30 @@ LIB_CUDA = -L/usr/local/cuda/lib64 -lcudart
 BLAST_ARGS = -c -Wno-format-y2k  -pthread -fPIC -D_DEBUG -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE   -D_MT -D_REENTRANT -D_THREAD_SAFE
 
 BUILD = build
-OBJS = $(BUILD)/invoker.o $(BUILD)/dlinked.o $(BUILD)/prospector.o $(BUILD)/blast.o
-SRC = *.cpp
 
 
 run: $(BUILD)/invoker.out
 	./$(BUILD)/invoker.out
 
+$(BUILD)/util.o: util.*
+	$(CPP) -c util.cpp -o $(BUILD)/util.o
 
-.PHONY: all_objs
-all_objs: *.cpp *.h
-	
-	$(CPP) $(OPTIMIZATION) $(CARGS) -c util.cpp -o $(BUILD)/util.o
-	$(CPP) $(OPTIMIZATION) $(CARGS) -c crispr.cpp -o $(BUILD)/crispr.o
-	$(CPP) $(OPTIMZATION) $(CARGS) $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(BUILD)/blast.o
-	$(NVCC) $(NVCCARGS) -dc prospector.cu -o $(BUILD)/prospector.o
+$(BUILD)/crispr.o: crispr.*
+	$(CPP) -c crispr.cpp -o $(BUILD)/crispr.o
+
+$(BUILD)/blast.o: blast.*
+	$(CPP) $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(BUILD)/blast.o
+
+$(BUILD)/dlinked.o: $(BUILD)/prospector.o
 	$(NVCC) $(NVCCARGS) -dlink $(BUILD)/prospector.o -o $(BUILD)/dlinked.o
+
+$(BUILD)/prospector.o: prospector.*
+	$(NVCC) $(NVCCARGS) -dc prospector.cu -o $(BUILD)/prospector.o
+
+
+$(BUILD)/invoker.out: $(BUILD)/prospector.o $(BUILD)/dlinked.o $(BUILD)/blast.o $(BUILD)/crispr.o $(BUILD)/util.o
 	$(CPP) $(OPTIMIZATION) $(CARGS) -c invoker.cpp -o $(BUILD)/invoker.o
-	$(CPP) $(OPTIMIZATION) $(CARGS) $(BUILD)/*.o $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -o invoker.out
-
-
-
-
-
+	$(CPP) $(OPTIMIZATION) $(CARGS) $(BUILD)/*.o $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -o $(BUILD)/invoker.out -fuse-ld=lld
 
 
 
