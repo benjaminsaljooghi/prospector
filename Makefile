@@ -17,10 +17,10 @@ B = build
 
 .PHONY: rebuild run clean
 
-rebuild: clean run
-
 run: $(B)/invoker.out
 	./$(B)/invoker.out
+
+rebuild: clean run
 
 clean:
 	rm -fv $(B)/*.o $(B)/*.out
@@ -40,7 +40,7 @@ $(B)/dlinked.o: $(B)/prospector.o
 $(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
 	$(NVCC) -dc prospector.cu -o $(B)/prospector.o
 
-$(B)/invoker.out: $(B)/prospector.o $(B)/dlinked.o $(B)/blast.o $(B)/crispr.o $(B)/util.o
+$(B)/invoker.out: invoker.* $(B)/prospector.o $(B)/dlinked.o $(B)/blast.o $(B)/crispr.o $(B)/util.o
 	$(CPP) -c invoker.cpp -o $(B)/invoker.o
 	$(CPP) $(B)/*.o $(LIB) -o $(B)/invoker.out -fuse-ld=lld
 
