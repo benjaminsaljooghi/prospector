@@ -82,6 +82,14 @@ map <string, string> parse_fasta (string file_path)
 	done(start);
 	return seqs;
 }
+
+
+string parse_fasta_single (string file_path)
+{
+	return parse_fasta(file_path).begin()->second;
+}
+
+
 string reverse_complement (string seq)
 {
     size_t len = seq.length();

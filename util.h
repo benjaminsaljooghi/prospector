@@ -168,6 +168,8 @@ template <typename T> T most_frequent(vector<T> elements)
 
 
 map<string, string> parse_fasta(string);
+string parse_fasta_single(string);
+
 string reverse_complement(string);
 int mismatch_count(string);
 string seqs_to_fasta(vector<string>);
