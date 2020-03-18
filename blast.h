@@ -1,6 +1,8 @@
 #pragma once
 
 #include "stdafx.h"
+#include "util.h"
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -17,9 +19,5 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(blast);
-
-#include "util.h"
 
 map<string, int> BLAST(set<string>);

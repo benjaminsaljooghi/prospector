@@ -1,5 +1,7 @@
-
 #include "blast.h"
+
+USING_NCBI_SCOPE;
+USING_SCOPE(blast);
 
 map <string, int> BLAST (set <string> _seqs)
 {

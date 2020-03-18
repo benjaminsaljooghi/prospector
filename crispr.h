@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "util.h"
+#include "blast.h"
 
 
 class Crispr
@@ -68,5 +69,6 @@ namespace CrisprUtil
     vector<Crispr> score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
     void cache_crispr_information(vector<Crispr>& crisprs, string genome);
     void debug(string genome, vector<Crispr> crisprs);
+    map<string, int> get_spacer_scores(vector<Crispr>& crisprs);
 }
 

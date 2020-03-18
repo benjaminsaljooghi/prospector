@@ -71,6 +71,7 @@
         "codecvt": "cpp",
         "memory_resource": "cpp",
         "bit": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "__config": "cpp"
     }
 }
