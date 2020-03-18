@@ -22,13 +22,20 @@ int main()
     
     CrisprUtil::cache_crispr_information(crisprs, genome);
     
-    sort(crisprs.begin(), crisprs.end(), CrisprUtil::heuristic_greater);
+    vector<Crispr> good_heuristic_crisprs;
+    for (const Crispr& crispr : crisprs)
+    {
+        if (crispr.overall_heuristic > 0.5)
+            good_heuristic_crisprs.push_back(crispr);
+    }
+
+    sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
     
-    vector<Crispr> domain_best = CrisprUtil::get_domain_best(crisprs);
-    
+    vector<Crispr> domain_best = CrisprUtil::get_domain_best(good_heuristic_crisprs);
+
     map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best);
     
-    vector<Crispr> final = CrisprUtil::score_filtered(domain_best, spacer_scores);
+    vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
 
     CrisprUtil::print(genome, final, spacer_scores);
 

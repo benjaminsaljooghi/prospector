@@ -388,7 +388,7 @@ vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
     return crisprs_domain_best;
 }
 
-vector<Crispr> CrisprUtil::score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
+vector<Crispr> CrisprUtil::spacer_score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
 {
     double start_time = omp_get_wtime();
     vector<Crispr> crisprs_filtered;
@@ -398,7 +398,7 @@ vector<Crispr> CrisprUtil::score_filtered(vector<Crispr> crisprs, map<string, in
         for (string spacer : crispr.spacers)
             scores.push_back((double) spacer_scores[spacer] / (double) spacer.size());
 
-        if (mean(scores) < 0.5 || crispr.overall_heuristic < 0.5)
+        if (mean(scores) < 0.5)
             continue;
 
         crisprs_filtered.push_back(crispr);

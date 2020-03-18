@@ -67,7 +67,7 @@ namespace CrisprUtil
     bool repeat_subset(Crispr a, Crispr b);
     void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size);
     vector<Crispr> get_domain_best(vector<Crispr> crisprs);
-    vector<Crispr> score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
+    vector<Crispr> spacer_score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
     void cache_crispr_information(vector<Crispr>& crisprs, string genome);
     void debug(string genome, vector<Crispr> crisprs);
     map<string, int> get_spacer_scores(vector<Crispr>& crisprs);
