@@ -1,34 +1,8 @@
-// CUDA
-#include "cuda.h"
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "cuda_fp16.h"
-
-#include "stdafx.h"
-#include "util.h"
-#include "crispr.h"
 #include "prospector.h"
-
-
-#ifdef __CUDACC__
-#define CUDA_CALLABLE_MEMBER __host__ __device__
-#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
-#else
-#define CUDA_CALLABLE_MEMBER
-#define KERNEL_ARGS2(grid, block)
-#define KERNEL_ARGS3(grid, block, sh_mem)
-#define KERNEL_ARGS4(grid, block, sh_mem, stream)
-#endif
-
 
 void cwait()
 {
-//	printf("waiting for kernel... ");
-//	double start = omp_get_wtime();
 	cudaError err = cudaDeviceSynchronize();
-//	printf("done in %.3f seconds\n", duration(start));
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
@@ -38,7 +12,6 @@ void cwait()
 
 __device__ char complement(char nuc)
 {
-    // printf("%c\n", nuc);
     switch (nuc)
     {
     case 'A':
@@ -387,7 +360,7 @@ vector<Crispr> prospector_main_gpu(const string& genome)
 }
 
 
-vector<Crispr> prospector_main(const string& genome)
+vector<Crispr> Prospector::prospector_main(const string& genome)
 {
     printf("genome has size %zd\n", genome.size());
     

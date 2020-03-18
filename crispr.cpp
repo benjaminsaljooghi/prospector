@@ -1,7 +1,3 @@
-
-
-#include "stdafx.h"
-#include "util.h"
 #include "crispr.h"
 
 double bp_match_score(string a, string b, bool differential)
@@ -172,78 +168,11 @@ void Crispr::cache_upstream_kmers(string genome, size_t upstream_size, unsigned 
 {
 	string upstream = genome.substr(start - upstream_size, upstream_size);
 	// this->target_kmers = get_kmers_amino(upstream, _k);
-
 }
 
 
 
 
-
-void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores)
-{
-	printf("printing %zd crisprs\n", crisprs.size());
-	for (Crispr crispr : crisprs) crispr.print(genome, spacer_scores);
-}
-
-
-// Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
-bool repeat_substring(Crispr b, unsigned int start, unsigned int end)
-{
-	for (size_t i = 0; i < b.size; i++)
-	{
-		unsigned int repeat_start = b.genome_indices[i];
-		unsigned int repeat_end = b.genome_indices[i] + b.k - 1;
-
-		if (start >= repeat_start && end <= repeat_end)
-		{
-			return true;
-		}				
-	}
-	return false;
-}
-
-
-
-// Are all the repeats of Crispr 'a' substrings of the repeats in Crispr 'b'?
-bool repeat_subset(Crispr a, Crispr b)
-{
-	// a cannot be a repeat_subset of b if its k is greater than b
-	if (a.k > b.k)
-	{
-		return false;
-	}
-
-	for (size_t i = 0; i < a.size; i++)
-	{
-		if (!repeat_substring(b, a.genome_indices[i], a.genome_indices[i] + a.k - 1))
-		{
-			return false;
-		}
-	}
-
-	// all a repeats are substrings of b repeats
-	return true;
-}
-
-
-bool any_overlap(Crispr a, Crispr b)
-{
-
-	unsigned int a_start = a.genome_indices[0];
-	unsigned int a_end = a.genome_indices[a.size - 1] + a.k - 1;
-
-	unsigned int b_start = b.genome_indices[0];
-	unsigned int b_end = b.genome_indices[b.size - 1] + b.k - 1;
-
-
-	bool a_before_b = a_start <= b_start;
-	bool b_before_a = b_start <= a_start;
-
-	bool a_bleeds_into_b = a_before_b && a_end >= b_start;
-	bool b_bleeds_into_a = b_before_a && b_end >= a_start;
-
-	return a_bleeds_into_b || b_bleeds_into_a;
-}
 
 
 
@@ -293,4 +222,183 @@ void ProfileExecution::print()
 
 
 
+
+
+
+void CrisprUtil::print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores)
+{
+	printf("printing %zd crisprs\n", crisprs.size());
+	for (Crispr crispr : crisprs) crispr.print(genome, spacer_scores);
+}
+
+// Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
+bool CrisprUtil::repeat_substring(Crispr b, unsigned int start, unsigned int end)
+{
+	for (size_t i = 0; i < b.size; i++)
+	{
+		unsigned int repeat_start = b.genome_indices[i];
+		unsigned int repeat_end = b.genome_indices[i] + b.k - 1;
+
+		if (start >= repeat_start && end <= repeat_end)
+		{
+			return true;
+		}				
+	}
+	return false;
+}
+
+// Are all the repeats of Crispr 'a' substrings of the repeats in Crispr 'b'?
+bool CrisprUtil::repeat_subset(Crispr a, Crispr b)
+{
+	// a cannot be a repeat_subset of b if its k is greater than b
+	if (a.k > b.k)
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < a.size; i++)
+	{
+		if (!repeat_substring(b, a.genome_indices[i], a.genome_indices[i] + a.k - 1))
+		{
+			return false;
+		}
+	}
+
+	// all a repeats are substrings of b repeats
+	return true;
+}
+
+
+bool CrisprUtil::any_overlap(Crispr a, Crispr b)
+{
+
+	unsigned int a_start = a.genome_indices[0];
+	unsigned int a_end = a.genome_indices[a.size - 1] + a.k - 1;
+
+	unsigned int b_start = b.genome_indices[0];
+	unsigned int b_end = b.genome_indices[b.size - 1] + b.k - 1;
+
+
+	bool a_before_b = a_start <= b_start;
+	bool b_before_a = b_start <= a_start;
+
+	bool a_bleeds_into_b = a_before_b && a_end >= b_start;
+	bool b_bleeds_into_a = b_before_a && b_end >= a_start;
+
+	return a_bleeds_into_b || b_bleeds_into_a;
+}
+
+void CrisprUtil::cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size)
+{
+    double start = omp_get_wtime();
+
+    vector<Profile> profiles = {
+        Profile("thermophilus", "crispr-data/cas9_amino_thermophilus.fasta", k),
+        Profile("pyogenes", "crispr-data/cas9_amino_pyogenes.fasta", k)
+    };
+
+    #pragma omp parallel for default(none) shared(crisprs, genome, upstream_size, k)
+    for (size_t i = 0; i < crisprs.size(); i++)
+    {
+        crisprs[i].cache_upstream_kmers(genome, upstream_size, k);
+    }
+    vector<ProfileExecution> executions;
+
+    #pragma omp parallel for default(none) shared(crisprs, profiles, executions)
+    for (int i = 0; i < crisprs.size(); i++)
+    {
+        for (int j = 0; j < profiles.size(); j++)
+        {
+            ProfileExecution result = ProfileExecution(&profiles[j], &crisprs[i]);
+            #pragma omp critical
+            {
+                executions.push_back(result);
+            };
+        }
+    }
+
+    for (ProfileExecution& execution : executions)
+        execution.print();
+
+    done(start, "cas detection");
+}
+
+vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
+{
+    printf("filtering %zd crisprs... ", crisprs.size());
+    double start = omp_get_wtime();
+
+    // get the best of each domain
+    vector<Crispr> crisprs_domain_best;
+    for (size_t i = 0; i < crisprs.size(); i++)
+    {        
+        // if there are no overlaps for this crispr (it is unique), then it is a new crispr_best. We have to iterate through all crisprs to find all unique domains.
+        Crispr crispr = crisprs[i];
+
+        // check if the domain exists
+        bool best_already_exists = false;
+        for (size_t j = 0; j < crisprs_domain_best.size(); j++)
+        {
+            Crispr other = crisprs_domain_best[j];
+            if (CrisprUtil::any_overlap(crispr, other))
+            {
+                // the best of the domain has already been added
+                best_already_exists = true;
+                break;
+            }
+        }
+
+        if (!best_already_exists)
+        {
+            crisprs_domain_best.push_back(crispr);
+        }
+    }
+    done(start);
+    return crisprs_domain_best;
+}
+
+vector<Crispr> CrisprUtil::score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
+{
+    double start_time = omp_get_wtime();
+    vector<Crispr> crisprs_filtered;
+    for (Crispr crispr : crisprs)
+    {
+        vector<double> scores;
+        for (string spacer : crispr.spacers)
+            scores.push_back((double) spacer_scores[spacer] / (double) spacer.size());
+
+        if (mean(scores) < 0.5 || crispr.overall_heuristic < 0.5)
+            continue;
+
+        crisprs_filtered.push_back(crispr);
+    }
+    done(start_time, "final filtering");
+    return crisprs_filtered;
+}
+
+void CrisprUtil::cache_crispr_information(vector<Crispr>& crisprs, string genome)
+{
+    double start = omp_get_wtime();
+    #pragma omp parallel for
+    for (size_t i = 0; i < crisprs.size(); i++)
+    {
+        crisprs[i].update(genome);
+    }
+    done(start, "cache crispr information");
+}
+
+void CrisprUtil::debug(string genome, vector<Crispr> crisprs)
+{
+    vector<Crispr> of_interest;
+    for (Crispr crispr : crisprs)
+    {
+        if (crispr.start >= DEBUG_START && crispr.end <= DEBUG_END)
+        {
+            of_interest.push_back(crispr);
+        }
+
+    }
+    sort(of_interest.begin(), of_interest.end());
+    exit(0);
+}
 

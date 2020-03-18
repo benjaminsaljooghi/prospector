@@ -36,7 +36,6 @@ const unsigned int DEBUG_END = 10e7;
 
 
 
-
 const map <string, string> codon_table = {
     {"TTT", "F"},
     {"TTC", "F"},

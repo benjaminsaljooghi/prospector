@@ -1,6 +1,8 @@
 #pragma once
 
 #include "stdafx.h"
+#include "util.h"
+
 
 class Crispr
 {
@@ -31,9 +33,6 @@ class Crispr
         void cache_upstream_kmers(string, size_t, unsigned int);
 };
 
-bool any_overlap(Crispr, Crispr);
-
-
 class Profile
 {
     public:
@@ -57,3 +56,17 @@ class ProfileExecution
 		ProfileExecution(Profile* _profile, Crispr* _crispr);
 		void print();
 };
+
+namespace CrisprUtil
+{
+    bool any_overlap(Crispr, Crispr);
+    void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores);
+    bool repeat_substring(Crispr b, unsigned int start, unsigned int end);
+    bool repeat_subset(Crispr a, Crispr b);
+    void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size);
+    vector<Crispr> get_domain_best(vector<Crispr> crisprs);
+    vector<Crispr> score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
+    void cache_crispr_information(vector<Crispr>& crisprs, string genome);
+    void debug(string genome, vector<Crispr> crisprs);
+}
+
