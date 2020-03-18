@@ -28,7 +28,9 @@ class Crispr
 
         Crispr(unsigned int, unsigned int*, unsigned int*);
         void update(string&);
+        void print_generic(string& genome, function<void(string)>& print_spacer);
         void print(string&, map<string, int>);
+        void print(string&);
         bool operator>(const Crispr& obj);
         bool operator<(const Crispr&);
         void cache_upstream_kmers(string, size_t, unsigned int);
@@ -62,6 +64,7 @@ namespace CrisprUtil
 {
     bool any_overlap(Crispr, Crispr);
     void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores);
+    void print(string genome, vector<Crispr> crisprs);
     bool repeat_substring(Crispr b, unsigned int start, unsigned int end);
     bool repeat_subset(Crispr a, Crispr b);
     void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size);

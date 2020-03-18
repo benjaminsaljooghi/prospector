@@ -109,7 +109,8 @@ void Crispr::update(string& genome)
 
 // void cache_upstream_kmers(string& genome, size_t upstream_size, unsigned int _k);
 
-void Crispr::print(string& genome, map<string, int> spacer_scores)
+
+void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 {
 	// header
 	printf("%d - %d %d\n\n", start, end, k);
@@ -140,19 +141,38 @@ void Crispr::print(string& genome, map<string, int> spacer_scores)
 	}
 	cout << endl;
 	
-	
 	// spacers
 	printf("\tspacers (%zd)\n", spacers.size());
 	
 	for (string spacer : spacers)
 	{
 		printf("\t\t");
-		printf("%d/%zd", spacer_scores[spacer], spacer.length());
+		print_spacer(spacer);
 		printf(" %s\n", spacer.c_str());
 	}
 
 	cout << endl;
+
 }
+
+void Crispr::print(string& genome, map<string, int> spacer_scores)
+{
+	function<void(string)> lambda = [&](string spacer) {
+		printf("%d/%zd", spacer_scores[spacer], spacer.length());
+	};
+
+	print_generic(genome, lambda);
+}
+
+void Crispr::print(string& genome)
+{
+	function<void(string)> lambda = [](string spacer) {
+		printf("%d/%zd", -1, spacer.length());
+	};
+
+	print_generic(genome, lambda);
+}
+
 
 bool Crispr::operator>(const Crispr& obj)
 {
@@ -176,11 +196,10 @@ void Crispr::cache_upstream_kmers(string genome, size_t upstream_size, unsigned 
 
 
 
-
 Profile::Profile(string _name, string _path, unsigned int _k)
 {
 	name = _name;
-	seq = parse_fasta(_path).begin()->second;
+	seq = parse_fasta_single(_path);
 	kmers = get_kmers(seq, _k);
 }
 
@@ -230,6 +249,13 @@ void CrisprUtil::print(string genome, vector<Crispr> crisprs, map<string, int> s
 	printf("printing %zd crisprs\n", crisprs.size());
 	for (Crispr crispr : crisprs) crispr.print(genome, spacer_scores);
 }
+
+void CrisprUtil::print(string genome, vector<Crispr> crisprs)
+{
+	printf("printing %zd crisprs\n", crisprs.size());
+	for (Crispr crispr : crisprs) crispr.print(genome);
+}
+
 
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
 bool CrisprUtil::repeat_substring(Crispr b, unsigned int start, unsigned int end)
