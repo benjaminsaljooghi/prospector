@@ -1,7 +1,6 @@
 CPP = clang++ -O0 --std=c++17 -g -Wall -fopenmp -g
 
-NVCC = /usr/local/cuda/bin/nvcc
-NVCCARGS = --std=c++14 -g -G -Xcompiler -fopenmp
+NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp
 
 NCBI = /home/ben/lib/ncbi
 INC_NCBI = -I. -I$(NCBI)/GCC800-DebugMT64/inc -I$(NCBI)/include -I$(NCBI)/include/internal
@@ -10,36 +9,39 @@ LIB_ARGS = -Wl,-rpath,$(NCBI)/GCC800-DebugMT64/lib -L. -Wl,--enable-new-dtags -W
 LIB_NCBI = -L$(NCBI)/GCC800-DebugMT64/lib -lblastinput-static -lncbi_xloader_blastdb_rmt-static -lncbi_xloader_blastdb-static -lxblastformat-static -lalign_format-static -ltaxon1-static -lblastdb_format-static -lgene_info-static -lxformat-static -lxcleanup-static -lgbseq-static -lmlacli-static -lmla-static -lmedlars-static -lpubmed-static -lvalid-static -lxobjedit-static -lxobjread-static -lvariation-static -lcreaders-static -lsubmit-static -ltaxon3-static -lxalnmgr-static -lblastxml-static -lblastxml2-static -lxcgi-static -lxhtml-static -lproteinkmer-static -lxblast-static -lxalgoblastdbindex-static -lcomposition_adjustment-static -lxalgodustmask-static -lxalgowinmask-static -lseqmasks_io-static -lseqdb-static -lblast_services-static -lxalnmgr-static -lxobjutil-static -lxobjread-static -lvariation-static -lcreaders-static -lsubmit-static -lxnetblastcli-static -lxnetblast-static -lblastdb-static -lscoremat-static -ltables-static -llmdb-static -lncbi_xloader_genbank-static -lncbi_xreader_id1-static -lncbi_xreader_id2-static -lncbi_xreader_cache-static -ldbapi_driver-static -lncbi_xreader-static -lxconnect-static -lid1-static -lid2-static -lxobjmgr-static -lgenome_collection-static -lseqedit-static -lseqsplit-static -lsubmit-static -lseqset-static -lseq-static -lseqcode-static -lsequtil-static -lpub-static -lmedline-static -lbiblio-static -lgeneral-static -lxser-static -lxutil-static -lxncbi-static -lxcompress-static -lz-static -lbz2-static -lpthread -lnsl -ldl -ldl -lm -lpthread
 LIB_CUDA = -L/usr/local/cuda/lib64 -lcudart
 
-BLAST_ARGS = -c -Wno-format-y2k  -pthread -fPIC -D_DEBUG -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE   -D_MT -D_REENTRANT -D_THREAD_SAFE
+LIB = $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA)
 
-BUILD = build
+BLAST_ARGS = -Wno-format-y2k  -pthread -fPIC -D_DEBUG -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE   -D_MT -D_REENTRANT -D_THREAD_SAFE
 
+B = build
 
-run: $(BUILD)/invoker.out
-	./$(BUILD)/invoker.out
+.PHONY: rebuild run clean
 
-$(BUILD)/util.o: util.*
-	$(CPP) -c util.cpp -o $(BUILD)/util.o
+rebuild: clean run
 
-$(BUILD)/crispr.o: crispr.*
-	$(CPP) -c crispr.cpp -o $(BUILD)/crispr.o
+run: $(B)/invoker.out
+	./$(B)/invoker.out
 
-$(BUILD)/blast.o: blast.*
-	$(CPP) $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(BUILD)/blast.o
-
-$(BUILD)/dlinked.o: $(BUILD)/prospector.o
-	$(NVCC) $(NVCCARGS) -dlink $(BUILD)/prospector.o -o $(BUILD)/dlinked.o
-
-$(BUILD)/prospector.o: prospector.*
-	$(NVCC) $(NVCCARGS) -dc prospector.cu -o $(BUILD)/prospector.o
-
-
-$(BUILD)/invoker.out: $(BUILD)/prospector.o $(BUILD)/dlinked.o $(BUILD)/blast.o $(BUILD)/crispr.o $(BUILD)/util.o
-	$(CPP) $(OPTIMIZATION) $(CARGS) -c invoker.cpp -o $(BUILD)/invoker.o
-	$(CPP) $(OPTIMIZATION) $(CARGS) $(BUILD)/*.o $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -o $(BUILD)/invoker.out -fuse-ld=lld
-
-
-
-.PHONY: clean
 clean:
-	rm -fv $(BUILD)/*.o $(BUILD)/*.out
+	rm -fv $(B)/*.o $(B)/*.out
+
+$(B)/util.o: util.*
+	$(CPP) -c util.cpp -o $(B)/util.o
+
+$(B)/crispr.o: crispr.* $(B)/util.o
+	$(CPP) -c crispr.cpp -o $(B)/crispr.o
+
+$(B)/blast.o: blast.* $(B)/util.o $(B)/crispr.o
+	$(CPP) -c $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(B)/blast.o
+
+$(B)/dlinked.o: $(B)/prospector.o
+	$(NVCC) -dlink $(B)/prospector.o -o $(B)/dlinked.o
+
+$(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
+	$(NVCC) -dc prospector.cu -o $(B)/prospector.o
+
+$(B)/invoker.out: $(B)/prospector.o $(B)/dlinked.o $(B)/blast.o $(B)/crispr.o $(B)/util.o
+	$(CPP) -c invoker.cpp -o $(B)/invoker.o
+	$(CPP) $(B)/*.o $(LIB) -o $(B)/invoker.out -fuse-ld=lld
+
+
