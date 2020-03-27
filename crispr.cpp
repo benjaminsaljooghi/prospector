@@ -1,5 +1,7 @@
 #include "crispr.h"
 
+// Private helper functions
+
 double bp_match_score(string a, string b, bool differential)
 {
 	size_t a_len = a.length();
@@ -74,6 +76,8 @@ double get_conservation_spacer(vector<string> spacers)
 }
 
 
+// Crispr
+
 Crispr::Crispr(unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
 {
 	k = _k;
@@ -106,8 +110,6 @@ void Crispr::update(string& genome)
 	this->conservation_spacers = get_conservation_spacer(spacers);
 	this->overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
 }
-
-// void cache_upstream_kmers(string& genome, size_t upstream_size, unsigned int _k);
 
 
 void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
@@ -175,6 +177,37 @@ void Crispr::print(string& genome)
 
 
 
+
+// CasProfile
+
+CasProfile::CasProfile(string _path, unsigned int _k)
+{
+	name = filesystem::path(_path).stem();
+	kmers = kmerize(parse_fasta_single(_path), _k);
+}
+
+
+// CrisprProfile
+
+CrisprProfile::CrisprProfile(string& genome, Crispr& _crispr, unsigned int upstream_size, unsigned int _k)
+:	crispr(_crispr)
+{
+	string upstream = genome.substr(_crispr.start - upstream_size, upstream_size);
+	map<string, string> sixway = sixwaytranslation(upstream);
+	
+	for (auto const& [key, val] : sixway)
+	{
+		sixway_kmerized[key] = kmerize(val, _k);
+	}
+}
+
+
+
+
+
+// CrisprUtil
+
+
 bool CrisprUtil::heuristic_less(const Crispr& a, const Crispr& b)
 {
 	return a.overall_heuristic < b.overall_heuristic;
@@ -184,67 +217,6 @@ bool CrisprUtil::heuristic_greater(const Crispr& a, const Crispr& b)
 {
 	return a.overall_heuristic > b.overall_heuristic;
 }
-
-
-
-void Crispr::cache_upstream_kmers(string genome, size_t upstream_size, unsigned int _k)
-{
-	string upstream = genome.substr(start - upstream_size, upstream_size);
-	// this->target_kmers = get_kmers_amino(upstream, _k);
-}
-
-
-
-
-
-
-
-Profile::Profile(string _name, string _path, unsigned int _k)
-{
-	name = _name;
-	seq = parse_fasta_single(_path);
-	kmers = get_kmers(seq, _k);
-}
-
-		
-ProfileExecution::ProfileExecution(Profile* _profile, Crispr* _crispr)
-{
-	// how do we demarcate Cas genes?
-
-	profile = _profile;
-	crispr = _crispr;
-
-	for (int query = 0; query < profile->kmers.size(); query++)
-	{
-		string query_kmer = profile->kmers[query];
-		for (int target = 0; target < crispr->target_kmers.size(); target++)
-		{
-			string target_kmer = crispr->target_kmers[target];
-			int comparison = query_kmer.compare(target_kmer);
-			if (comparison == 0)
-			{
-				locations_present[query_kmer].push_back(target);
-				ordered_positions.push_back(target);
-			}
-		}
-	}
-
-	sort(ordered_positions.begin(), ordered_positions.end());
-
-	hits = ordered_positions.size();
-	hits_possible = (profile->kmers).size();
-}
-
-
-void ProfileExecution::print()
-{
-	printf("profile %s; CRISPR %d %d", profile->name.c_str(), crispr->start, crispr->k);
-	printf(": %zd/%zd\n", hits, hits_possible);
-}
-
-
-
-
 
 
 void CrisprUtil::print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores)
@@ -317,40 +289,6 @@ bool CrisprUtil::any_overlap(Crispr a, Crispr b)
 	return a_bleeds_into_b || b_bleeds_into_a;
 }
 
-void CrisprUtil::cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size)
-{
-    double start = omp_get_wtime();
-
-    vector<Profile> profiles = {
-        Profile("thermophilus", "crispr-data/cas9_amino_thermophilus.fasta", k),
-        Profile("pyogenes", "crispr-data/cas9_amino_pyogenes.fasta", k)
-    };
-
-    #pragma omp parallel for default(none) shared(crisprs, genome, upstream_size, k)
-    for (size_t i = 0; i < crisprs.size(); i++)
-    {
-        crisprs[i].cache_upstream_kmers(genome, upstream_size, k);
-    }
-    vector<ProfileExecution> executions;
-
-    #pragma omp parallel for default(none) shared(crisprs, profiles, executions)
-    for (int i = 0; i < crisprs.size(); i++)
-    {
-        for (int j = 0; j < profiles.size(); j++)
-        {
-            ProfileExecution result = ProfileExecution(&profiles[j], &crisprs[i]);
-            #pragma omp critical
-            {
-                executions.push_back(result);
-            };
-        }
-    }
-
-    for (ProfileExecution& execution : executions)
-        execution.print();
-
-    done(start, "cas detection");
-}
 
 vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
 {
@@ -410,12 +348,13 @@ vector<Crispr> CrisprUtil::spacer_score_filtered(vector<Crispr> crisprs, map<str
 void CrisprUtil::cache_crispr_information(vector<Crispr>& crisprs, string genome)
 {
     double start = omp_get_wtime();
+	printf("caching %zd crisprs... ", crisprs.size());
     #pragma omp parallel for
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         crisprs[i].update(genome);
     }
-    done(start, "cache crispr information");
+    done(start);
 }
 
 // void CrisprUtil::debug(string genome, vector<Crispr> crisprs)

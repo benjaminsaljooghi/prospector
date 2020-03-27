@@ -23,40 +23,36 @@ class Crispr
         double conservation_spacers;
         double overall_heuristic;
 
-        // computed by cache_upstream_kmers
-        vector<string> target_kmers;
+        // computed by cache_upstream_aminos
+        // vector<string> target_kmers;
 
         Crispr(unsigned int, unsigned int*, unsigned int*);
         void update(string&);
         void print_generic(string& genome, function<void(string)>& print_spacer);
         void print(string&, map<string, int>);
         void print(string&);
-        void cache_upstream_kmers(string, size_t, unsigned int);
+        // void cache_upstream_aminos(string, size_t, unsigned int);
 };
 
-class Profile
+class CasProfile
 {
     public:
         string name;
-        string seq;
         vector<string> kmers;
 		
-		Profile(string _name, string _path, unsigned int _k);
+		CasProfile(string _path, unsigned int _k);
 };
 
-class ProfileExecution
+class CrisprProfile
 {
     public:
-        Profile* profile;
-        Crispr* crispr;
-        vector<int> ordered_positions;
-        map<string, vector<int>> locations_present;
-        size_t hits;
-        size_t hits_possible;
-		
-		ProfileExecution(Profile* _profile, Crispr* _crispr);
-		void print();
+
+        Crispr& crispr;
+        map<string, vector<string>> sixway_kmerized;
+        CrisprProfile(string& genome, Crispr& _crispr, unsigned int upstream_size, unsigned int _k);
 };
+
+
 
 namespace CrisprUtil
 {
@@ -65,7 +61,7 @@ namespace CrisprUtil
     void print(string genome, vector<Crispr> crisprs);
     bool repeat_substring(Crispr b, unsigned int start, unsigned int end);
     bool repeat_subset(Crispr a, Crispr b);
-    void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size);
+    // void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size);
     vector<Crispr> get_domain_best(vector<Crispr> crisprs);
     vector<Crispr> spacer_score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
     void cache_crispr_information(vector<Crispr>& crisprs, string genome);

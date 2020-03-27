@@ -130,14 +130,16 @@ string seqs_to_fasta (vector <string> seqs)
     }
     return string_stream.str();
 }
-vector <string> get_kmers (string seq, unsigned int k)
+
+vector <string> kmerize (string seq, unsigned int k)
 {
 	vector<string> kmers;
 	for (size_t i = 0; i < seq.length() - k + 1; i++)
 		kmers.push_back(seq.substr(i, k));
 	return kmers;
 }
-map <string, string*> sixwaytranslation (string seq)
+
+map <string, string> sixwaytranslation (string seq)
 {
 
     size_t k = 3;
@@ -159,16 +161,21 @@ map <string, string*> sixwaytranslation (string seq)
         vector<string> amino_acid_seqs = vector<string>(3);
         for (size_t frame = 0; frame < 3; frame++)
             amino_acid_seqs[frame] = amino_acid_seq(domain, frame);
-        return &amino_acid_seqs[0];
+        // return &amino_acid_seqs[0];
+		return amino_acid_seqs;
     };
 
     string rc = reverse_complement(seq);
-    string* pos_seqs = frame_shift(seq);
-    string* neg_seqs = frame_shift(rc);
+    vector<string> pos_seqs = frame_shift(seq);
+    vector<string> neg_seqs = frame_shift(rc);
 
-    map<string, string*> result = {
-            {"pos", pos_seqs},
-            {"neg", neg_seqs},
+    map<string, string> result = {
+            {"pos_0", pos_seqs[0]},
+			{"pos_1", pos_seqs[1]},
+			{"pos_2", pos_seqs[2]},
+			{"neg_0", neg_seqs[0]},
+			{"neg_1", neg_seqs[1]},
+			{"neg_2", neg_seqs[2]},
     };
 
     return result;

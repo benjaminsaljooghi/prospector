@@ -146,6 +146,14 @@ template <typename T> vector<T> flatten(vector<vector<T>> vecs)
     return flattened;
 }
 
+template <typename T> bool contains(vector<T> target, T query)
+{
+    for (T elem : target)
+        if (elem == query)
+            return true;
+    return false;
+}
+
 template <typename T> T most_frequent(vector<T> elements)
 {
 	map<T, int> frequencies;
@@ -173,5 +181,5 @@ string parse_fasta_single(string);
 string reverse_complement(string);
 int mismatch_count(string);
 string seqs_to_fasta(vector<string>);
-vector<string> get_kmers(string, unsigned int);
-map<string, string*> sixwaytranslation(string);
+vector<string> kmerize(string, unsigned int);
+map<string, string> sixwaytranslation(string);

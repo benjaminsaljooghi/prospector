@@ -2,7 +2,7 @@ CPP = clang++ -O0 --std=c++17 -g -Wall -fopenmp -g
 
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp
 
-NCBI = /home/ben/lib/ncbi
+NCBI = /home/ben/bin/ncbi
 INC_NCBI = -I. -I$(NCBI)/GCC800-DebugMT64/inc -I$(NCBI)/include -I$(NCBI)/include/internal
 
 LIB_ARGS = -Wl,-rpath,$(NCBI)/GCC800-DebugMT64/lib -L. -Wl,--enable-new-dtags -Wl,-export-dynamic -pthread -g
@@ -15,12 +15,11 @@ BLAST_ARGS = -Wno-format-y2k  -pthread -fPIC -D_DEBUG -D_LARGEFILE_SOURCE -D_FIL
 
 B = build
 
-.PHONY: rebuild run clean
+.PHONY: build rebuild clean
 
-run: $(B)/invoker.out
-	./$(B)/invoker.out
+build: $(B)/invoker.out
 
-rebuild: clean run
+rebuild: clean build
 
 clean:
 	rm -fv $(B)/*.o $(B)/*.out
