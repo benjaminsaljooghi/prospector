@@ -42,7 +42,10 @@ class ProfileExecution
         }
 
 
-        void print()
+
+
+
+        void interpret()
         {
 
             printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
@@ -52,10 +55,6 @@ class ProfileExecution
 
             for (auto const& [label, containment]: result)
             {
-                // have current label
-                printf("%s \t %zd / %zd (%zd) \n", label.c_str(), containment.size(), crispr_profile.sixway_kmerized[label].size(), cas_profile.kmers.size());
-
-
                 size_t dist_allowed = 20;
                 
                 vector<size_t> starts;
@@ -78,14 +77,92 @@ class ProfileExecution
 
                 assert(ends.size() == starts.size());
 
+                
+                size_t cluster_requirement = 3;
+                bool small_clusters = true;
+                for (size_t i = 0; i < starts.size(); i++)
+                {   
+                    size_t start = starts[i];
+                    size_t end = ends[i];
+                    size_t len = end-start+1;
+
+                    if (len > cluster_requirement)
+                    {
+                        small_clusters = false;
+                        break;
+                    }
+                }
+
+                if (small_clusters)
+                {
+                    continue;
+                }
+
+
+                // generate a continuous stretch for which we interpret the gene to exist.
+                // It starts at the first non-singleton cluster and ends at the last non-singleton cluster
+
+                // get first non-singleton cluster
+
+                size_t demarc_start = 0;
+
                 for (size_t i = 0; i < starts.size(); i++)
                 {
                     size_t start = starts[i];
                     size_t end = ends[i];
+                    size_t len = end-start+1;
 
-                    printf("\t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, end-start+1);
+                    bool non_singleton = len > 1;
 
+                    if (non_singleton)
+                    {
+                        demarc_start = i;
+                        break;
+                    }
+                
                 }
+
+                size_t demarc_end = 0;
+
+                for (size_t i = starts.size()-1; i >= 0; i--)
+                {
+                    size_t start = starts[i];
+                    size_t end = ends[i];
+                    size_t len = end-start+1;
+
+                    bool non_singleton = len > 1;
+
+                    if (non_singleton)
+                    {
+                        demarc_end = i;
+                        break;
+                    }
+                
+                }
+
+
+
+
+                printf("\t %s \t %zd / %zd (%zd) \n", label.c_str(), containment.size(), crispr_profile.sixway_kmerized[label].size(), cas_profile.kmers.size());
+
+
+                // print demarcation
+                
+                printf("\t \t %zd -  %zd  \n", containment[starts[demarc_start]], containment[ends[demarc_end]]);
+                
+
+
+                // print underlying cluster information
+
+                // for (size_t i = 0; i < starts.size(); i++)
+                // {
+                //     size_t start = starts[i];
+                //     size_t end = ends[i];
+                //     size_t len = end-start+1;
+
+                //     printf("\t \t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, len);
+
+                // }
 
 
 
@@ -116,21 +193,20 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
 
     vector<ProfileExecution> executions;
     #pragma omp parallel for
-    for (int i = 0; i < crisprs.size(); i++)
+    for (int j = 0; j < cas_profiles.size(); j++)
     {
-        for (int j = 0; j < cas_profiles.size(); j++)
+        for (int i = 0; i < crisprs.size(); i++)
         {
             ProfileExecution result = ProfileExecution(cas_profiles[j], crispr_profiles[i]);
             #pragma omp critical
             {
                 executions.push_back(result);
             }
-
         }
     }
 
     for (ProfileExecution& execution : executions)
-        execution.print();
+        execution.interpret();
 
     done(start, "cas detection");
 }
@@ -147,7 +223,7 @@ int main()
             {"pyogenes", parse_fasta_single("crispr-data/pyogenes.fasta")}
     };
 
-    string genome = genomes["thermophilus"];
+    string genome = genomes["pyogenes"];
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
