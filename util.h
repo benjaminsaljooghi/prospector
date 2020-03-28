@@ -2,13 +2,17 @@
 #include "stdafx.h"
 
 
-const unsigned int DEBUG_START = 0;
-const unsigned int DEBUG_END = 10e7;
+#define DEBUG 0
 
-// const unsigned int DEBUG_START = 1085434-1;
-// const unsigned int DEBUG_END = 1086855;
+// #define DEBUG_START 57585-1000
+// #define DEBUG_END 58065+1000
 
-#define DEBUG 1
+// #define DEBUG_START 0
+// #define DEBUG_END 10e7
+
+
+
+
 
 
 #define K_START 20

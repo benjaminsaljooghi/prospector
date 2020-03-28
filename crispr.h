@@ -21,6 +21,7 @@ class Crispr
         vector<string> spacers;
         double conservation_repeats;
         double conservation_spacers;
+        double spacer_variance;
         double overall_heuristic;
 
         // computed by cache_upstream_aminos

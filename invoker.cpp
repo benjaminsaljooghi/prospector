@@ -7,21 +7,12 @@
 
 
 
-// ProfileExecution
-
-
-
-
 class ProfileExecution
 {
     public:
         CasProfile& cas_profile;
         CrisprProfile& crispr_profile;
         map<string, vector<size_t>> result;
-		
-		// ProfileExecution(CasProfile&, CrisprProfile&);
-		// void print();
-
         		
         ProfileExecution(CasProfile& _cas_profile, CrisprProfile& _crispr_profile)
         :	cas_profile(_cas_profile),
@@ -95,16 +86,16 @@ class ProfileExecution
 
                 if (small_clusters)
                 {
-                    continue;
+                    // continue;
                 }
 
 
-                // generate a continuous stretch for which we interpret the gene to exist.
-                // It starts at the first non-singleton cluster and ends at the last non-singleton cluster
 
-                // get first non-singleton cluster
+                printf("\t %s \t %zd / %zd (%zd) \n", label.c_str(), containment.size(), crispr_profile.sixway_kmerized[label].size(), cas_profile.kmers.size());
 
-                size_t demarc_start = 0;
+
+
+                // print underlying cluster information
 
                 for (size_t i = 0; i < starts.size(); i++)
                 {
@@ -112,47 +103,18 @@ class ProfileExecution
                     size_t end = ends[i];
                     size_t len = end-start+1;
 
-                    bool non_singleton = len > 1;
+                    printf("\t \t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, len);
 
-                    if (non_singleton)
-                    {
-                        demarc_start = i;
-                        break;
-                    }
-                
-                }
-
-                size_t demarc_end = 0;
-
-                for (size_t i = starts.size()-1; i >= 0; i--)
-                {
-                    size_t start = starts[i];
-                    size_t end = ends[i];
-                    size_t len = end-start+1;
-
-                    bool non_singleton = len > 1;
-
-                    if (non_singleton)
-                    {
-                        demarc_end = i;
-                        break;
-                    }
-                
                 }
 
 
 
+                // generate a continuous stretch for which we interpret the gene to exist.
+                // It starts at the first non-singleton cluster and ends at the last non-singleton cluster
 
-                printf("\t %s \t %zd / %zd (%zd) \n", label.c_str(), containment.size(), crispr_profile.sixway_kmerized[label].size(), cas_profile.kmers.size());
+                // get first non-singleton cluster
 
-
-                // print demarcation
-                
-                printf("\t \t %zd -  %zd  \n", containment[starts[demarc_start]], containment[ends[demarc_end]]);
-                
-
-
-                // print underlying cluster information
+                // size_t demarc_start = 0;
 
                 // for (size_t i = 0; i < starts.size(); i++)
                 // {
@@ -160,9 +122,43 @@ class ProfileExecution
                 //     size_t end = ends[i];
                 //     size_t len = end-start+1;
 
-                //     printf("\t \t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, len);
+                //     bool non_singleton = len > 1;
 
+                //     if (non_singleton)
+                //     {
+                //         demarc_start = i;
+                //         break;
+                //     }
+                
                 // }
+
+                // size_t demarc_end = 0;
+
+                // for (size_t i = starts.size()-1; i >= 0; i--)
+                // {
+                //     size_t start = starts[i];
+                //     size_t end = ends[i];
+                //     size_t len = end-start+1;
+
+                //     bool non_singleton = len > 1;
+
+                //     if (non_singleton)
+                //     {
+                //         demarc_end = i;
+                //         break;
+                //     }
+                
+                // }
+
+
+
+
+                // print demarcation
+                
+                // printf("\t \t %zd -  %zd  \n", containment[starts[demarc_start]], containment[ends[demarc_end]]);
+                
+
+
 
 
 
@@ -181,8 +177,10 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
     double start = omp_get_wtime();
 
     vector<CasProfile> cas_profiles = {
-        CasProfile("crispr-data/cas9_amino_thermophilus.fasta", k),
-        CasProfile("crispr-data/cas9_amino_pyogenes.fasta", k)
+        CasProfile("crispr-data/cas9_aureus.fasta", k),
+        CasProfile("crispr-data/cas9_novicida.fasta", k),
+        CasProfile("crispr-data/cas9_pyogenes.fasta", k),
+        CasProfile("crispr-data/cas9_thermophilus.fasta", k)
     };
 
     vector<CrisprProfile> crispr_profiles;
@@ -212,6 +210,23 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
 }
 
 
+
+
+void finish()
+{
+    exit(0);
+}
+
+void debug(vector<Crispr> crisprs, string genome)
+{
+    int how_many = crisprs.size()/2;
+
+    for (size_t i = 0; i < how_many; i++) crisprs[i].print(genome);
+
+    finish();
+}
+
+
 int main()
 {
     printf("running invoker...\n");
@@ -220,7 +235,8 @@ int main()
     map<string, string> genomes =
     {
             {"thermophilus", parse_fasta_single("crispr-data/streptococcus_thermophilus.fasta")},
-            {"pyogenes", parse_fasta_single("crispr-data/pyogenes.fasta")}
+            {"pyogenes", parse_fasta_single("crispr-data/pyogenes.fasta")},
+            {"aureus", parse_fasta_single("crispr-data/aureus.fasta")},
     };
 
     string genome = genomes["pyogenes"];
@@ -238,6 +254,10 @@ int main()
 
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
     
+
+    // debug(good_heuristic_crisprs, genome);
+
+
     vector<Crispr> domain_best = CrisprUtil::get_domain_best(good_heuristic_crisprs);
 
     map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best);
@@ -250,6 +270,7 @@ int main()
     
     done(start, "invoker");
 
+    finish();
     return 0;
 }
 

@@ -75,6 +75,30 @@ double get_conservation_spacer(vector<string> spacers)
 	return mean_score / (double) spacers.size();
 }
 
+double get_spacer_variance(vector<string> spacers)
+{
+	double sum = 0;
+	double mean = 0;
+	double variance = 0;
+
+	for (size_t i = 0; i < spacers.size(); i++)
+	{
+		sum += (double) spacers[i].length();
+	}
+
+	mean = sum / (double) spacers.size();
+
+	for (size_t i = 0; i < spacers.size(); i++)
+	{
+		variance += pow((double) spacers[i].length()    - mean, 2);
+	}
+
+	variance = variance / (double) spacers.size();
+
+	return sqrt(variance);
+
+}
+
 
 // Crispr
 
@@ -108,7 +132,8 @@ void Crispr::update(string& genome)
 
 	this->conservation_repeats = get_conservation_consensus(repeats);
 	this->conservation_spacers = get_conservation_spacer(spacers);
-	this->overall_heuristic = conservation_repeats - (conservation_spacers * 2.5); // high conservation_repeats and low conservation_spacers is ideal
+	this->spacer_variance = get_spacer_variance(spacers);
+	this->overall_heuristic = (conservation_repeats) - (conservation_spacers * (1 + spacer_variance) * 2); // high conservation_repeats and low conservation_spacers is ideal
 }
 
 
@@ -116,7 +141,7 @@ void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 {
 	// header
 	printf("%d - %d %d\n\n", start, end, k);
-	printf("\t%fh %fr %fs\n\n", overall_heuristic, conservation_repeats, conservation_spacers);
+	printf("\t%fh %fr %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers, spacer_variance);
 
 
 	// repeats
