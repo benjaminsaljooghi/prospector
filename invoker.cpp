@@ -86,7 +86,7 @@ class ProfileExecution
 
                 if (small_clusters)
                 {
-                    // continue;
+                    continue;
                 }
 
 
@@ -97,15 +97,14 @@ class ProfileExecution
 
                 // print underlying cluster information
 
-                for (size_t i = 0; i < starts.size(); i++)
-                {
-                    size_t start = starts[i];
-                    size_t end = ends[i];
-                    size_t len = end-start+1;
+                // for (size_t i = 0; i < starts.size(); i++)
+                // {
+                //     size_t start = starts[i];
+                //     size_t end = ends[i];
+                //     size_t len = end-start+1;
 
-                    printf("\t \t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, len);
-
-                }
+                //     printf("\t \t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, len);
+                // }
 
 
 
@@ -114,48 +113,45 @@ class ProfileExecution
 
                 // get first non-singleton cluster
 
-                // size_t demarc_start = 0;
+                size_t demarc_start = 0;
 
-                // for (size_t i = 0; i < starts.size(); i++)
-                // {
-                //     size_t start = starts[i];
-                //     size_t end = ends[i];
-                //     size_t len = end-start+1;
+                for (size_t i = 0; i < starts.size(); i++)
+                {
+                    size_t start = starts[i];
+                    size_t end = ends[i];
+                    size_t len = end-start+1;
 
-                //     bool non_singleton = len > 1;
+                    bool non_singleton = len > 1;
 
-                //     if (non_singleton)
-                //     {
-                //         demarc_start = i;
-                //         break;
-                //     }
+                    if (non_singleton)
+                    {
+                        demarc_start = i;
+                        break;
+                    }
                 
-                // }
+                }
 
-                // size_t demarc_end = 0;
+                size_t demarc_end = 0;
 
-                // for (size_t i = starts.size()-1; i >= 0; i--)
-                // {
-                //     size_t start = starts[i];
-                //     size_t end = ends[i];
-                //     size_t len = end-start+1;
+                for (size_t i = starts.size()-1; i >= 0; i--)
+                {
+                    size_t start = starts[i];
+                    size_t end = ends[i];
+                    size_t len = end-start+1;
 
-                //     bool non_singleton = len > 1;
+                    bool non_singleton = len > 1;
 
-                //     if (non_singleton)
-                //     {
-                //         demarc_end = i;
-                //         break;
-                //     }
+                    if (non_singleton)
+                    {
+                        demarc_end = i;
+                        break;
+                    }
                 
-                // }
-
-
-
+                }
 
                 // print demarcation
                 
-                // printf("\t \t %zd -  %zd  \n", containment[starts[demarc_start]], containment[ends[demarc_end]]);
+                printf("\t \t %zd -  %zd  \n", containment[starts[demarc_start]], containment[ends[demarc_end]]);
                 
 
 
@@ -180,7 +176,8 @@ void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size
         CasProfile("crispr-data/cas9_aureus.fasta", k),
         CasProfile("crispr-data/cas9_novicida.fasta", k),
         CasProfile("crispr-data/cas9_pyogenes.fasta", k),
-        CasProfile("crispr-data/cas9_thermophilus.fasta", k)
+        CasProfile("crispr-data/cas9_thermophilus.fasta", k),
+        CasProfile("crispr-data/cas9_mutans.fasta", k)
     };
 
     vector<CrisprProfile> crispr_profiles;
@@ -239,7 +236,7 @@ int main()
             {"aureus", parse_fasta_single("crispr-data/aureus.fasta")},
     };
 
-    string genome = genomes["pyogenes"];
+    string genome = genomes["thermophilus"];
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
@@ -256,7 +253,6 @@ int main()
     
 
     // debug(good_heuristic_crisprs, genome);
-
 
     vector<Crispr> domain_best = CrisprUtil::get_domain_best(good_heuristic_crisprs);
 
