@@ -168,29 +168,15 @@ class ProfileExecution
 
 
 
-void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size)
+void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles)
 {
     double start = omp_get_wtime();
-
-    vector<CasProfile> cas_profiles = {
-        CasProfile("crispr-data/cas9_aureus.fasta", k),
-        CasProfile("crispr-data/cas9_novicida.fasta", k),
-        CasProfile("crispr-data/cas9_pyogenes.fasta", k),
-        CasProfile("crispr-data/cas9_thermophilus.fasta", k),
-        CasProfile("crispr-data/cas9_mutans.fasta", k)
-    };
-
-    vector<CrisprProfile> crispr_profiles;
-    for (Crispr& crispr : crisprs)
-    {
-        crispr_profiles.push_back(CrisprProfile(genome, crispr, upstream_size, k));
-    }
 
     vector<ProfileExecution> executions;
     #pragma omp parallel for
     for (int j = 0; j < cas_profiles.size(); j++)
     {
-        for (int i = 0; i < crisprs.size(); i++)
+        for (int i = 0; i < crispr_profiles.size(); i++)
         {
             ProfileExecution result = ProfileExecution(cas_profiles[j], crispr_profiles[i]);
             #pragma omp critical
@@ -224,19 +210,38 @@ void debug(vector<Crispr> crisprs, string genome)
 }
 
 
+
+vector<CasProfile> load_casprofiles(string dir, unsigned int k)
+{   
+    vector<CasProfile> cas_profiles;
+    for (const auto& entry : filesystem::directory_iterator(dir))
+        cas_profiles.push_back(CasProfile(entry.path(), k));
+    return cas_profiles;
+}
+
+vector<string> load_genomes(string dir)
+{
+
+    vector<string> genomes;
+    for (const auto& entry : filesystem::directory_iterator(dir))
+        genomes.push_back(parse_fasta_single(entry.path()));
+    return genomes;
+}
+
+
 int main()
 {
     printf("running invoker...\n");
     double start = omp_get_wtime();
 
-    map<string, string> genomes =
-    {
-            {"thermophilus", parse_fasta_single("crispr-data/streptococcus_thermophilus.fasta")},
-            {"pyogenes", parse_fasta_single("crispr-data/pyogenes.fasta")},
-            {"aureus", parse_fasta_single("crispr-data/aureus.fasta")},
-    };
+    string genome_dir = "crispr-data/genome";
+    string cas_dir = "crispr-data/cas";
+    string target_db_path = "crispr-data/phage/bacteriophages.fasta";
 
-    string genome = genomes["thermophilus"];
+
+
+    string genome = load_genomes(genome_dir)[0];
+
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
@@ -244,26 +249,29 @@ int main()
     
     vector<Crispr> good_heuristic_crisprs;
     for (const Crispr& crispr : crisprs)
-    {
         if (crispr.overall_heuristic > 0.5)
             good_heuristic_crisprs.push_back(crispr);
-    }
 
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
-    
-
     // debug(good_heuristic_crisprs, genome);
-
     vector<Crispr> domain_best = CrisprUtil::get_domain_best(good_heuristic_crisprs);
-
-    map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best);
-    
+    map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
     vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
-
     CrisprUtil::print(genome, final, spacer_scores);
 
-    cas(genome, final, 5, 10000);
+
+
+    // cas
+    unsigned int k = 5;
+    vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, k);
+    vector<CrisprProfile> crispr_profiles;
+    for (Crispr& crispr : final)
+        crispr_profiles.push_back(CrisprProfile(genome, crispr, 10000, k));
+    cas(crispr_profiles, cas_profiles);
     
+
+
+
     done(start, "invoker");
 
     finish();

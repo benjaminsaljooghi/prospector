@@ -19,7 +19,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 
-map <string, int> BLAST (set <string> _seqs)
+map <string, int> BLAST (set <string> _seqs, string target_db_path)
 {
     double start = omp_get_wtime();
 
@@ -48,7 +48,11 @@ map <string, int> BLAST (set <string> _seqs)
     SDataLoaderConfig dlconfig(is_protein);
     CBlastInputSourceConfig iconfig(dlconfig);
     CScope scope(*objmgr);
-    string target_db_path("crispr-data/bacteriophages.fasta");
+
+
+    // string target_db_path("crispr-data/bacteriophages.fasta");
+
+    
     const CSearchDatabase target_db(target_db_path, CSearchDatabase::eBlastDbIsNucleotide);
 
     string fasta = seqs_to_fasta(seqs);

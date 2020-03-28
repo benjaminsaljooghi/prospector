@@ -67,7 +67,7 @@ namespace CrisprUtil
     vector<Crispr> spacer_score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
     void cache_crispr_information(vector<Crispr>& crisprs, string genome);
     void debug(string genome, vector<Crispr> crisprs);
-    map<string, int> get_spacer_scores(vector<Crispr>& crisprs);
+    map<string, int> get_spacer_scores(vector<Crispr>& crisprs, string target_db_path);
 
     bool heuristic_less(const Crispr& a, const Crispr& b);
     bool heuristic_greater(const Crispr& a, const Crispr& b);
