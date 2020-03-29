@@ -110,6 +110,7 @@ class ProfileExecution
             size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_start];
             size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_end];
 
+
             size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
             size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + Translation::frame_offset(label);
             size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + Translation::frame_offset(label) + 3; // not sure why I need this final +3
@@ -223,9 +224,6 @@ int main()
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     string genome = load_genomes(genome_dir)[1];
 
-
-
-
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
     CrisprUtil::cache_crispr_information(crisprs, genome);
@@ -248,13 +246,13 @@ int main()
     vector<CrisprProfile> crispr_profiles;
     for (Crispr& crispr : final)
     {
-        string upstream = genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE);
-        Translation translation(upstream, K_FRAGMENT);
+        string region = "";
+        region += genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE); 
+        // region += genome.substr(crispr.end, UPSTREAM_SIZE); // will need to think about how I'm going to do this. Everything will need to be reversed (all calculations in the interpretation).
+        Translation translation(region, K_FRAGMENT);
         CrisprProfile crispr_profile(crispr, translation);
         crispr_profiles.push_back(crispr_profile);
     }
-
-
     cas(crispr_profiles, cas_profiles, genome);
     
     done(start, "invoker");
