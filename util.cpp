@@ -189,7 +189,7 @@ Translation::Translation(string& _seq, unsigned int k)
 		size_t index = 0;
 		for (char elem : val)
 		{
-			if (val == STOP)
+			if (elem == STOP_C)
 			{
 				stop_count++;
 				continue;

@@ -35,6 +35,7 @@
 
 
 #define STOP "Z"
+#define STOP_C 'Z'
 
 
 

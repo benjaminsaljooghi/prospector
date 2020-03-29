@@ -69,11 +69,12 @@ class ProfileExecution
 
             if (!good_clusters) return;
 
-            // underlying cluster information
-            printf("\t%s\n", label.c_str());
-            for (vector<size_t> cluster : clusters)
-                printf("\t \t %zd - %zd (%zd)\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 
+            printf("\t%s\n", label.c_str());
+
+            // underlying cluster information
+            // for (vector<size_t> cluster : clusters)
+                // printf("\t \t %zd - %zd (%zd)\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 
             vector<size_t>  demarc_start;
             vector<size_t>  demarc_end;
@@ -101,32 +102,16 @@ class ProfileExecution
             // get amino acid sequence
             string demarcated_amino = this->crispr_profile.translation.translations_pure.at(label).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
 
-
             size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
-
-
-            // note: need to account for frame offset
-            // size_t genome_kmer_start = (genome_upstream_start) + (index_kmer_start * 3) + ()
-            // size_t genome_kmer_end = (genome_upstream_start) + (index_kmer_end * 3) + (num_stop_codons * 3);
 
             size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_start];
             size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_end];
 
-            size_t genome_start = genome_upstream_start + (raw_pos_start * 3);
-            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3);
-
-            // frame offset addition
-
-            size_t frame_offset = Translation::frame_offset(label);
-            genome_start += frame_offset;
-            genome_end += frame_offset;
-
+            size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + Translation::frame_offset(label);
+            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + Translation::frame_offset(label) + 3; // not sure why I need this final 3
 
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
-
-            string test = genome.substr(genome_start, genome_end-genome_start);
-            Translation regenerator(test, K_FRAGMENT);
 
             
         }
