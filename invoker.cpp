@@ -14,30 +14,40 @@ class ProfileExecution
     public:
         CasProfile& cas_profile;
         CrisprProfile& crispr_profile;
-        // map<string, int*> result;
+        map<string, vector<size_t>> index;
         		
         ProfileExecution(CasProfile& _cas_profile, CrisprProfile& _crispr_profile)
         :	cas_profile(_cas_profile),
             crispr_profile(_crispr_profile)
         {
+            
+        }
+
+        void build_index()
+        {
+            for (auto const& [label, thing]: this->crispr_profile.translation.translations_raw) // only iterating labels here
+            {
+                vector<string> crispr_kmers = this->crispr_profile.translation.translations_pure_kmerized.at(label);
+                vector<string> cas_kmers = this->cas_profile.kmers;
+
+                vector<size_t> indices;
+                for (size_t i = 0; i < crispr_kmers.size(); i++)
+                {
+                    if ( contains(cas_kmers, crispr_kmers[i]) )
+                    {
+                        indices.push_back(i);
+                    }
+                } 
+
+                index[label] = indices;
+            }
 
         }
 
         void single_interpretation(string& genome, string label)
         {
+            vector<size_t> indices = index[label];
 
-            vector<string> crispr_kmers = this->crispr_profile.translation.translations_pure_kmerized.at(label);
-            vector<string> cas_kmers = this->cas_profile.kmers;
-
-            vector<size_t> indices;
-            for (size_t i = 0; i < crispr_kmers.size(); i++)
-            {
-                if ( contains(cas_kmers, crispr_kmers[i]) )
-                {
-                    indices.push_back(i);
-                }
-            } 
-            
             if (indices.size() == 0)
                 return;
 
@@ -94,28 +104,19 @@ class ProfileExecution
                 }
             }
 
-
             size_t index_kmer_start = demarc_start[0];
             size_t index_kmer_end = demarc_end[demarc_end.size()-1];
 
-
-            // get amino acid sequence
-            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(label).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
-
-            size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
-
             size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_start];
             size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_end];
-            // size_t raw_pos_start = index_kmer_start;
-            // size_t raw_pos_end = index_kmer_end;
 
+            size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
             size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + Translation::frame_offset(label);
-            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + Translation::frame_offset(label) + 3; // not sure why I need this final 3
+            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + Translation::frame_offset(label) + 3; // not sure why I need this final +3
 
+            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(label).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
-
-
 
             // test translations
 
@@ -149,21 +150,28 @@ void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles,
     double start = omp_get_wtime();
 
     vector<ProfileExecution> executions;
-    #pragma omp parallel for
     for (int j = 0; j < cas_profiles.size(); j++)
     {
         for (int i = 0; i < crispr_profiles.size(); i++)
         {
             ProfileExecution result = ProfileExecution(cas_profiles[j], crispr_profiles[i]);
-            #pragma omp critical
-            {
-                executions.push_back(result);
-            }
+            executions.push_back(result);
         }
     }
 
-    for (ProfileExecution& execution : executions)
-        execution.interpret(genome);
+    double start_index = omp_get_wtime();
+    #pragma omp parallel for
+    for (size_t i = 0; i < executions.size(); i++)
+    {
+        executions[i].build_index();
+    }
+    done(start_index, "build index");
+
+    for (size_t i = 0; i < executions.size(); i++)
+    {
+        executions[i].interpret(genome);
+    }
+
 
     done(start, "cas detection");
 }
