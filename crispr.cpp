@@ -214,7 +214,7 @@ CasProfile::CasProfile(string _path, unsigned int _k)
 
 // CrisprProfile
 
-CrisprProfile::CrisprProfile(Crispr& _crispr, Translation& _translation)
+CrisprProfile::CrisprProfile(Crispr& _crispr, Translation _translation)
 :	crispr(_crispr),
 	translation(_translation)
 {

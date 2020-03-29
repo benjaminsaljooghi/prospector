@@ -49,8 +49,8 @@ class CrisprProfile
     public:
 
         const Crispr& crispr;
-        const Translation& translation;
-        CrisprProfile(Crispr& _crispr, Translation& _translation);
+        const Translation translation;
+        CrisprProfile(Crispr& _crispr, Translation _translation);
 };
 
 
