@@ -106,6 +106,8 @@ class ProfileExecution
 
             size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_start];
             size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_end];
+            // size_t raw_pos_start = index_kmer_start;
+            // size_t raw_pos_end = index_kmer_end;
 
             size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + Translation::frame_offset(label);
             size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + Translation::frame_offset(label) + 3; // not sure why I need this final 3
@@ -113,6 +115,13 @@ class ProfileExecution
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
 
+
+
+            // test translations
+
+            // string a = genome.substr(genome_start, genome_end-genome_start+6); // +3/+6 to check stop codon etc
+            // Translation trans_a(a, K_FRAGMENT);
+            // printf("a:%s\n", trans_a.translations_raw["pos_0"].c_str());
             
         }
 
@@ -121,7 +130,7 @@ class ProfileExecution
 
             printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
 
-            for (auto const& [label, thing]: this->crispr_profile.translation.translations_pure_kmerized)
+            for (auto const& [label, thing]: this->crispr_profile.translation.translations_raw) // only iterating labels here
             {
                 single_interpretation(genome, label);
             }
@@ -204,7 +213,7 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    string genome = load_genomes(genome_dir)[0];
+    string genome = load_genomes(genome_dir)[1];
 
 
 
@@ -228,16 +237,16 @@ int main()
 
     // cas
     vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, K_FRAGMENT);
-    // vector<CrisprProfile> crispr_profiles;
-    // for (Crispr& crispr : final)
-        // crispr_profiles.push_back(CrisprProfile(genome, crispr, UPSTREAM_SIZE, K_FRAGMENT));
-    // crispr_profiles.push_back(CrisprProfile(genome, final[0], UPSTREAM_SIZE, K_FRAGMENT));
     vector<CrisprProfile> crispr_profiles;
+    for (Crispr& crispr : final)
+    {
+        string upstream = genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE);
+        Translation translation(upstream, K_FRAGMENT);
+        CrisprProfile crispr_profile(crispr, translation);
+        crispr_profiles.push_back(crispr_profile);
+    }
 
-    string upstream = genome.substr(final[0].start - UPSTREAM_SIZE, UPSTREAM_SIZE);
-    Translation translation(upstream, K_FRAGMENT);
-    crispr_profiles.push_back(CrisprProfile(final[0], translation));
-    
+
     cas(crispr_profiles, cas_profiles, genome);
     
     done(start, "invoker");
