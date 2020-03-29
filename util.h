@@ -34,9 +34,7 @@
 #define printf_BYTE_FORMAT_ALIGN 10
 
 
-
-
-
+#define STOP "Z"
 
 
 
@@ -75,8 +73,8 @@ const map <string, string> codon_table = {
     {"GCG", "A"},
     {"TAT", "Y"},
     {"TAC", "Y"},
-    {"TAA", "STOP"},
-    {"TAG", "STOP"},
+    {"TAA", STOP},
+    {"TAG", STOP},
     {"CAT", "H"},
     {"CAC", "H"},
     {"CAA", "Q"},
@@ -91,7 +89,7 @@ const map <string, string> codon_table = {
     {"GAG", "E"},
     {"TGT", "C"},
     {"TGC", "C"},
-    {"TGA", "STOP"},
+    {"TGA", STOP},
     {"TGG", "W"},
     {"CGT", "R"},
     {"CGC", "R"},
@@ -177,6 +175,20 @@ template <typename T> T most_frequent(vector<T> elements)
 	return consensus;
 }
 
+
+class Translation
+{
+    public:
+        string& nucleotide_sequence;
+        map<string, string> translations_raw;
+        map<string, string> translations_pure;
+        map<string, vector<string>> translations_pure_kmerized;
+        map<string, vector<size_t>> pure_mapping;
+
+        Translation(string&, unsigned int k);
+
+        static size_t frame_offset(string label);
+};
 
 
 map<string, string> parse_fasta(string);

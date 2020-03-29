@@ -48,9 +48,9 @@ class CrisprProfile
 {
     public:
 
-        Crispr& crispr;
-        map<string, vector<string>> sixway_kmerized;
-        CrisprProfile(string& genome, Crispr& _crispr, unsigned int upstream_size, unsigned int _k);
+        const Crispr& crispr;
+        const Translation& translation;
+        CrisprProfile(Crispr& _crispr, Translation& _translation);
 };
 
 

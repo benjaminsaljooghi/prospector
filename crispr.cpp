@@ -214,16 +214,11 @@ CasProfile::CasProfile(string _path, unsigned int _k)
 
 // CrisprProfile
 
-CrisprProfile::CrisprProfile(string& genome, Crispr& _crispr, unsigned int upstream_size, unsigned int _k)
-:	crispr(_crispr)
+CrisprProfile::CrisprProfile(Crispr& _crispr, Translation& _translation)
+:	crispr(_crispr),
+	translation(_translation)
 {
-	string upstream = genome.substr(_crispr.start - upstream_size, upstream_size);
-	map<string, string> sixway = sixwaytranslation(upstream);
-	
-	for (auto const& [key, val] : sixway)
-	{
-		sixway_kmerized[key] = kmerize(val, _k);
-	}
+
 }
 
 

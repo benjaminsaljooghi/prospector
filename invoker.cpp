@@ -5,6 +5,8 @@
 #include "blast.h"
 
 
+#define UPSTREAM_SIZE 10000
+#define K_FRAGMENT 5
 
 
 class ProfileExecution
@@ -12,153 +14,133 @@ class ProfileExecution
     public:
         CasProfile& cas_profile;
         CrisprProfile& crispr_profile;
-        map<string, vector<size_t>> result;
+        // map<string, int*> result;
         		
         ProfileExecution(CasProfile& _cas_profile, CrisprProfile& _crispr_profile)
         :	cas_profile(_cas_profile),
             crispr_profile(_crispr_profile)
         {
-            for (auto const& [label, kmers]: crispr_profile.sixway_kmerized)
-            {
-                for (size_t i = 0; i < kmers.size(); i++)
-                {
-                    // is this kmer a cas profile kmer?
-                    if (contains(cas_profile.kmers, kmers[i]))
-                    {
-                        // mark this kmer as being a profile kmer
-                        result[label].push_back(i);
-                    }
-                }	
-            }
+
         }
 
+        void single_interpretation(string& genome, string label)
+        {
+
+            vector<string> crispr_kmers = this->crispr_profile.translation.translations_pure_kmerized.at(label);
+            vector<string> cas_kmers = this->cas_profile.kmers;
+
+            vector<size_t> indices;
+            for (size_t i = 0; i < crispr_kmers.size(); i++)
+            {
+                if ( contains(cas_kmers, crispr_kmers[i]) )
+                {
+                    indices.push_back(i);
+                }
+            } 
+            
+            if (indices.size() == 0)
+                return;
+
+            vector<vector<size_t>> clusters; vector<size_t> cluster;
+
+            size_t prev = indices[0];
+            for (size_t index : indices)
+            {
+                if (index - prev > 5)
+                {
+                    vector<size_t> cluster_cp = cluster; clusters.push_back(cluster_cp); cluster.clear();
+                }
+                cluster.push_back(index); prev = index;
+            }
+            clusters.push_back(cluster);
+ 
 
 
+            size_t cluster_requirement = 3;
+            bool good_clusters = false;
+            for (vector<size_t> cluster : clusters)
+            {   
+                if (cluster.size() > cluster_requirement)
+                {
+                    good_clusters = true;
+                    break;
+                }
+            }
+
+            if (!good_clusters) return;
+
+            // underlying cluster information
+            printf("\t%s\n", label.c_str());
+            for (vector<size_t> cluster : clusters)
+                printf("\t \t %zd - %zd (%zd)\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 
 
-        void interpret()
+            vector<size_t>  demarc_start;
+            vector<size_t>  demarc_end;
+            for (vector<size_t> cluster : clusters)
+            {
+                if (cluster.size() > 1)
+                {
+                    demarc_start = cluster; break;
+                }
+            }
+
+            for (size_t i = clusters.size()-1; i >= 0; i--)
+            {
+                if (clusters[i].size() > 1)
+                {
+                    demarc_end = clusters[i]; break;
+                }
+            }
+
+
+            size_t index_kmer_start = demarc_start[0];
+            size_t index_kmer_end = demarc_end[demarc_end.size()-1];
+
+
+            // get amino acid sequence
+            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(label).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
+
+            size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
+
+
+            // note: need to account for frame offset
+            // size_t genome_kmer_start = (genome_upstream_start) + (index_kmer_start * 3) + ()
+            // size_t genome_kmer_end = (genome_upstream_start) + (index_kmer_end * 3) + (num_stop_codons * 3);
+
+            size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_start];
+            size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_end];
+
+            size_t genome_start = genome_upstream_start + (raw_pos_start * 3);
+            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3);
+
+            // frame offset addition
+
+            size_t frame_offset = Translation::frame_offset(label);
+            genome_start += frame_offset;
+            genome_end += frame_offset;
+
+
+            printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
+            printf("%s\n", demarcated_amino.c_str());
+
+            string test = genome.substr(genome_start, genome_end-genome_start);
+            Translation regenerator(test, K_FRAGMENT);
+
+            
+        }
+
+        void interpret(string genome)
         {
 
             printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
 
-
-            // compute a full printout of the result
-
-            for (auto const& [label, containment]: result)
+            for (auto const& [label, thing]: this->crispr_profile.translation.translations_pure_kmerized)
             {
-                size_t dist_allowed = 20;
-                
-                vector<size_t> starts;
-                vector<size_t> ends;
-
-                starts.push_back(0);
-                for (size_t i = 1; i < containment.size(); i++)
-                {
-                    size_t prev = containment[i-1];
-                    size_t curr = containment[i];
-
-                    size_t dist = curr - prev;
-                    if (dist > dist_allowed)
-                    {
-                        ends.push_back(i-1);
-                        starts.push_back(i);
-                    }
-                }
-                ends.push_back(containment.size()-1);
-
-                assert(ends.size() == starts.size());
-
-                
-                size_t cluster_requirement = 3;
-                bool small_clusters = true;
-                for (size_t i = 0; i < starts.size(); i++)
-                {   
-                    size_t start = starts[i];
-                    size_t end = ends[i];
-                    size_t len = end-start+1;
-
-                    if (len > cluster_requirement)
-                    {
-                        small_clusters = false;
-                        break;
-                    }
-                }
-
-                if (small_clusters)
-                {
-                    continue;
-                }
-
-
-
-                printf("\t %s \t %zd / %zd (%zd) \n", label.c_str(), containment.size(), crispr_profile.sixway_kmerized[label].size(), cas_profile.kmers.size());
-
-
-
-                // print underlying cluster information
-
-                // for (size_t i = 0; i < starts.size(); i++)
-                // {
-                //     size_t start = starts[i];
-                //     size_t end = ends[i];
-                //     size_t len = end-start+1;
-
-                //     printf("\t \t %zd - %zd \t %zd - %zd (%zd)\n", containment[start], containment[end], start, end, len);
-                // }
-
-
-
-                // generate a continuous stretch for which we interpret the gene to exist.
-                // It starts at the first non-singleton cluster and ends at the last non-singleton cluster
-
-                // get first non-singleton cluster
-
-                size_t demarc_start = 0;
-
-                for (size_t i = 0; i < starts.size(); i++)
-                {
-                    size_t start = starts[i];
-                    size_t end = ends[i];
-                    size_t len = end-start+1;
-
-                    bool non_singleton = len > 1;
-
-                    if (non_singleton)
-                    {
-                        demarc_start = i;
-                        break;
-                    }
-                
-                }
-
-                size_t demarc_end = 0;
-
-                for (size_t i = starts.size()-1; i >= 0; i--)
-                {
-                    size_t start = starts[i];
-                    size_t end = ends[i];
-                    size_t len = end-start+1;
-
-                    bool non_singleton = len > 1;
-
-                    if (non_singleton)
-                    {
-                        demarc_end = i;
-                        break;
-                    }
-                
-                }
-
-                // print demarcation
-                
-                printf("\t \t %zd -  %zd  \n", containment[starts[demarc_start]], containment[ends[demarc_end]]);
-                
-
-
-
-
-
+                single_interpretation(genome, label);
             }
+
         }
 
 };
@@ -168,7 +150,7 @@ class ProfileExecution
 
 
 
-void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles)
+void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles, string genome)
 {
     double start = omp_get_wtime();
 
@@ -187,7 +169,7 @@ void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles)
     }
 
     for (ProfileExecution& execution : executions)
-        execution.interpret();
+        execution.interpret(genome);
 
     done(start, "cas detection");
 }
@@ -237,10 +219,9 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-
-
-
     string genome = load_genomes(genome_dir)[0];
+
+
 
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
@@ -260,21 +241,23 @@ int main()
     CrisprUtil::print(genome, final, spacer_scores);
 
 
-
     // cas
-    unsigned int k = 5;
-    vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, k);
+    vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, K_FRAGMENT);
+    // vector<CrisprProfile> crispr_profiles;
+    // for (Crispr& crispr : final)
+        // crispr_profiles.push_back(CrisprProfile(genome, crispr, UPSTREAM_SIZE, K_FRAGMENT));
+    // crispr_profiles.push_back(CrisprProfile(genome, final[0], UPSTREAM_SIZE, K_FRAGMENT));
     vector<CrisprProfile> crispr_profiles;
-    for (Crispr& crispr : final)
-        crispr_profiles.push_back(CrisprProfile(genome, crispr, 10000, k));
-    cas(crispr_profiles, cas_profiles);
+
+    string upstream = genome.substr(final[0].start - UPSTREAM_SIZE, UPSTREAM_SIZE);
+    Translation translation(upstream, K_FRAGMENT);
+    crispr_profiles.push_back(CrisprProfile(final[0], translation));
     
-
-
-
+    cas(crispr_profiles, cas_profiles, genome);
+    
     done(start, "invoker");
 
     finish();
-    return 0;
+    return 0;                                                                                                           
 }
 

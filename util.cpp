@@ -139,44 +139,85 @@ vector <string> kmerize (string seq, unsigned int k)
 	return kmers;
 }
 
-map <string, string> sixwaytranslation (string seq)
+
+
+
+Translation::Translation(string& _seq, unsigned int k)
+:
+	nucleotide_sequence(_seq)
 {
+    size_t codon_size = 3;
 
-    size_t k = 3;
-
-    auto amino_acid_seq = [&](string& dna, size_t start)
+    auto frame_shift = [&](string& dna)
     {
-        string __amino_acid_seq = "";
-        for (size_t i = start; i + k < dna.size(); i += k)
-        {
-            string codon = dna.substr(i, k);
-            string amino_acid = codon_table.at(codon);
-            if (amino_acid != "STOP") __amino_acid_seq += amino_acid;
-        }
-        return __amino_acid_seq;
-    };
-
-    auto frame_shift = [&](string& domain)
-    {
-        vector<string> amino_acid_seqs = vector<string>(3);
+        vector<string> amino_acid_seqs{"", "", ""};
         for (size_t frame = 0; frame < 3; frame++)
-            amino_acid_seqs[frame] = amino_acid_seq(domain, frame);
-        // return &amino_acid_seqs[0];
+		{
+			for (size_t i = frame; i + codon_size < dna.size(); i += codon_size)
+			{
+				string codon = dna.substr(i, codon_size);
+				string amino_acid = codon_table.at(codon);
+				amino_acid_seqs[frame] += amino_acid;
+			}
+		}
 		return amino_acid_seqs;
     };
 
-    string rc = reverse_complement(seq);
-    vector<string> pos_seqs = frame_shift(seq);
+    string rc = reverse_complement(nucleotide_sequence);
+    vector<string> pos_seqs = frame_shift(nucleotide_sequence);
     vector<string> neg_seqs = frame_shift(rc);
 
-    map<string, string> result = {
-            {"pos_0", pos_seqs[0]},
-			{"pos_1", pos_seqs[1]},
-			{"pos_2", pos_seqs[2]},
-			{"neg_0", neg_seqs[0]},
-			{"neg_1", neg_seqs[1]},
-			{"neg_2", neg_seqs[2]},
-    };
+    this->translations_raw["pos_0"] = pos_seqs[0];
+	this->translations_raw["pos_1"] = pos_seqs[1];
+	this->translations_raw["pos_2"] = pos_seqs[2];
+	this->translations_raw["neg_0"] = neg_seqs[0];
+	this->translations_raw["neg_1"] = neg_seqs[1];
+	this->translations_raw["neg_2"] = neg_seqs[2];
 
-    return result;
+	// the genome positions are cached and computed here, they are not computed on the fly
+	// they are cached in the object via a kind of "map"
+	// that is, if I ask for the "index" of a translation,
+	// it gets first mapped to the index in teh translation_raw
+	// and then that index is multiplied by 3 to get me 
+	// the genome index
+
+	for (auto const& [key, val] : this->translations_raw)
+	{
+		this->translations_pure[key] = "";
+		
+		size_t stop_count = 0;
+		size_t index = 0;
+		for (char elem : val)
+		{
+			if (val == STOP)
+			{
+				stop_count++;
+				continue;
+			}
+			this->translations_pure[key] += elem;
+			pure_mapping[key].push_back(index + stop_count);
+			index++;
+		}
+
+
+		this->translations_pure_kmerized[key] = kmerize(this->translations_pure[key], k);
+	}
+
+
+}
+
+
+size_t Translation::frame_offset(string label)
+{
+	map<string, size_t> offset;
+
+	offset["pos_0"] = 0;
+	offset["pos_1"] = 1;
+	offset["pos_2"] = 2;
+	offset["neg_0"] = 0;
+	offset["neg_1"] = 1;
+	offset["neg_2"] = 2;
+
+	return offset[label];
+
 }
