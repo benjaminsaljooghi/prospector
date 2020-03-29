@@ -177,7 +177,7 @@ Translation::Translation(string& _seq, unsigned int k)
 	// the genome positions are cached and computed here, they are not computed on the fly
 	// they are cached in the object via a kind of "map"
 	// that is, if I ask for the "index" of a translation,
-	// it gets first mapped to the index in teh translation_raw
+	// it gets first mapped to the index in the translation_raw
 	// and then that index is multiplied by 3 to get me 
 	// the genome index
 

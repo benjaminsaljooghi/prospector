@@ -182,6 +182,7 @@ class Translation
     public:
         string& nucleotide_sequence;
         map<string, string> translations_raw;
+        // map<string, vector<string>> translations_raw_kmerized;
         map<string, string> translations_pure;
         map<string, vector<string>> translations_pure_kmerized;
         map<string, vector<size_t>> pure_mapping;
