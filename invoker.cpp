@@ -31,6 +31,7 @@ class ProfileExecution
                 vector<string> cas_kmers = this->cas_profile.kmers;
 
                 vector<size_t> indices;
+                printf("comparing %zd kmers against %zd kmers\n", crispr_kmers.size(), cas_kmers.size());
                 for (size_t i = 0; i < crispr_kmers.size(); i++)
                 {
                     if ( contains(cas_kmers, crispr_kmers[i]) )
@@ -166,6 +167,8 @@ void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles,
     {
         executions[i].build_index();
     }
+
+    
     done(start_index, "build index");
 
     for (size_t i = 0; i < executions.size(); i++)
@@ -235,11 +238,12 @@ int main()
 
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
     // debug(good_heuristic_crisprs, genome);
-    vector<Crispr> domain_best = CrisprUtil::get_domain_best(good_heuristic_crisprs);
-    map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
-    vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
-    CrisprUtil::print(genome, final, spacer_scores);
+    vector<Crispr> final = CrisprUtil::get_domain_best(good_heuristic_crisprs);
+    // map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
+    // vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
+    // CrisprUtil::print(genome, final, spacer_scores);
 
+    CrisprUtil::print(genome, final);
 
     // cas
     vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, K_FRAGMENT);
