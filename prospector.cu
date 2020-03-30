@@ -68,7 +68,7 @@ __device__ bool mutant(const char* genome, unsigned int start_a, unsigned int st
 	return true;
 }
 
-#if DEBUG != 0
+#if DEBUG == 1
 __device__ bool is_dyad_debug_check(unsigned int start_index)
 {
     return start_index >= DEBUG_START && start_index <= DEBUG_END;
@@ -78,7 +78,7 @@ __device__ bool is_dyad_debug_check(unsigned int start_index)
 
 __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned int k)
 {
-#if DEBUG != 0
+#if DEBUG == 1
     if (!is_dyad_debug_check(start_index))
     {
         return false;
@@ -97,7 +97,7 @@ __device__ bool is_dyad(const char* genome, unsigned int start_index, unsigned i
 	}
 
     double mismatch_ratio = (double) mismatch_count / (double) range;
-    return mismatch_ratio < 0.75;
+    return mismatch_ratio < 0.8;
 }
 
 
