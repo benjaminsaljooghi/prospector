@@ -9,12 +9,26 @@
 #define K_FRAGMENT 5
 
 
+vector<string> pos_labels {
+    "pos_0",
+    "pos_1",
+    "pos_2"
+};
+
+vector<string> neg_labels {
+    "neg_0",
+    "neg_1",
+    "neg_2"
+};
+
+
 class ProfileExecution
 {
     public:
         CasProfile& cas_profile;
         CrisprProfile& crispr_profile;
         map<string, vector<size_t>> index;
+        map<string, vector<vector<size_t>>> index_clusters;
         		
         ProfileExecution(CasProfile& _cas_profile, CrisprProfile& _crispr_profile)
         :	cas_profile(_cas_profile),
@@ -25,7 +39,7 @@ class ProfileExecution
 
         void build_index()
         {
-            for (auto const& [label, thing]: this->crispr_profile.translation.translations_raw) // only iterating labels here
+            for (string label : pos_labels)
             {
                 vector<string> crispr_kmers = this->crispr_profile.translation.translations_pure_kmerized.at(label);
                 vector<string> cas_kmers = this->cas_profile.kmers;
@@ -40,48 +54,58 @@ class ProfileExecution
                     }
                 } 
 
-                index[label] = indices;
+
+                if (indices.size() == 0)
+                    continue;
+
+                vector<vector<size_t>> clusters; vector<size_t> cluster;
+
+                size_t prev = indices[0];
+                for (size_t index : indices)
+                {
+                    if (index - prev > 5)
+                    {
+                        vector<size_t> cluster_cp = cluster; clusters.push_back(cluster_cp); cluster.clear();
+                    }
+                    cluster.push_back(index); prev = index;
+                }
+                clusters.push_back(cluster);
+    
+
+
+                size_t cluster_requirement = 3;
+                bool good_clusters = false;
+                for (vector<size_t> cluster : clusters)
+                {   
+                    if (cluster.size() > cluster_requirement)
+                    {
+                        good_clusters = true;
+                        break;
+                    }
+                }
+
+                if (good_clusters)
+                {
+                    index[label] = indices;
+                    index_clusters[label] = clusters;
+                    printf("early termination at %s\n", label.c_str());
+                    break;
+                }
+
             }
 
         }
 
         void single_interpretation(string& genome, string label)
         {
-            vector<size_t> indices = index[label];
 
-            if (indices.size() == 0)
+            bool contains = index.count(label) == 1;
+            if (!contains)
                 return;
 
-            vector<vector<size_t>> clusters; vector<size_t> cluster;
-
-            size_t prev = indices[0];
-            for (size_t index : indices)
-            {
-                if (index - prev > 5)
-                {
-                    vector<size_t> cluster_cp = cluster; clusters.push_back(cluster_cp); cluster.clear();
-                }
-                cluster.push_back(index); prev = index;
-            }
-            clusters.push_back(cluster);
- 
-
-
-            size_t cluster_requirement = 3;
-            bool good_clusters = false;
-            for (vector<size_t> cluster : clusters)
-            {   
-                if (cluster.size() > cluster_requirement)
-                {
-                    good_clusters = true;
-                    break;
-                }
-            }
-
-            if (!good_clusters) return;
-
-
             printf("\t%s\n", label.c_str());
+
+            vector<vector<size_t>> clusters = index_clusters[label];
 
             // underlying cluster information
             // for (vector<size_t> cluster : clusters)
@@ -119,12 +143,6 @@ class ProfileExecution
             string demarcated_amino = this->crispr_profile.translation.translations_pure.at(label).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
-
-            // test translations
-
-            // string a = genome.substr(genome_start, genome_end-genome_start+6); // +3/+6 to check stop codon etc
-            // Translation trans_a(a, K_FRAGMENT);
-            // printf("a:%s\n", trans_a.translations_raw["pos_0"].c_str());
             
         }
 
@@ -133,7 +151,7 @@ class ProfileExecution
 
             printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
 
-            for (auto const& [label, thing]: this->crispr_profile.translation.translations_raw) // only iterating labels here
+            for (string label : pos_labels) // only iterating labels here
             {
                 single_interpretation(genome, label);
             }
