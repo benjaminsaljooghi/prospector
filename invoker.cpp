@@ -9,17 +9,23 @@
 #define K_FRAGMENT 5
 
 
-vector<string> pos_labels {
-    "pos_0",
-    "pos_1",
-    "pos_2"
+vector<unsigned int> frames{
+    0,
+    1,
+    2
 };
 
-vector<string> neg_labels {
-    "neg_0",
-    "neg_1",
-    "neg_2"
-};
+// vector<string> pos_labels {
+//     "pos_0",
+//     "pos_1",
+//     "pos_2"
+// };
+
+// vector<string> neg_labels {
+//     "neg_0",
+//     "neg_1",
+//     "neg_2"
+// };
 
 
 class ProfileExecution
@@ -27,8 +33,8 @@ class ProfileExecution
     public:
         CasProfile& cas_profile;
         CrisprProfile& crispr_profile;
-        map<string, vector<size_t>> index;
-        map<string, vector<vector<size_t>>> index_clusters;
+        map<unsigned int, vector<size_t>> index;
+        map<unsigned int, vector<vector<size_t>>> index_clusters;
         		
         ProfileExecution(CasProfile& _cas_profile, CrisprProfile& _crispr_profile)
         :	cas_profile(_cas_profile),
@@ -39,9 +45,9 @@ class ProfileExecution
 
         void build_index()
         {
-            for (string label : pos_labels)
+            for (unsigned int frame : frames)
             {
-                vector<string> crispr_kmers = this->crispr_profile.translation.translations_pure_kmerized.at(label);
+                vector<string> crispr_kmers = this->crispr_profile.translation.translations_pure_kmerized.at(frame);
                 vector<string> cas_kmers = this->cas_profile.kmers;
 
                 vector<size_t> indices;
@@ -86,9 +92,9 @@ class ProfileExecution
 
                 if (good_clusters)
                 {
-                    index[label] = indices;
-                    index_clusters[label] = clusters;
-                    printf("early termination at %s\n", label.c_str());
+                    index[frame] = indices;
+                    index_clusters[frame] = clusters;
+                    printf("early termination at frame %d\n", frame);
                     break;
                 }
 
@@ -96,16 +102,16 @@ class ProfileExecution
 
         }
 
-        void single_interpretation(string& genome, string label)
+        void single_interpretation(string& genome, unsigned int frame)
         {
 
-            bool contains = index.count(label) == 1;
+            bool contains = index.count(frame) == 1;
             if (!contains)
                 return;
 
-            printf("\t%s\n", label.c_str());
+            printf("\tframe: %d\n", frame);
 
-            vector<vector<size_t>> clusters = index_clusters[label];
+            vector<vector<size_t>> clusters = index_clusters[frame];
 
             // underlying cluster information
             // for (vector<size_t> cluster : clusters)
@@ -132,15 +138,15 @@ class ProfileExecution
             size_t index_kmer_start = demarc_start[0];
             size_t index_kmer_end = demarc_end[demarc_end.size()-1];
 
-            size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_start];
-            size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(label)[index_kmer_end];
+            size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(frame)[index_kmer_start];
+            size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(frame)[index_kmer_end];
 
 
             size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
-            size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + Translation::frame_offset(label);
-            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + Translation::frame_offset(label) + 3; // not sure why I need this final +3
+            size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + frame;
+            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + frame + 3; // not sure why I need this final +3
 
-            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(label).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
             
@@ -151,9 +157,9 @@ class ProfileExecution
 
             printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
 
-            for (string label : pos_labels) // only iterating labels here
+            for (unsigned int frame : frames) // only iterating labels here
             {
-                single_interpretation(genome, label);
+                single_interpretation(genome, frame);
             }
 
         }
@@ -243,7 +249,7 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    string genome = load_genomes(genome_dir)[1];
+    string genome = load_genomes(genome_dir)[0];
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
@@ -270,6 +276,8 @@ int main()
     {
         string region = "";
         region += genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE); 
+
+    // string rc = reverse_complement(nucleotide_sequence);
         // region += genome.substr(crispr.end, UPSTREAM_SIZE); // will need to think about how I'm going to do this. Everything will need to be reversed (all calculations in the interpretation).
         Translation translation(region, K_FRAGMENT);
         CrisprProfile crispr_profile(crispr, translation);

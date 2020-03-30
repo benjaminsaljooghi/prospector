@@ -181,11 +181,11 @@ class Translation
 {
     public:
         string& nucleotide_sequence;
-        map<string, string> translations_raw;
+        map<unsigned int, string> translations_raw;
         // map<string, vector<string>> translations_raw_kmerized;
-        map<string, string> translations_pure;
-        map<string, vector<string>> translations_pure_kmerized;
-        map<string, vector<size_t>> pure_mapping;
+        map<unsigned int, string> translations_pure;
+        map<unsigned int, vector<string>> translations_pure_kmerized;
+        map<unsigned int, vector<size_t>> pure_mapping;
 
         Translation(string&, unsigned int k);
 

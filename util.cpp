@@ -163,16 +163,11 @@ Translation::Translation(string& _seq, unsigned int k)
 		return amino_acid_seqs;
     };
 
-    string rc = reverse_complement(nucleotide_sequence);
-    vector<string> pos_seqs = frame_shift(nucleotide_sequence);
-    vector<string> neg_seqs = frame_shift(rc);
+    vector<string> seqs = frame_shift(nucleotide_sequence);
 
-    this->translations_raw["pos_0"] = pos_seqs[0];
-	this->translations_raw["pos_1"] = pos_seqs[1];
-	this->translations_raw["pos_2"] = pos_seqs[2];
-	this->translations_raw["neg_0"] = neg_seqs[0];
-	this->translations_raw["neg_1"] = neg_seqs[1];
-	this->translations_raw["neg_2"] = neg_seqs[2];
+    this->translations_raw[0] = seqs[0];
+	this->translations_raw[1] = seqs[1];
+	this->translations_raw[2] = seqs[2];
 
 	// the genome positions are cached and computed here, they are not computed on the fly
 	// they are cached in the object via a kind of "map"
@@ -207,17 +202,17 @@ Translation::Translation(string& _seq, unsigned int k)
 }
 
 
-size_t Translation::frame_offset(string label)
-{
-	map<string, size_t> offset;
+// size_t Translation::frame_offset(string label)
+// {
+// 	map<string, size_t> offset;
 
-	offset["pos_0"] = 0;
-	offset["pos_1"] = 1;
-	offset["pos_2"] = 2;
-	offset["neg_0"] = 0;
-	offset["neg_1"] = 1;
-	offset["neg_2"] = 2;
+// 	offset["pos_0"] = 0;
+// 	offset["pos_1"] = 1;
+// 	offset["pos_2"] = 2;
+// 	offset["neg_0"] = 0;
+// 	offset["neg_1"] = 1;
+// 	offset["neg_2"] = 2;
 
-	return offset[label];
+// 	return offset[label];
 
-}
+// }
