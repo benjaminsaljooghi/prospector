@@ -1,4 +1,4 @@
-CPP = clang++ -O0 --std=c++17 -g -Wall -fopenmp -g
+CPP = clang++ -O3 --std=c++17 -g -Wall -fopenmp -g
 
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp
 
