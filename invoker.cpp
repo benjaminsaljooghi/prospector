@@ -137,16 +137,19 @@ class ProfileExecution
 
             size_t index_kmer_start = demarc_start[0];
             size_t index_kmer_end = demarc_end[demarc_end.size()-1];
+            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
+
 
             size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(frame)[index_kmer_start];
             size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(frame)[index_kmer_end];
 
 
-            size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE;
+            size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE; // WRONG. WILL NOT WORK FOR RC.
             size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + frame;
             size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + frame + 3; // not sure why I need this final +3
 
-            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
             
@@ -214,9 +217,16 @@ void finish()
 
 void debug(vector<Crispr> crisprs, string genome)
 {
-    int how_many = crisprs.size()/2;
+    int how_many = crisprs.size();
 
-    for (size_t i = 0; i < how_many; i++) crisprs[i].print(genome);
+    for (size_t i = 0; i < how_many; i++)
+    {
+        if (crisprs[i].k > 29 && crisprs[i].k < 31)
+        {
+            crisprs[i].print(genome);
+        }
+
+    }
 
     finish();
 }
@@ -249,7 +259,7 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    string genome = load_genomes(genome_dir)[0];
+    string genome = load_genomes(genome_dir)[1];
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
@@ -257,11 +267,24 @@ int main()
     
     vector<Crispr> good_heuristic_crisprs;
     for (const Crispr& crispr : crisprs)
+    {
+        #if DEBUG == 0
         if (crispr.overall_heuristic > 0.5)
+        #endif
+        {
             good_heuristic_crisprs.push_back(crispr);
+        }
+    }
+
+
 
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
-    // debug(good_heuristic_crisprs, genome);
+
+    #if DEBUG == 1
+        debug(good_heuristic_crisprs, genome);
+    #endif
+
+
     vector<Crispr> final = CrisprUtil::get_domain_best(good_heuristic_crisprs);
     // map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
     // vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
@@ -271,20 +294,38 @@ int main()
 
     // cas
     vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, K_FRAGMENT);
+
+
     vector<CrisprProfile> crispr_profiles;
     for (Crispr& crispr : final)
     {
         string region = "";
         region += genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE); 
-
-    // string rc = reverse_complement(nucleotide_sequence);
-        // region += genome.substr(crispr.end, UPSTREAM_SIZE); // will need to think about how I'm going to do this. Everything will need to be reversed (all calculations in the interpretation).
         Translation translation(region, K_FRAGMENT);
         CrisprProfile crispr_profile(crispr, translation);
         crispr_profiles.push_back(crispr_profile);
     }
+
+
     cas(crispr_profiles, cas_profiles, genome);
     
+    // try inverse
+    crispr_profiles.clear();
+
+    for (Crispr& crispr : final)
+    {
+        string region = "";
+        region += genome.substr(crispr.end, UPSTREAM_SIZE); 
+        region = reverse_complement(region);
+        Translation translation(region, K_FRAGMENT);
+        CrisprProfile crispr_profile(crispr, translation);
+        crispr_profiles.push_back(crispr_profile);
+    }
+
+    cas(crispr_profiles, cas_profiles, genome);
+    
+
+
     done(start, "invoker");
 
     finish();
