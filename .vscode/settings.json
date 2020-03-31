@@ -72,6 +72,8 @@
         "memory_resource": "cpp",
         "bit": "cpp",
         "__nullptr": "cpp",
-        "__config": "cpp"
+        "__config": "cpp",
+        "queue": "cpp",
+        "stack": "cpp"
     }
 }

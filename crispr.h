@@ -35,24 +35,6 @@ class Crispr
         // void cache_upstream_aminos(string, size_t, unsigned int);
 };
 
-class CasProfile
-{
-    public:
-        string name;
-        vector<string> kmers;
-		
-		CasProfile(string _path, unsigned int _k);
-};
-
-class CrisprProfile
-{
-    public:
-
-        const Crispr& crispr;
-        const Translation translation;
-        CrisprProfile(Crispr& _crispr, Translation _translation);
-};
-
 
 
 namespace CrisprUtil

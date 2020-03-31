@@ -177,21 +177,6 @@ template <typename T> T most_frequent(vector<T> elements)
 }
 
 
-class Translation
-{
-    public:
-        string& nucleotide_sequence;
-        map<unsigned int, string> translations_raw;
-        // map<string, vector<string>> translations_raw_kmerized;
-        map<unsigned int, string> translations_pure;
-        map<unsigned int, vector<string>> translations_pure_kmerized;
-        map<unsigned int, vector<size_t>> pure_mapping;
-
-        Translation(string&, unsigned int k);
-
-        static size_t frame_offset(string label);
-};
-
 
 map<string, string> parse_fasta(string);
 string parse_fasta_single(string);
@@ -200,4 +185,3 @@ string reverse_complement(string);
 int mismatch_count(string);
 string seqs_to_fasta(vector<string>);
 vector<string> kmerize(string, unsigned int);
-map<string, string> sixwaytranslation(string);

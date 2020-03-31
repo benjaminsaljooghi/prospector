@@ -202,29 +202,6 @@ void Crispr::print(string& genome)
 
 
 
-
-// CasProfile
-
-CasProfile::CasProfile(string _path, unsigned int _k)
-{
-	name = filesystem::path(_path).stem();
-	kmers = kmerize(parse_fasta_single(_path), _k);
-}
-
-
-// CrisprProfile
-
-CrisprProfile::CrisprProfile(Crispr& _crispr, Translation _translation)
-:	crispr(_crispr),
-	translation(_translation)
-{
-
-}
-
-
-
-
-
 // CrisprUtil
 
 

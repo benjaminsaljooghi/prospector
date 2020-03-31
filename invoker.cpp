@@ -4,6 +4,9 @@
 #include "prospector.h"
 #include "blast.h"
 
+#include "fmt/core.h"
+#include "fmt/format.h"
+// #include "fmt/format-inl.h"
 
 #define UPSTREAM_SIZE 10000
 #define K_FRAGMENT 5
@@ -15,17 +18,143 @@ vector<unsigned int> frames{
     2
 };
 
-// vector<string> pos_labels {
-//     "pos_0",
-//     "pos_1",
-//     "pos_2"
-// };
 
-// vector<string> neg_labels {
-//     "neg_0",
-//     "neg_1",
-//     "neg_2"
-// };
+
+
+class Translation
+{
+    public:
+        string& nucleotide_sequence;
+        map<unsigned int, string> translations_raw;
+        // map<string, vector<string>> translations_raw_kmerized;
+        map<unsigned int, string> translations_pure;
+        map<unsigned int, vector<string>> translations_pure_kmerized;
+        map<unsigned int, vector<size_t>> pure_mapping;
+
+        Translation(string&, unsigned int k);
+         
+        string to_string();
+};
+
+
+Translation::Translation(string& _seq, unsigned int k)
+:
+	nucleotide_sequence(_seq)
+{
+    size_t codon_size = 3;
+
+    auto frame_shift = [&](string& dna)
+    {
+        vector<string> amino_acid_seqs{"", "", ""};
+        for (size_t frame = 0; frame < 3; frame++)
+		{
+			for (size_t i = frame; i + codon_size < dna.size(); i += codon_size)
+			{
+				string codon = dna.substr(i, codon_size);
+				string amino_acid = codon_table.at(codon);
+				amino_acid_seqs[frame] += amino_acid;
+			}
+		}
+		return amino_acid_seqs;
+    };
+
+    vector<string> seqs = frame_shift(nucleotide_sequence);
+
+    this->translations_raw[0] = seqs[0];
+	this->translations_raw[1] = seqs[1];
+	this->translations_raw[2] = seqs[2];
+
+	// the genome positions are cached and computed here, they are not computed on the fly
+	// they are cached in the object via a kind of "map"
+	// that is, if I ask for the "index" of a translation,
+	// it gets first mapped to the index in the translation_raw
+	// and then that index is multiplied by 3 to get me 
+	// the genome index
+
+	for (auto const& [key, val] : this->translations_raw)
+	{
+		this->translations_pure[key] = "";
+		
+		size_t stop_count = 0;
+		size_t index = 0;
+		for (char elem : val)
+		{
+			if (elem == STOP_C)
+			{
+				stop_count++;
+				continue;
+			}
+			this->translations_pure[key] += elem;
+			pure_mapping[key].push_back(index + stop_count);
+			index++;
+		}
+
+
+		this->translations_pure_kmerized[key] = kmerize(this->translations_pure[key], k);
+	}
+
+
+}
+
+
+string Translation::to_string()
+{
+	size_t frame_count = 3;
+
+	string result = "";
+
+	for (size_t frame = 0; frame < frame_count; frame++)
+	{
+		result += fmt::format("{}:\n{}\n\n", frame, this->translations_raw[frame]);
+	}
+
+	return result;
+}
+
+
+
+class CasProfile
+{
+    public:
+        string name;
+        vector<string> kmers;
+		
+		CasProfile(string _path, unsigned int _k);
+};
+
+class CrisprProfile
+{
+    public:
+
+        const Crispr& crispr;
+        const Translation translation;
+        CrisprProfile(Crispr& _crispr, Translation _translation);
+};
+
+
+
+
+
+// CasProfile
+
+CasProfile::CasProfile(string _path, unsigned int _k)
+{
+	name = filesystem::path(_path).stem();
+	kmers = kmerize(parse_fasta_single(_path), _k);
+}
+
+
+// CrisprProfile
+
+CrisprProfile::CrisprProfile(Crispr& _crispr, Translation _translation)
+:	crispr(_crispr),
+	translation(_translation)
+{
+
+}
+
+
+
 
 
 class ProfileExecution
@@ -253,6 +382,8 @@ vector<string> load_genomes(string dir)
 
 int main()
 {
+
+
     printf("running invoker...\n");
     double start = omp_get_wtime();
 
@@ -260,6 +391,17 @@ int main()
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     string genome = load_genomes(genome_dir)[1];
+
+
+
+    // int __start = 1830078;
+    // int __end = 1833441;
+    // string domain = genome.substr(__start, __end-__start);
+    // domain = reverse_complement(domain);
+    // Translation domain_translation(domain, K_FRAGMENT);
+    // printf("%s\n", domain_translation.to_string().c_str());
+    // finish();
+
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
@@ -299,8 +441,7 @@ int main()
     vector<CrisprProfile> crispr_profiles;
     for (Crispr& crispr : final)
     {
-        string region = "";
-        region += genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE); 
+        string region = genome.substr(crispr.start - UPSTREAM_SIZE, UPSTREAM_SIZE);
         Translation translation(region, K_FRAGMENT);
         CrisprProfile crispr_profile(crispr, translation);
         crispr_profiles.push_back(crispr_profile);
@@ -314,8 +455,7 @@ int main()
 
     for (Crispr& crispr : final)
     {
-        string region = "";
-        region += genome.substr(crispr.end, UPSTREAM_SIZE); 
+        string region = genome.substr(crispr.end, UPSTREAM_SIZE);
         region = reverse_complement(region);
         Translation translation(region, K_FRAGMENT);
         CrisprProfile crispr_profile(crispr, translation);
