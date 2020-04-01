@@ -24,22 +24,25 @@ vector<unsigned int> frames{
 class Translation
 {
     public:
-        string& nucleotide_sequence;
+        size_t genome_start;
+        size_t genome_end;
         map<unsigned int, string> translations_raw;
-        // map<string, vector<string>> translations_raw_kmerized;
         map<unsigned int, string> translations_pure;
         map<unsigned int, vector<string>> translations_pure_kmerized;
         map<unsigned int, vector<size_t>> pure_mapping;
 
-        Translation(string&, unsigned int k);
+        Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k);
         const char* to_string();
 };
 
 
-Translation::Translation(string& _seq, unsigned int k)
-:
-	nucleotide_sequence(_seq)
+Translation::Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k)
+
 {
+    this->genome_start = genome_start;
+    this->genome_end = genome_end;
+    string domain = genome.substr(genome_start, genome_end - genome_start);
+
     size_t codon_size = 3;
 
     auto frame_shift = [&](string& dna)
@@ -57,7 +60,7 @@ Translation::Translation(string& _seq, unsigned int k)
 		return amino_acid_seqs;
     };
 
-    vector<string> seqs = frame_shift(nucleotide_sequence);
+    vector<string> seqs = frame_shift(domain);
 
     this->translations_raw[0] = seqs[0];
 	this->translations_raw[1] = seqs[1];
@@ -93,12 +96,6 @@ const char* Translation::to_string()
 		result += fmt::format("{}:\n{}\n\n", frame, this->translations_raw[frame]);
 
 	return result.c_str();
-}
-
-void translation_test(const string& genome, size_t genome_start, size_t genome_end)
-{
-    string region = genome.substr(genome_start, genome_end - genome_start);
-    printf("---translation_test---\n%s\n", Translation(region, K_FRAGMENT).to_string());
 }
 
 class CasProfile
@@ -221,66 +218,78 @@ size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
             return clusters[i][clusters[i].size()-1];
 }
 
-bool detect(const string& genome, const Translation& translation, string cas_profile_name, const vector<string>& cas_profile, const Crispr& crispr)
+struct gene_fragment {
+    const Crispr& reference_crispr;
+    const Translation& reference_translation;
+    string name;
+    vector<vector<size_t>> clusters;
+    size_t frame;
+};
+
+void print_gene_fragment(gene_fragment gene)
+{
+    size_t index_kmer_start = demarc_start_clusters(gene.clusters);
+    size_t index_kmer_end = demarc_end_clusters(gene.clusters);
+    
+    string protein = gene.reference_translation.translations_pure.at(gene.frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
+    size_t raw_pos_start = gene.reference_translation.pure_mapping.at(gene.frame)[index_kmer_start];
+    size_t raw_pos_end = gene.reference_translation.pure_mapping.at(gene.frame)[index_kmer_end];
+
+    size_t genome_start = gene.reference_translation.genome_start + (raw_pos_start * 3) + gene.frame;
+    size_t genome_end = gene.reference_translation.genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + gene.frame + 3;
+
+    fmt::print("crispr {} {}\n", gene.reference_crispr.start, gene.reference_crispr.k);
+    fmt::print("name {}\n", gene.name);
+    fmt::print("\tframe {}\n", gene.frame);
+    fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
+    fmt::print("\t{} - {}\n", genome_start, genome_end);
+    fmt::print("\t{}...{}\n", protein.substr(0, 3), protein.substr(protein.length()-3, 3));
+}
+
+void detect(const string& genome, const Translation& translation, CasProfile profile, const Crispr& crispr)
 {
     for (auto const& [frame, crispr_profile] : translation.translations_pure_kmerized)
     {
-        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile);
+        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, profile.kmers);
         if (clusters)
         {
-            size_t index_kmer_start = demarc_start_clusters(clusters.value());
-            size_t index_kmer_end = demarc_end_clusters(clusters.value());
-            
-
-
-            string protein = translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
-
-            size_t raw_pos_start = translation.pure_mapping.at(frame)[index_kmer_start];
-            size_t raw_pos_end = translation.pure_mapping.at(frame)[index_kmer_end];
-
-            size_t genome_upstream_start = crispr.start - UPSTREAM_SIZE; // WRONG. WILL NOT WORK FOR RC.
-            size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + frame;
-            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + frame + 3;
-
-            fmt::print("crispr {} {}\n", crispr.start, crispr.k);
-            fmt::print("profile {}\n", cas_profile_name);
-            fmt::print("\tframe {}\n", frame);
-            fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
-            fmt::print("\t{} - {}\n", genome_start, genome_end);
-            fmt::print("\t{}...{}\n", protein.substr(0, 3), protein.substr(protein.length()-3, 3));
-
-
-            // return true;
+            gene_fragment g = {
+                crispr,
+                translation,
+                profile.name,
+                clusters.value(),
+                frame
+            };
+            print_gene_fragment(g);
         }
     }
-    // return false;
-    return false;
 }
 
 void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 {
     map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
-    size_t num = crisprs.size();
 
     vector<Translation> downstreams;
     vector<Translation> upstreams;
 
-    for (size_t i = 0; i < num; i++)
+    for (const Crispr& crispr : crisprs)
     {
-        string down = genome.substr(crisprs[i].start - UPSTREAM_SIZE, UPSTREAM_SIZE);
-        string up = genome.substr(crisprs[i].end, UPSTREAM_SIZE);
-        downstreams.push_back(Translation(down, K_FRAGMENT));
-        upstreams.push_back(Translation(up, K_FRAGMENT));
+        Translation down(genome, crispr.start - UPSTREAM_SIZE, crispr.start, K_FRAGMENT);
+        Translation up(genome, crispr.end, crispr.end + UPSTREAM_SIZE, K_FRAGMENT);
+        downstreams.push_back(down);
+        upstreams.push_back(up);
     }
 
-    for (size_t i = 0; i < num; i++)
+    for (size_t i = 0; i < crisprs.size(); i++)
     {
         for (auto const& [type, profiles] : cas_profiles)
         {
             for (CasProfile profile : profiles)
             {
-                detect(genome, downstreams[i], profile.name, profile.kmers, crisprs[i]);
+                detect(genome, upstreams[i], profile, crisprs[i]);
+                detect(genome, downstreams[i], profile, crisprs[i]);
             }
         }
     }
