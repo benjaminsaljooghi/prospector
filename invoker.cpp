@@ -32,8 +32,7 @@ class Translation
         map<unsigned int, vector<size_t>> pure_mapping;
 
         Translation(string&, unsigned int k);
-         
-        string to_string();
+        const char* to_string();
 };
 
 
@@ -64,13 +63,6 @@ Translation::Translation(string& _seq, unsigned int k)
 	this->translations_raw[1] = seqs[1];
 	this->translations_raw[2] = seqs[2];
 
-	// the genome positions are cached and computed here, they are not computed on the fly
-	// they are cached in the object via a kind of "map"
-	// that is, if I ask for the "index" of a translation,
-	// it gets first mapped to the index in the translation_raw
-	// and then that index is multiplied by 3 to get me 
-	// the genome index
-
 	for (auto const& [key, val] : this->translations_raw)
 	{
 		this->translations_pure[key] = "";
@@ -89,29 +81,25 @@ Translation::Translation(string& _seq, unsigned int k)
 			index++;
 		}
 
-
 		this->translations_pure_kmerized[key] = kmerize(this->translations_pure[key], k);
 	}
-
-
 }
 
-
-string Translation::to_string()
+const char* Translation::to_string()
 {
 	size_t frame_count = 3;
-
 	string result = "";
-
-	for (size_t frame = 0; frame < frame_count; frame++)
-	{
+	for (size_t frame : frames)
 		result += fmt::format("{}:\n{}\n\n", frame, this->translations_raw[frame]);
-	}
 
-	return result;
+	return result.c_str();
 }
 
-
+void translation_test(const string& genome, size_t genome_start, size_t genome_end)
+{
+    string region = genome.substr(genome_start, genome_end - genome_start);
+    printf("---translation_test---\n%s\n", Translation(region, K_FRAGMENT).to_string());
+}
 
 class CasProfile
 {
@@ -243,10 +231,9 @@ bool detect(const string& genome, const Translation& translation, string cas_pro
             size_t index_kmer_start = demarc_start_clusters(clusters.value());
             size_t index_kmer_end = demarc_end_clusters(clusters.value());
             
-            printf("profile %s; CRISPR %d %d\n", cas_profile_name.c_str(), crispr.start, crispr.k);
-            printf("\tframe: %d\n", frame);
 
-            string demarcated_amino = translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
+            string protein = translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
 
             size_t raw_pos_start = translation.pure_mapping.at(frame)[index_kmer_start];
             size_t raw_pos_end = translation.pure_mapping.at(frame)[index_kmer_end];
@@ -255,16 +242,25 @@ bool detect(const string& genome, const Translation& translation, string cas_pro
             size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + frame;
             size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + frame + 3;
 
-            printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
-            printf("%s\n", demarcated_amino.c_str());
-            return true;
+            fmt::print("crispr {} {}\n", crispr.start, crispr.k);
+            fmt::print("profile {}\n", cas_profile_name);
+            fmt::print("\tframe {}\n", frame);
+            fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
+            fmt::print("\t{} - {}\n", genome_start, genome_end);
+            fmt::print("\t{}...{}\n", protein.substr(0, 3), protein.substr(protein.length()-3, 3));
+
+
+            // return true;
         }
     }
+    // return false;
     return false;
 }
 
-void cas(const string& genome, const vector<Crispr>& crisprs, const map<string, vector<CasProfile>>& cas_profiles )
+void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 {
+    map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
+
     size_t num = crisprs.size();
 
     vector<Translation> downstreams;
@@ -284,8 +280,7 @@ void cas(const string& genome, const vector<Crispr>& crisprs, const map<string, 
         {
             for (CasProfile profile : profiles)
             {
-                bool good = detect(genome, downstreams[i], profile.name, profile.kmers, crisprs[i]);
-                if (good) break;
+                detect(genome, downstreams[i], profile.name, profile.kmers, crisprs[i]);
             }
         }
     }
@@ -338,16 +333,6 @@ int main()
     string genome = load_genomes(genome_dir)[1];
 
 
-
-    // int __start = 1830078;
-    // int __end = 1833441;
-    // string domain = genome.substr(__start, __end-__start);
-    // domain = reverse_complement(domain);
-    // Translation domain_translation(domain, K_FRAGMENT);
-    // printf("%s\n", domain_translation.to_string().c_str());
-    // finish();
-
-
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
     CrisprUtil::cache_crispr_information(crisprs, genome);
@@ -363,26 +348,21 @@ int main()
         }
     }
 
-
-
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
 
     #if DEBUG == 1
         debug(good_heuristic_crisprs, genome);
     #endif
 
-
     vector<Crispr> final = CrisprUtil::get_domain_best(good_heuristic_crisprs);
+
     // map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
     // vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
     // CrisprUtil::print(genome, final, spacer_scores);
 
     CrisprUtil::print(genome, final);
 
-    // cas
-    map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
-
-    cas(genome, final, cas_profiles);
+    cas(genome, final, cas_dir);
 
     done(start, "invoker");
 
