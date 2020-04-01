@@ -31,17 +31,18 @@ class Translation
         map<unsigned int, vector<string>> translations_pure_kmerized;
         map<unsigned int, vector<size_t>> pure_mapping;
 
-        Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k);
+        Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k, bool rc);
         const char* to_string();
 };
 
 
-Translation::Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k)
+Translation::Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k, bool rc)
 
 {
     this->genome_start = genome_start;
     this->genome_end = genome_end;
     string domain = genome.substr(genome_start, genome_end - genome_start);
+    domain = rc ? reverse_complement(domain) : domain; 
 
     size_t codon_size = 3;
 
@@ -244,7 +245,7 @@ void print_gene_fragment(gene_fragment gene)
     fmt::print("\tframe {}\n", gene.frame);
     fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
     fmt::print("\t{} - {}\n", genome_start, genome_end);
-    fmt::print("\t{}...{}\n", protein.substr(0, 3), protein.substr(protein.length()-3, 3));
+    fmt::print("\t{}...{}\n\n", protein.substr(0, 4), protein.substr(protein.length()-4, 4));
 }
 
 void detect(const string& genome, const Translation& translation, CasProfile profile, const Crispr& crispr)
@@ -276,8 +277,8 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 
     for (const Crispr& crispr : crisprs)
     {
-        Translation down(genome, crispr.start - UPSTREAM_SIZE, crispr.start, K_FRAGMENT);
-        Translation up(genome, crispr.end, crispr.end + UPSTREAM_SIZE, K_FRAGMENT);
+        Translation down(genome, crispr.start - UPSTREAM_SIZE, crispr.start, K_FRAGMENT, false);
+        Translation up(genome, crispr.end, crispr.end + UPSTREAM_SIZE, K_FRAGMENT, true);
         downstreams.push_back(down);
         upstreams.push_back(up);
     }
