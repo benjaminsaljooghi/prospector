@@ -223,41 +223,49 @@ size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
             return clusters[i][clusters[i].size()-1];
 }
 
-struct gene_fragment {
-    const Crispr& reference_crispr;
-    const Translation& reference_translation;
-    const CasProfile& reference_profile;
+
+
+struct gene_fragment
+{
+    const Crispr* reference_crispr;
+    const Translation* reference_translation;
+    const CasProfile* reference_profile;
     vector<vector<size_t>> clusters;
     size_t frame;
 };
+
+bool gene_fragment_less(const gene_fragment& a, const gene_fragment& b)
+{
+    return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
+}
 
 void print_gene_fragment(gene_fragment gene)
 {
     size_t index_kmer_start = demarc_start_clusters(gene.clusters);
     size_t index_kmer_end = demarc_end_clusters(gene.clusters);
     
-    string protein = gene.reference_translation.translations_pure.at(gene.frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+    string protein = gene.reference_translation->translations_pure.at(gene.frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
 
-    size_t raw_pos_start = gene.reference_translation.pure_mapping.at(gene.frame)[index_kmer_start];
-    size_t raw_pos_end = gene.reference_translation.pure_mapping.at(gene.frame)[index_kmer_end];
+    size_t raw_pos_start = gene.reference_translation->pure_mapping.at(gene.frame)[index_kmer_start];
+    size_t raw_pos_end = gene.reference_translation->pure_mapping.at(gene.frame)[index_kmer_end];
 
-    size_t genome_start = gene.reference_translation.genome_start + (raw_pos_start * 3) + gene.frame;
-    size_t genome_end = gene.reference_translation.genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + gene.frame + 3;
+    size_t genome_start = gene.reference_translation->genome_start + (raw_pos_start * 3) + gene.frame;
+    size_t genome_end = gene.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + gene.frame + 3;
 
-    fmt::print("crispr {} {}\n", gene.reference_crispr.start, gene.reference_crispr.k);
-    fmt::print("name {} {}\n", gene.reference_profile.type, gene.reference_profile.name);
+    fmt::print("crispr {} {}\n", gene.reference_crispr->start, gene.reference_crispr->k);
+    fmt::print("name {} {}\n", gene.reference_profile->type, gene.reference_profile->name);
     fmt::print("\tframe {}\n", gene.frame);
     fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
     fmt::print("\t{} - {}\n", genome_start, genome_end);
     fmt::print("\t{}...{}\n\n", protein.substr(0, 4), protein.substr(protein.length()-4, 4));
 }
 
-vector<gene_fragment> detect(const string& genome, const Translation& translation, CasProfile cas_profile, const Crispr& crispr)
+vector<gene_fragment> detect(const string& genome, const Translation* translation, const CasProfile* cas_profile, const Crispr* crispr)
 {
     vector<gene_fragment> fragments;
-    for (auto const& [frame, crispr_profile] : translation.translations_pure_kmerized)
+    for (auto const& [frame, crispr_profile] : translation->translations_pure_kmerized)
     {
-        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile.kmers);
+        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile->kmers);
         if (clusters)
         {
             gene_fragment fragment = {
@@ -293,12 +301,23 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
     {
         for (auto const& [type, profiles] : cas_profiles)
         {
-            for (CasProfile profile : profiles)
+            for (size_t j = 0; j < profiles.size(); j++)
             {
-                vector<gene_fragment> __fragments = detect(genome, upstreams[i], profile, crisprs[i]);
+                vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &profiles[j], &crisprs[i]);
                 fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
             }
         }
+    }
+
+
+
+
+    // organize fragments, sorted by position, then sorted by type, then sorted by fragment
+    sort(fragments.begin(), fragments.end(), gene_fragment_less);
+
+    for (gene_fragment g : fragments)
+    {
+        print_gene_fragment(g);
     }
 
     fmt::print("index computation time {}\n", index_computation);
@@ -309,28 +328,23 @@ void finish()
     exit(0);
 }
 
+#if DEBUG == 1
 void debug(vector<Crispr> crisprs, string genome)
 {
     int how_many = crisprs.size();
-
     for (size_t i = 0; i < how_many; i++)
     {
         if (crisprs[i].k > 29 && crisprs[i].k < 31)
         {
             crisprs[i].print(genome);
         }
-
     }
-
     finish();
 }
-
-
-
+#endif
 
 vector<string> load_genomes(string dir)
 {
-
     vector<string> genomes;
     for (const auto& entry : filesystem::directory_iterator(dir))
         genomes.push_back(parse_fasta_single(entry.path()));
