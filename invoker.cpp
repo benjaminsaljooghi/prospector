@@ -239,6 +239,24 @@ bool gene_fragment_less(const gene_fragment& a, const gene_fragment& b)
     return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
 }
 
+size_t gene_fragment_length(const gene_fragment& a)
+{
+    return demarc_end_clusters(a.clusters) - demarc_start_clusters(a.clusters); 
+}
+
+// a is contained within b
+bool fragment_contains(const gene_fragment& a, const gene_fragment& b)
+{
+    size_t a_start = demarc_start_clusters(a.clusters);
+    size_t a_end = demarc_end_clusters(a.clusters);
+    size_t b_start = demarc_start_clusters(b.clusters);
+    size_t b_end = demarc_end_clusters(b.clusters);
+    
+    bool equivalent = a_start == b_start && a_end == b_end;
+
+    return (!equivalent) && a_start >= b_start && a_end <= b_end;
+}
+
 void print_gene_fragment(gene_fragment gene)
 {
     size_t index_kmer_start = demarc_start_clusters(gene.clusters);
@@ -253,9 +271,10 @@ void print_gene_fragment(gene_fragment gene)
     size_t genome_end = gene.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + gene.frame + 3;
 
     fmt::print("crispr {} {}\n", gene.reference_crispr->start, gene.reference_crispr->k);
-    fmt::print("name {} {}\n", gene.reference_profile->type, gene.reference_profile->name);
-    fmt::print("\tframe {}\n", gene.frame);
-    fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
+    fmt::print("\t{}\n", gene.reference_profile->type);
+    // fmt::print("\tframe {}\n", gene.frame);
+    // fmt::print("\t{}\n", gene.reference_profile->name);
+    // fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
     fmt::print("\t{} - {}\n", genome_start, genome_end);
     fmt::print("\t{}...{}\n\n", protein.substr(0, 4), protein.substr(protein.length()-4, 4));
 }
@@ -310,12 +329,30 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
     }
 
 
-
-
     // organize fragments, sorted by position, then sorted by type, then sorted by fragment
     sort(fragments.begin(), fragments.end(), gene_fragment_less);
 
-    for (gene_fragment g : fragments)
+    // remove any fragments that are a complete subset of any other fragments
+    vector<gene_fragment> fragments_filtered;
+
+    for (gene_fragment a : fragments)
+    {
+        bool do_not_include_a = false;
+        for (gene_fragment b : fragments)
+        {
+            if (fragment_contains(a, b))
+            {
+                do_not_include_a = true; break;
+            }
+        }
+
+        if (!do_not_include_a)
+        {
+            fragments_filtered.push_back(a);
+        }
+    }
+    
+    for (gene_fragment g : fragments_filtered)
     {
         print_gene_fragment(g);
     }
