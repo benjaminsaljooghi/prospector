@@ -316,6 +316,8 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
     }
 
     vector<gene_fragment> fragments;
+
+
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         for (auto const& [type, profiles] : cas_profiles)
@@ -324,6 +326,7 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
             {
                 vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &profiles[j], &crisprs[i]);
                 vector<gene_fragment> _fragments = detect(genome, &upstreams[i], &profiles[j], &crisprs[i]);
+
                 fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
                 fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
             }
@@ -443,6 +446,10 @@ int main()
     // map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
     // vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
     // CrisprUtil::print(genome, final, spacer_scores);
+
+    sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) {
+        return a.start < b.start;
+    });
 
     CrisprUtil::print(genome, final);
 
