@@ -270,13 +270,13 @@ void print_gene_fragment(gene_fragment gene)
     size_t genome_start = gene.reference_translation->genome_start + (raw_pos_start * 3) + gene.frame;
     size_t genome_end = gene.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + gene.frame + 3;
 
-    fmt::print("crispr {} {}\n", gene.reference_crispr->start, gene.reference_crispr->k);
-    fmt::print("\t{}\n", gene.reference_profile->type);
+    // fmt::print("crispr {} {}\n", gene.reference_crispr->start, gene.reference_crispr->k);
+    fmt::print("\t\t{}\n", gene.reference_profile->type);
     // fmt::print("\tframe {}\n", gene.frame);
     // fmt::print("\t{}\n", gene.reference_profile->name);
     // fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
-    fmt::print("\t{} - {}\n", genome_start, genome_end);
-    fmt::print("\t{}...{}\n\n", protein.substr(0, 4), protein.substr(protein.length()-4, 4));
+    fmt::print("\t\t\t{} - {}\n", genome_start, genome_end);
+    fmt::print("\t\t\t{}...{}\n\n", protein.substr(0, 4), protein.substr(protein.length()-4, 4));
 }
 
 vector<gene_fragment> detect(const string& genome, const Translation* translation, const CasProfile* cas_profile, const Crispr* crispr)
@@ -323,7 +323,9 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
             for (size_t j = 0; j < profiles.size(); j++)
             {
                 vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &profiles[j], &crisprs[i]);
+                vector<gene_fragment> _fragments = detect(genome, &upstreams[i], &profiles[j], &crisprs[i]);
                 fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
+                fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
             }
         }
     }
@@ -352,10 +354,23 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
         }
     }
     
-    for (gene_fragment g : fragments_filtered)
+
+    // place gene fragments into crispr buckets
+
+    for (const Crispr& crispr : crisprs)
     {
-        print_gene_fragment(g);
+        fmt::print("\tcrispr {} {}\n", crispr.start, crispr.k);
+        for (const gene_fragment& g : fragments_filtered )
+        {
+            if (g.reference_crispr->start == crispr.start && g.reference_crispr->k == crispr.k)
+            {
+                print_gene_fragment(g);
+            }
+        }
     }
+
+
+
 
     fmt::print("index computation time {}\n", index_computation);
 }
