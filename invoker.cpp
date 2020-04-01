@@ -188,13 +188,13 @@ map<string, vector<CasProfile>> CasProfile::load_casprofiles(string dir, unsigne
 
 double index_computation = 0;
 
-vector<size_t> build_index_single(const vector<string>& query_kmers, const vector<string>& target_kmers)
+template <typename T> vector<size_t> build_index_single(const vector<T>& query_kmers, const vector<T>& target_kmers)
 {
     vector<size_t> indices;
     double start = omp_get_wtime();
     for (size_t i = 0; i < target_kmers.size(); i++)
     {
-        if ( contains(query_kmers, target_kmers[i]) )
+        if (contains(query_kmers, target_kmers[i]))
         {
             indices.push_back(i);
         }
@@ -246,7 +246,7 @@ void print_clusters(const vector<vector<size_t>>& clusters)
     for (vector<size_t> cluster : clusters) fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 }
 
-optional<vector<vector<size_t>>> detect_single(const vector<string>& crispr_profile, const vector<string>& cas_profile)
+template<typename T> optional<vector<vector<size_t>>> detect_single(const vector<T>& crispr_profile, const vector<T>& cas_profile)
 {
     vector<size_t> index = build_index_single(cas_profile, crispr_profile);
     if (!good_index(index)) return {};
@@ -326,9 +326,9 @@ void print_gene_fragment(gene_fragment gene)
 vector<gene_fragment> detect(const string& genome, const Translation* translation, const CasProfile* cas_profile, const Crispr* crispr)
 {
     vector<gene_fragment> fragments;
-    for (auto const& [frame, crispr_profile] : translation->translations_pure_kmerized)
+    for (auto const& [frame, crispr_profile] : translation->translations_pure_kmerized_encoded)
     {
-        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile->kmers);
+        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile->encoded_kmers);
         if (clusters)
         {
             gene_fragment fragment = {
@@ -455,22 +455,6 @@ vector<string> load_genomes(string dir)
 
 int main()
 {
-
-
-
-    finish();
-
-
-
-
-
-
-
-
-
-
-
-
 
     printf("running invoker...\n");
     double start = omp_get_wtime();
