@@ -130,11 +130,13 @@ map<string, vector<CasProfile>> CasProfile::load_casprofiles(string dir, unsigne
     return profiles;
 }
 
+double index_computation = 0;
 
 vector<size_t> build_index_single(const vector<string>& query_kmers, const vector<string>& target_kmers)
 {
     vector<size_t> indices;
     // printf("comparing %zd kmers against %zd kmers\n", query_kmers.size(), target_kmers.size());
+    double start = omp_get_wtime();
     for (size_t i = 0; i < target_kmers.size(); i++)
     {
         if ( contains(query_kmers, target_kmers[i]) )
@@ -142,6 +144,8 @@ vector<size_t> build_index_single(const vector<string>& query_kmers, const vecto
             indices.push_back(i);
         }
     } 
+    double end = omp_get_wtime();
+    index_computation += end - start;
     return indices;
 }
 
@@ -222,7 +226,7 @@ size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
 struct gene_fragment {
     const Crispr& reference_crispr;
     const Translation& reference_translation;
-    string name;
+    const CasProfile& reference_profile;
     vector<vector<size_t>> clusters;
     size_t frame;
 };
@@ -241,36 +245,37 @@ void print_gene_fragment(gene_fragment gene)
     size_t genome_end = gene.reference_translation.genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + gene.frame + 3;
 
     fmt::print("crispr {} {}\n", gene.reference_crispr.start, gene.reference_crispr.k);
-    fmt::print("name {}\n", gene.name);
+    fmt::print("name {} {}\n", gene.reference_profile.type, gene.reference_profile.name);
     fmt::print("\tframe {}\n", gene.frame);
     fmt::print("\t{} - {}\n", index_kmer_start, index_kmer_end);
     fmt::print("\t{} - {}\n", genome_start, genome_end);
     fmt::print("\t{}...{}\n\n", protein.substr(0, 4), protein.substr(protein.length()-4, 4));
 }
 
-void detect(const string& genome, const Translation& translation, CasProfile profile, const Crispr& crispr)
+vector<gene_fragment> detect(const string& genome, const Translation& translation, CasProfile cas_profile, const Crispr& crispr)
 {
+    vector<gene_fragment> fragments;
     for (auto const& [frame, crispr_profile] : translation.translations_pure_kmerized)
     {
-        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, profile.kmers);
+        optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile.kmers);
         if (clusters)
         {
-            gene_fragment g = {
+            gene_fragment fragment = {
                 crispr,
                 translation,
-                profile.name,
+                cas_profile,
                 clusters.value(),
                 frame
             };
-            print_gene_fragment(g);
+            fragments.push_back(fragment);
         }
     }
+    return fragments;
 }
 
 void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 {
     map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
-
 
     vector<Translation> downstreams;
     vector<Translation> upstreams;
@@ -283,17 +288,20 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
         upstreams.push_back(up);
     }
 
+    vector<gene_fragment> fragments;
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         for (auto const& [type, profiles] : cas_profiles)
         {
             for (CasProfile profile : profiles)
             {
-                detect(genome, upstreams[i], profile, crisprs[i]);
-                detect(genome, downstreams[i], profile, crisprs[i]);
+                vector<gene_fragment> __fragments = detect(genome, upstreams[i], profile, crisprs[i]);
+                fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
             }
         }
     }
+
+    fmt::print("index computation time {}\n", index_computation);
 }
 
 void finish()
@@ -372,7 +380,9 @@ int main()
 
     CrisprUtil::print(genome, final);
 
+    double cas_start = omp_get_wtime();    
     cas(genome, final, cas_dir);
+    done(cas_start, "cas_gene_detection");
 
     done(start, "invoker");
 
