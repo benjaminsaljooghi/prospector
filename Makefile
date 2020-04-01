@@ -1,4 +1,4 @@
-CPP = clang++ -O3 --std=gnu++2a -g -Wall -fopenmp -g
+CPP = clang++ -O0 --std=gnu++2a -g -Wall -fopenmp -g
 
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp
 

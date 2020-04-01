@@ -117,10 +117,34 @@ class CasProfile
 {
     public:
         string name;
+        string type;
         vector<string> kmers;
 		
-		CasProfile(string _path, unsigned int _k);
+		CasProfile(string, unsigned int);
+
+        static map<string, vector<CasProfile>> load_casprofiles(string, unsigned int);
 };
+
+CasProfile::CasProfile(string _path, unsigned int _k)
+{
+	this->name = filesystem::path(_path).stem();
+	this->kmers = kmerize(parse_fasta_single(_path), _k);
+    this->type = this->name.substr(0, this->name.find("_"));
+}
+
+
+map<string, vector<CasProfile>> CasProfile::load_casprofiles(string dir, unsigned int k)
+{   
+    map<string, vector<CasProfile>> profiles;  
+    for (const auto& entry : filesystem::directory_iterator(dir))
+    {
+        CasProfile cas_profile(entry.path(), k);
+        profiles[cas_profile.type].push_back(cas_profile);
+    }
+    return profiles;
+}
+
+
 
 class CrisprProfile
 {
@@ -132,25 +156,10 @@ class CrisprProfile
 };
 
 
-
-
-
-// CasProfile
-
-CasProfile::CasProfile(string _path, unsigned int _k)
-{
-	name = filesystem::path(_path).stem();
-	kmers = kmerize(parse_fasta_single(_path), _k);
-}
-
-
-// CrisprProfile
-
 CrisprProfile::CrisprProfile(Crispr& _crispr, Translation _translation)
 :	crispr(_crispr),
 	translation(_translation)
 {
-
 }
 
 
@@ -162,15 +171,15 @@ class ProfileExecution
     public:
         CasProfile& cas_profile;
         CrisprProfile& crispr_profile;
-        map<unsigned int, vector<size_t>> index;
-        map<unsigned int, vector<vector<size_t>>> index_clusters;
-        		
+        vector<size_t> index;
+        vector<vector<size_t>> index_clusters;
+        bool good_execution = false;
+        unsigned int good_frame = 0;
+
         ProfileExecution(CasProfile& _cas_profile, CrisprProfile& _crispr_profile)
         :	cas_profile(_cas_profile),
             crispr_profile(_crispr_profile)
-        {
-            
-        }
+        {}
 
         void build_index()
         {
@@ -189,7 +198,6 @@ class ProfileExecution
                     }
                 } 
 
-
                 if (indices.size() == 0)
                     continue;
 
@@ -207,7 +215,6 @@ class ProfileExecution
                 clusters.push_back(cluster);
     
 
-
                 size_t cluster_requirement = 3;
                 bool good_clusters = false;
                 for (vector<size_t> cluster : clusters)
@@ -221,9 +228,13 @@ class ProfileExecution
 
                 if (good_clusters)
                 {
-                    index[frame] = indices;
-                    index_clusters[frame] = clusters;
-                    printf("early termination at frame %d\n", frame);
+                    this->good_execution = true;
+                    this->good_frame = frame;
+                    this->index = indices;
+                    this->index_clusters = clusters;
+                    printf("good index found at frame %d\n", frame);
+                    string a = this->crispr_profile.translation.to_string().c_str();
+                    printf("%s\n", );
                     break;
                 }
 
@@ -231,16 +242,15 @@ class ProfileExecution
 
         }
 
-        void single_interpretation(string& genome, unsigned int frame)
+        void interpret(string genome)
         {
+            assert(this->good_execution);
 
-            bool contains = index.count(frame) == 1;
-            if (!contains)
-                return;
+            printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
 
-            printf("\tframe: %d\n", frame);
+            printf("\tframe: %d\n", this->good_frame);
 
-            vector<vector<size_t>> clusters = index_clusters[frame];
+            vector<vector<size_t>> clusters = this->index_clusters;
 
             // underlying cluster information
             // for (vector<size_t> cluster : clusters)
@@ -266,33 +276,21 @@ class ProfileExecution
 
             size_t index_kmer_start = demarc_start[0];
             size_t index_kmer_end = demarc_end[demarc_end.size()-1];
-            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+            string demarcated_amino = this->crispr_profile.translation.translations_pure.at(this->good_frame).substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
 
 
 
-            size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(frame)[index_kmer_start];
-            size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(frame)[index_kmer_end];
+            size_t raw_pos_start = this->crispr_profile.translation.pure_mapping.at(this->good_frame)[index_kmer_start];
+            size_t raw_pos_end = this->crispr_profile.translation.pure_mapping.at(this->good_frame)[index_kmer_end];
 
 
             size_t genome_upstream_start = this->crispr_profile.crispr.start - UPSTREAM_SIZE; // WRONG. WILL NOT WORK FOR RC.
-            size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + frame;
-            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + frame + 3; // not sure why I need this final +3
+            size_t genome_start = genome_upstream_start + (raw_pos_start * 3) + this->good_frame;
+            size_t genome_end = genome_upstream_start + ((raw_pos_end + K_FRAGMENT) * 3) + this->good_frame + 3; // not sure why I need this final +3
 
 
             printf("\t \t %zd -  %zd (%zd - %zd) \n", index_kmer_start, index_kmer_end, genome_start, genome_end );
             printf("%s\n", demarcated_amino.c_str());
-            
-        }
-
-        void interpret(string genome)
-        {
-
-            printf("profile %s; CRISPR %d %d\n", cas_profile.name.c_str(), crispr_profile.crispr.start, crispr_profile.crispr.k);
-
-            for (unsigned int frame : frames) // only iterating labels here
-            {
-                single_interpretation(genome, frame);
-            }
 
         }
 
@@ -303,33 +301,37 @@ class ProfileExecution
 
 
 
-void cas(vector<CrisprProfile> crispr_profiles, vector<CasProfile> cas_profiles, string genome)
+void cas(vector<CrisprProfile> crispr_profiles, map<string, vector<CasProfile>> cas_profile_set, string genome)
 {
     double start = omp_get_wtime();
 
-    vector<ProfileExecution> executions;
-    for (int j = 0; j < cas_profiles.size(); j++)
+    map<string, vector<ProfileExecution>> executions;
+
+    vector<ProfileExecution> pending_interpretation;
+
+    for (CrisprProfile crispr_profile : crispr_profiles)
     {
-        for (int i = 0; i < crispr_profiles.size(); i++)
+        for (auto const& [type, cas_profiles] : cas_profile_set)
         {
-            ProfileExecution result = ProfileExecution(cas_profiles[j], crispr_profiles[i]);
-            executions.push_back(result);
+            for (CasProfile cas_profile : cas_profiles)
+            {
+                ProfileExecution execution = ProfileExecution(cas_profile, crispr_profile);
+                execution.build_index();
+                if (execution.good_execution)
+                {
+                    // the CasProfile of type TYPE is good enough for this Crispr, therefore no need to check
+                    // any more CasProfiles of this type for THIS Crispr.
+                    pending_interpretation.push_back(execution);
+                    break;
+                }
+            }
         }
     }
 
-    double start_index = omp_get_wtime();
-    #pragma omp parallel for
-    for (size_t i = 0; i < executions.size(); i++)
-    {
-        executions[i].build_index();
-    }
 
-    
-    done(start_index, "build index");
-
-    for (size_t i = 0; i < executions.size(); i++)
+    for (ProfileExecution execution : pending_interpretation)
     {
-        executions[i].interpret(genome);
+        execution.interpret(genome);
     }
 
 
@@ -362,13 +364,6 @@ void debug(vector<Crispr> crisprs, string genome)
 
 
 
-vector<CasProfile> load_casprofiles(string dir, unsigned int k)
-{   
-    vector<CasProfile> cas_profiles;
-    for (const auto& entry : filesystem::directory_iterator(dir))
-        cas_profiles.push_back(CasProfile(entry.path(), k));
-    return cas_profiles;
-}
 
 vector<string> load_genomes(string dir)
 {
@@ -435,7 +430,7 @@ int main()
     CrisprUtil::print(genome, final);
 
     // cas
-    vector<CasProfile> cas_profiles = load_casprofiles(cas_dir, K_FRAGMENT);
+    map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
 
     vector<CrisprProfile> crispr_profiles;
