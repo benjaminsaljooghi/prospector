@@ -7,6 +7,9 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 // #include "fmt/format-inl.h"
+#include <bitset>
+#include <cstddef>
+
 
 #define UPSTREAM_SIZE 10000
 #define K_FRAGMENT 5
@@ -19,6 +22,54 @@ vector<unsigned int> frames{
 };
 
 
+const size_t encoding_size = 5;
+
+map<char, int> amino_encoding {
+    {'F', 0},
+    {'L', 1},
+    {'I', 2},
+    {'M', 3},
+    {'V', 4},
+    {'S', 5},
+    {'P', 6},
+    {'T', 7},
+    {'A', 8},
+    {'Y', 9},
+    {'H', 10},
+    {'Q', 11},
+    {'N', 12},
+    {'K', 13},
+    {'D', 14},
+    {'E', 15},
+    {'C', 16},
+    {'W', 17},
+    {'R', 18},
+    {'S', 19},
+    {'G', 20},
+};
+
+int str_to_int(string kmer)
+{
+    assert(kmer.size() == encoding_size);
+    int my_int = 0;
+    for (int i = 0; i < encoding_size; i++)
+    {
+        my_int += amino_encoding[kmer[i]] << encoding_size * i;
+    }
+    return my_int;
+}
+
+
+vector<int> kmers_encoded(vector<string> kmers)
+{
+    vector<int> encoded;
+    for (string kmer : kmers)
+    {
+        encoded.push_back(str_to_int(kmer));
+    }
+    return encoded;
+}
+
 
 
 class Translation
@@ -29,6 +80,7 @@ class Translation
         map<unsigned int, string> translations_raw;
         map<unsigned int, string> translations_pure;
         map<unsigned int, vector<string>> translations_pure_kmerized;
+        map<unsigned int, vector<int>> translations_pure_kmerized_encoded;
         map<unsigned int, vector<size_t>> pure_mapping;
 
         Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k, bool rc);
@@ -85,7 +137,10 @@ Translation::Translation(const string& genome, size_t genome_start, size_t genom
 			index++;
 		}
 
-		this->translations_pure_kmerized[key] = kmerize(this->translations_pure[key], k);
+
+        vector<string> kmers = kmerize(this->translations_pure[key], k);
+        this->translations_pure_kmerized[key] = kmers;
+        this->translations_pure_kmerized_encoded[key] = kmers_encoded(kmers);
 	}
 }
 
@@ -105,6 +160,7 @@ class CasProfile
         string name;
         string type;
         vector<string> kmers;
+        vector<int> encoded_kmers;
 		
 		CasProfile(string, unsigned int);
 
@@ -115,9 +171,9 @@ CasProfile::CasProfile(string _path, unsigned int _k)
 {
 	this->name = filesystem::path(_path).stem();
 	this->kmers = kmerize(parse_fasta_single(_path), _k);
+    this->encoded_kmers = kmers_encoded(this->kmers);
     this->type = this->name.substr(0, this->name.find("_"));
 }
-
 
 map<string, vector<CasProfile>> CasProfile::load_casprofiles(string dir, unsigned int k)
 {   
@@ -135,7 +191,6 @@ double index_computation = 0;
 vector<size_t> build_index_single(const vector<string>& query_kmers, const vector<string>& target_kmers)
 {
     vector<size_t> indices;
-    // printf("comparing %zd kmers against %zd kmers\n", query_kmers.size(), target_kmers.size());
     double start = omp_get_wtime();
     for (size_t i = 0; i < target_kmers.size(); i++)
     {
@@ -171,7 +226,6 @@ vector<vector<size_t>> cluster_index(const vector<size_t>& indices)
     return clusters;
 }
 
-
 bool good_clusters(const vector<vector<size_t>>& clusters)
 {
     size_t cluster_requirement = 3;
@@ -189,23 +243,15 @@ bool good_clusters(const vector<vector<size_t>>& clusters)
 
 void print_clusters(const vector<vector<size_t>>& clusters)
 {
-    // underlying cluster information
-    for (vector<size_t> cluster : clusters)
-        printf("\t \t %zd - %zd (%zd)\n", cluster[0], cluster[cluster.size()-1], cluster.size());
+    for (vector<size_t> cluster : clusters) fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 }
 
 optional<vector<vector<size_t>>> detect_single(const vector<string>& crispr_profile, const vector<string>& cas_profile)
 {
     vector<size_t> index = build_index_single(cas_profile, crispr_profile);
-
-    if (!good_index(index))
-        return {};
-
+    if (!good_index(index)) return {};
     vector<vector<size_t>> clusters = cluster_index(index);    
-
-    if (!good_clusters(clusters))
-        return {};
-
+    if (!good_clusters(clusters)) return {};
     return clusters;
 }
 
@@ -222,8 +268,6 @@ size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
         if (clusters[i].size() > 1)
             return clusters[i][clusters[i].size()-1];
 }
-
-
 
 struct gene_fragment
 {
@@ -317,7 +361,6 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 
     vector<gene_fragment> fragments;
 
-
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         for (auto const& [type, profiles] : cas_profiles)
@@ -407,12 +450,31 @@ vector<string> load_genomes(string dir)
 }
 
 
+
+
+
 int main()
 {
 
 
+
+    finish();
+
+
+
+
+
+
+
+
+
+
+
+
+
     printf("running invoker...\n");
     double start = omp_get_wtime();
+
 
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
