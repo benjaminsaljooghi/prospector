@@ -456,7 +456,7 @@ vector<string> load_genomes(string dir)
 int main()
 {
 
-    printf("running invoker...\n");
+    printf("running main...\n");
     double start = omp_get_wtime();
 
 
@@ -503,7 +503,7 @@ int main()
     cas(genome, final, cas_dir);
     done(cas_start, "cas_gene_detection");
 
-    done(start, "invoker");
+    done(start, "main");
 
     finish();
     return 0;                                                                                                           

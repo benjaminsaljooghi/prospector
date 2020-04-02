@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch invoker",
+            "name": "(gdb) Launch main",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/invoker.out",
+            "program": "${workspaceFolder}/build/main.out",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build invoker",
+            "preLaunchTask": "build main",
         }
     ]
 }
