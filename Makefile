@@ -1,6 +1,8 @@
-CPP = clang++ -O3 --std=gnu++2a -g -Wall -fopenmp -g
 
-NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp
+OPT = -O3
+
+CPP = clang++ $(OPT) --std=gnu++2a -g -Wall -fopenmp -g
+NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp $(OPT)
 
 NCBI = /home/ben/bin/ncbi
 INC_NCBI = -I. -I$(NCBI)/GCC800-DebugMT64/inc -I$(NCBI)/include -I$(NCBI)/include/internal

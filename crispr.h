@@ -10,7 +10,7 @@ class Crispr
     public:
 
         // computed by constructor
-        unsigned int* genome_indices;
+        vector<unsigned int> genome_indices;
         size_t size;
         unsigned int k;
 
@@ -27,7 +27,7 @@ class Crispr
         // computed by cache_upstream_aminos
         // vector<string> target_kmers;
 
-        Crispr(unsigned int, unsigned int*, unsigned int*);
+        Crispr(unsigned int, vector<unsigned int>, size_t);
         void update(string&);
         void print_generic(string& genome, function<void(string)>& print_spacer);
         void print(string&, map<string, int>);

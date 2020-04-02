@@ -102,11 +102,12 @@ double get_spacer_variance(vector<string> spacers)
 
 // Crispr
 
-Crispr::Crispr(unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
+Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, size_t size)
 {
-	k = _k;
-	genome_indices = inclusive;
-	size = exclusive - inclusive;
+	// printf("%d %zd\n", genome_indices[0], size);
+	this->k = k;
+	this->genome_indices = genome_indices;
+	this->size = size;;
 }
 		
 void Crispr::update(string& genome)
@@ -127,7 +128,7 @@ void Crispr::update(string& genome)
 		spacers[i] = genome.substr(current_repeat_end, spacer_size);
 	}
 
-	this->start = *genome_indices;
+	this->start = genome_indices[0];
 	this->end = (genome_indices[size-1]) + k - 1;
 
 	this->conservation_repeats = get_conservation_consensus(repeats);

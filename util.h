@@ -15,8 +15,8 @@
 
 
 
-#define K_START 20
-#define K_END 50
+#define K_START 35
+#define K_END 37
 #define K_COUNT (K_END - K_START)
 
 
