@@ -21,89 +21,88 @@
 
 
 
-int bits_required = 4;
-int pack = 64/bits_required; // 16
+typedef unsigned long long ull;
 
-
-map<char, unsigned long long> scheme {
+#define BITS 4
+#define SIZE 16
+map<char, ull> scheme {
     {'A', 1},
     {'C', 2},
     {'G', 4},
     {'T', 8} 
 };
 
-int ulongs_required(unsigned int k)
+
+ull encoded(const string& kmer)
 {
-    int result = (k + pack -1) / pack;
-    // printf("%d: %d\n", k, result);
-    return result;
+    assert(kmer.size() == SIZE);
+    ull e = 0;
+    for (int i = 0; i < kmer.size(); i++)
+        e += scheme.at(kmer[i]) << (i * BITS);
+    return e;
 }
 
-unsigned long long encoded(char nuc)
-{
-    return scheme.at(nuc);
-}
-
-typedef vector<unsigned long long> EnK;
-
-EnK encoded(string kmer)
-{
-    vector<unsigned long long> encoding;
-    int kmer_index = 0;
-    for (int j = 0; j < ulongs_required(kmer.size()); j++)
-    {
-        unsigned long long e = 0;
-        for (int i = 0; i < pack; i++)
-        {
-            e += (encoded(kmer[kmer_index++]) << (i * bits_required));
-            if (kmer_index == kmer.size())
-            {
-                break;
-            }
-        }
-        encoding.push_back(e);
-    }
-    return encoding;
-}
-
-
-void debug_encoding(vector<unsigned long long> encoding)
-{
-    for (unsigned long long l : encoding)
-    {
-        bitset<64> bs(l);
-        cout << bs << " ";  
-    }
-    cout << endl;
-}
-
-vector<EnK> encoded_genome(string& genome, size_t k)
+vector<ull> encoded_genome(const string& genome)
 {
     double __start = omp_get_wtime();
-    vector<EnK> encoding;
-    for (size_t i = 0; i < genome.size() - k + 1; i++)
+    vector<ull> encoding;
+    for (size_t i = 0; i < genome.size() - SIZE + 1; i++)
     {
-        string kmer = genome.substr(i, k);
+        string kmer = genome.substr(i, SIZE);
         encoding.push_back(encoded(kmer));
     }
     done(__start, "\t\tencoding");
     return encoding;
 }
 
-unsigned long long difference(const unsigned long long& _a, const unsigned long long& _b)
+ull difference(const ull& _a, const ull& _b)
 {
-    unsigned long long _xor = _a ^ _b;
-    unsigned long long _and = _xor & _a;
-    unsigned long long _pc = __builtin_popcountll(_and);
+    ull _xor = _a ^ _b;
+    ull _and = _xor & _a;
+    ull _pc = __builtin_popcountll(_and);
     return _pc;
 }
 
+bool mutant(const string& genome, const vector<ull>& genome_encoding, const unsigned int& i, const unsigned int& j, const unsigned int& k, const unsigned int& allowed_mutations)
+{
+    ull diff = 0;
+    const int chunks = k / SIZE;
+    for (int chunk = 0; chunk < chunks; chunk++)
+    {
+        diff += difference(genome_encoding[i + (chunk * SIZE)], genome_encoding[j + (chunk * SIZE)]);
+    }
 
-vector<vector<unsigned int>> substrate(unsigned int k, vector<EnK> genome_encoding)
+    if (diff > allowed_mutations)
+    {
+        return false;
+    }
+
+    
+    // compute final diffs
+    const int chars = k - (chunks * SIZE);
+    for (int z = 0; z < chars; z++)
+    {
+        diff += genome[i + (chunks * SIZE) +  z] == genome[j + (chunks * SIZE) +  z] ? 0 : 1;
+    }
+    return diff <= allowed_mutations;
+    return true;
+}
+
+
+// note: can repartition the 8-mer size differently depending on the current k.
+// k20: 1 16-mer comparison + ...
+// k21: 1 16-mer comparison + ...
+// k24: 3 8-mer comparisons + 0
+// k31: 3 8-mer comparisons + ...
+// k32: 2 16-mer comparisons + 0
+// k33: 2 16-mer comparisons + ...
+// k40: 5 8-mer comparisons + 0
+// k41: 4 8-mer comparisons + ...
+
+vector<vector<unsigned int>> substrate(const string& genome, const unsigned int& k, const vector<ull>& genome_encoding)
 {
     double start = omp_get_wtime();
     unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
-    int required = ulongs_required(k);
     vector<vector<unsigned int>> k_crisprs;
     for (unsigned int i = 0; i < genome_encoding.size(); i++)
     {
@@ -111,17 +110,7 @@ vector<vector<unsigned int>> substrate(unsigned int k, vector<EnK> genome_encodi
         unsigned int bound = i + k + SPACER_SKIP;
         for (unsigned int j = bound; j - bound <= SPACER_MAX && j < genome_encoding.size(); j++)
         {
-            int diff = difference(genome_encoding[i][0], genome_encoding[j][0]);
-            if (diff > allowed_mutations)
-            {
-                continue;
-            }
-
-            for (int z = 1; z < required; z++)
-            {
-                diff += difference(genome_encoding[i][z], genome_encoding[j][z]);
-            }
-            if (diff <= allowed_mutations)
+            if (mutant(genome, genome_encoding, i, j, k, allowed_mutations))
             {
                 crispr.push_back(j);
                 bound = j + k + SPACER_SKIP;
@@ -135,16 +124,21 @@ vector<vector<unsigned int>> substrate(unsigned int k, vector<EnK> genome_encodi
     return k_crisprs;
 }
 
-vector<Crispr> crispr_formation_pure(string genome)
+vector<Crispr> crispr_formation_pure(const string& genome)
 {
     double start = omp_get_wtime();
     vector<vector<vector<unsigned int>>> crisprs; 
+
+    vector<ull> genome_encoding = encoded_genome(genome);
+
+    // #pragma omp parallel for
     for (unsigned int k = K_START; k < K_END; k++)
     {
-        vector<EnK> genome_encoding = encoded_genome(genome, k);
-        vector<vector<unsigned int>> k_crisprs = substrate(k, genome_encoding);
-        crisprs.push_back(k_crisprs);
-
+        vector<vector<unsigned int>> k_crisprs = substrate(genome, k, genome_encoding);   
+        #pragma omp critical
+        {
+            crisprs.push_back(k_crisprs);
+        }
     }
     done(start, "\t\tcrispr collection");
 
