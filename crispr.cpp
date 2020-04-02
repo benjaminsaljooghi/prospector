@@ -144,7 +144,6 @@ void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 	printf("%d - %d %d\n\n", start, end, k);
 	printf("\t%fh %fr %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers, spacer_variance);
 
-
 	// repeats
 	printf("\trepeats (%zd)\n", repeats.size());
 
@@ -197,7 +196,6 @@ void Crispr::print(string& genome)
 	function<void(string)> print_spacer = [](string spacer) {
 		printf("%d/%zd", -1, spacer.length());
 	};
-
 	print_generic(genome, print_spacer);
 }
 

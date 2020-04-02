@@ -24,12 +24,20 @@
 int bits_required = 4;
 int pack = 64/bits_required; // 16
 
+
 map<char, unsigned long long> scheme {
     {'A', 1},
     {'C', 2},
     {'G', 4},
     {'T', 8} 
 };
+
+int ulongs_required(unsigned int k)
+{
+    int result = (k + pack -1) / pack;
+    // printf("%d: %d\n", k, result);
+    return result;
+}
 
 unsigned long long encoded(char nuc)
 {
@@ -40,11 +48,9 @@ typedef vector<unsigned long long> EnK;
 
 EnK encoded(string kmer)
 {
-    int longs_required = (kmer.size() + pack -1) / pack;
-
     vector<unsigned long long> encoding;
     int kmer_index = 0;
-    for (int j = 0; j < longs_required; j++)
+    for (int j = 0; j < ulongs_required(kmer.size()); j++)
     {
         unsigned long long e = 0;
         for (int i = 0; i < pack; i++)
@@ -60,21 +66,6 @@ EnK encoded(string kmer)
     return encoding;
 }
 
-unsigned long long diff(EnK a, EnK b, int size)
-{
-    unsigned long long _diff = 0;
-
-    for (int i = 0; i < size; i++)
-    {
-        unsigned long long _a = a[i];
-        unsigned long long _b = b[i];
-        unsigned long long _xor = _a ^ _b;
-        unsigned long long _and = _xor & _a;
-        // cout << _and << endl;
-        _diff += __builtin_popcountll(_and);
-    }
-    return _diff;
-}
 
 void debug_encoding(vector<unsigned long long> encoding)
 {
@@ -88,70 +79,71 @@ void debug_encoding(vector<unsigned long long> encoding)
 
 vector<EnK> encoded_genome(string& genome, size_t k)
 {
+    double __start = omp_get_wtime();
     vector<EnK> encoding;
     for (size_t i = 0; i < genome.size() - k + 1; i++)
     {
         string kmer = genome.substr(i, k);
         encoding.push_back(encoded(kmer));
     }
+    done(__start, "\t\tencoding");
     return encoding;
 }
 
-
-
-__device__ __host__ bool mutant(const char* genome, unsigned int start_a, unsigned int start_b, unsigned int k, unsigned int allowed_mutations)
+unsigned long long difference(const unsigned long long& _a, const unsigned long long& _b)
 {
-	unsigned int mutations = 0;
-	for (unsigned int i = 0; i < k; i++)
-	{
-        mutations += genome[start_a + i] == genome[start_b + i] ? 0 : 1;
-		if (mutations > allowed_mutations)
-        {
-			return false;
-        }
-	}
-	return true;
+    unsigned long long _xor = _a ^ _b;
+    unsigned long long _and = _xor & _a;
+    unsigned long long _pc = __builtin_popcountll(_and);
+    return _pc;
 }
 
-bool mutant(EnK a, EnK b, int size, unsigned int allowed_mutations)
+
+vector<vector<unsigned int>> substrate(unsigned int k, vector<EnK> genome_encoding)
 {
-    unsigned long long _diff = diff(a, b, size);
-    return _diff <= allowed_mutations;
+    double start = omp_get_wtime();
+    unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+    int required = ulongs_required(k);
+    vector<vector<unsigned int>> k_crisprs;
+    for (unsigned int i = 0; i < genome_encoding.size(); i++)
+    {
+        vector<unsigned int> crispr; crispr.push_back(i);
+        unsigned int bound = i + k + SPACER_SKIP;
+        for (unsigned int j = bound; j - bound <= SPACER_MAX && j < genome_encoding.size(); j++)
+        {
+            int diff = difference(genome_encoding[i][0], genome_encoding[j][0]);
+            if (diff > allowed_mutations)
+            {
+                continue;
+            }
+
+            for (int z = 1; z < required; z++)
+            {
+                diff += difference(genome_encoding[i][z], genome_encoding[j][z]);
+            }
+            if (diff <= allowed_mutations)
+            {
+                crispr.push_back(j);
+                bound = j + k + SPACER_SKIP;
+                j = bound;
+            }
+        }
+        k_crisprs.push_back(crispr);
+    }
+
+    done(start, "\t\tsubstrate");
+    return k_crisprs;
 }
 
 vector<Crispr> crispr_formation_pure(string genome)
 {
     double start = omp_get_wtime();
     vector<vector<vector<unsigned int>>> crisprs; 
-    // #pragma omp parallel for
     for (unsigned int k = K_START; k < K_END; k++)
     {
-        // get genome encoding
-        double __start = omp_get_wtime();
         vector<EnK> genome_encoding = encoded_genome(genome, k);
-        done(__start, "encoding");
-
-        unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
-        vector<vector<unsigned int>> k_crisprs;
-        for (unsigned int i = 0; i < genome_encoding.size(); i++)
-        {
-            vector<unsigned int> crispr; crispr.push_back(i);
-            unsigned int bound = i + k + SPACER_SKIP;
-            for (unsigned int j = bound; j - bound <= SPACER_MAX && j < genome_encoding.size(); j++)
-            {
-                if (mutant(genome_encoding[i], genome_encoding[j], genome_encoding[0].size(), allowed_mutations))
-                {
-                    crispr.push_back(j);
-                    bound = j + k + SPACER_SKIP;
-                    j = bound;
-                }
-            }
-            k_crisprs.push_back(crispr);
-        }
-        #pragma omp critical
-        {
-            crisprs.push_back(k_crisprs);
-        }
+        vector<vector<unsigned int>> k_crisprs = substrate(k, genome_encoding);
+        crisprs.push_back(k_crisprs);
 
     }
     done(start, "\t\tcrispr collection");
