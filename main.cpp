@@ -452,8 +452,98 @@ vector<string> load_genomes(string dir)
 
 
 
+int bits_required = 4;
+int pack = 64/bits_required; // 16
+
+map<char, unsigned long long> scheme {
+    {'A', 1},
+    {'C', 2},
+    {'G', 4},
+    {'T', 8} 
+};
+
+unsigned long long encoded(char nuc)
+{
+    return scheme.at(nuc);
+}
+
+vector<unsigned long long> encoded(string kmer)
+{
+    int longs_required = (kmer.size() + pack -1) / pack;
+
+    vector<unsigned long long> encoding;
+    int kmer_index = 0;
+    for (int j = 0; j < longs_required; j++)
+    {
+        unsigned long long e = 0;
+        for (int i = 0; i < pack; i++)
+        {
+            e += (encoded(kmer[kmer_index++]) << (i * bits_required));
+            if (kmer_index == kmer.size())
+            {
+                break;
+            }
+        }
+        encoding.push_back(e);
+    }
+    return encoding;
+}
+
+
+void debug_encoding(vector<unsigned long long> encoding)
+{
+    for (unsigned long long l : encoding)
+    {
+        bitset<64> bs(l);
+        cout << bs << " ";  
+    }
+    cout << endl;
+}
+
 int main()
 {
+
+    vector<unsigned long long> encoding = encoded("AAAAAAAAAAAAAAAAAAAAAAAAA");
+
+    debug_encoding(encoding);
+
+    finish();
+
+
+
+
+    for (const auto& [c1, e1] : scheme)
+    {
+        bitset<4> _bs(e1);
+        cout << c1 << " " << _bs << endl;
+    }
+    cout << endl;
+
+
+    for (const auto& [c1, e1] : scheme)
+    {
+        for (const auto& [c2, e2] : scheme)
+        {
+            unsigned long long _xor = (e1 ^ e2) & e1;
+            bitset<4> bs(_xor);
+            cout << c1 << " XOR " << c2 << " = " << bs << endl;  
+        }
+        cout << endl;
+    }
+
+
+    finish();
+
+
+
+
+
+
+
+
+
+
+
 
     printf("running main...\n");
     double start = omp_get_wtime();
