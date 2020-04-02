@@ -31,7 +31,7 @@ bool subset (vector <int> a, vector <int> b)
 map <string, string> parse_fasta (string file_path)
 {
 	// printf("reading %s... ", file_path.c_str());
-	double start = omp_get_wtime();
+	// double start = omp_get_wtime();
 	ifstream input(file_path);
 	if (!input.good())
 	{

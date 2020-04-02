@@ -145,7 +145,7 @@ Translation::Translation(const string& genome, size_t genome_start, size_t genom
 
 const char* Translation::to_string()
 {
-	size_t frame_count = 3;
+	// size_t frame_count = 3;
 	string result = "";
 	for (size_t frame : frames)
 		result += fmt::format("{}:\n{}\n\n", frame, this->translations_raw[frame]);
@@ -259,6 +259,7 @@ size_t demarc_start_clusters(const vector<vector<size_t>>& clusters)
     for (const vector<size_t>& cluster : clusters)
         if (cluster.size() > 1)
             return cluster[0];
+    assert(false); return -1;
 }
 
 size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
@@ -266,6 +267,8 @@ size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
     for (size_t i = clusters.size()-1; i >= 0; i--)
         if (clusters[i].size() > 1)
             return clusters[i][clusters[i].size()-1];
+    assert(false); return(-1);
+    return -1;
 }
 
 struct gene_fragment

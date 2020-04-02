@@ -1,23 +1,25 @@
 #include "prospector.h"
 
 
-#include "cuda.h"
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "cuda_fp16.h"
+// #include "cuda.h"
+// #include "cuda_runtime.h"
+// #include "device_launch_parameters.h"
+// #include "cuda_fp16.h"
 #include <bitset>
+#include "fmt/core.h"
+#include "fmt/format.h"
 
-#ifdef __CUDACC__
-#define CUDA_CALLABLE_MEMBER __host__ __device__
-#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
-#else
-#define CUDA_CALLABLE_MEMBER
-#define KERNEL_ARGS2(grid, block)
-#define KERNEL_ARGS3(grid, block, sh_mem)
-#define KERNEL_ARGS4(grid, block, sh_mem, stream)
-#endif
+// #ifdef __CUDACC__
+// #define CUDA_CALLABLE_MEMBER __host__ __device__
+// #define KERNEL_ARGS2(grid, block) <<< grid, block >>>
+// #define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
+// #define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
+// #else
+// #define CUDA_CALLABLE_MEMBER
+// #define KERNEL_ARGS2(grid, block)
+// #define KERNEL_ARGS3(grid, block, sh_mem)
+// #define KERNEL_ARGS4(grid, block, sh_mem, stream)
+// #endif
 
 
 
@@ -70,14 +72,12 @@ bool mutant(const string& genome, const vector<ull>& genome_encoding, const unsi
     for (int chunk = 0; chunk < chunks; chunk++)
     {
         diff += difference(genome_encoding[i + (chunk * SIZE)], genome_encoding[j + (chunk * SIZE)]);
+        if (diff > allowed_mutations)
+        {
+            return false;
+        }
     }
 
-    if (diff > allowed_mutations)
-    {
-        return false;
-    }
-
-    
     // compute final diffs
     const int chars = k - (chunks * SIZE);
     for (int z = 0; z < chars; z++)
@@ -104,12 +104,14 @@ vector<vector<unsigned int>> substrate(const string& genome, const unsigned int&
     double start = omp_get_wtime();
     unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
     vector<vector<unsigned int>> k_crisprs;
+    printf("\t\t%d...", k);
     for (unsigned int i = 0; i < genome_encoding.size(); i++)
     {
         vector<unsigned int> crispr; crispr.push_back(i);
         unsigned int bound = i + k + SPACER_SKIP;
         for (unsigned int j = bound; j - bound <= SPACER_MAX && j < genome_encoding.size(); j++)
         {
+            // here I am redundantly computing a lot of the 16-mers. 
             if (mutant(genome, genome_encoding, i, j, k, allowed_mutations))
             {
                 crispr.push_back(j);
@@ -120,7 +122,7 @@ vector<vector<unsigned int>> substrate(const string& genome, const unsigned int&
         k_crisprs.push_back(crispr);
     }
 
-    done(start, "\t\tsubstrate");
+    done(start, "substrate");
     return k_crisprs;
 }
 
@@ -131,16 +133,17 @@ vector<Crispr> crispr_formation_pure(const string& genome)
 
     vector<ull> genome_encoding = encoded_genome(genome);
 
-    // #pragma omp parallel for
+    #pragma omp parallel for
     for (unsigned int k = K_START; k < K_END; k++)
     {
         vector<vector<unsigned int>> k_crisprs = substrate(genome, k, genome_encoding);   
         #pragma omp critical
         {
             crisprs.push_back(k_crisprs);
-        }
+        }    
     }
     done(start, "\t\tcrispr collection");
+    // fmt::print("{} {}", mutant_diffs, final_diffs);
 
     start = omp_get_wtime();
     vector<Crispr> _crisprs;
