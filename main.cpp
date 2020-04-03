@@ -92,7 +92,7 @@ Translation::Translation(const string& genome, size_t genome_start, size_t genom
 {
     this->genome_start = genome_start;
     this->genome_end = genome_end;
-    string domain = genome.substr(genome_start, genome_end - genome_start);
+    string domain = genome.substr(this->genome_start, this->genome_end - this->genome_start);
     domain = rc ? reverse_complement(domain) : domain; 
 
     size_t codon_size = 3;
@@ -355,8 +355,21 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 
     for (const Crispr& crispr : crisprs)
     {
-        Translation down(genome, crispr.start - UPSTREAM_SIZE, crispr.start, K_FRAGMENT, false);
-        Translation up(genome, crispr.end, crispr.end + UPSTREAM_SIZE, K_FRAGMENT, true);
+        // guard against overflow
+        size_t genome_start = crispr.start - UPSTREAM_SIZE;
+        if (genome_start > crispr.start)
+        {
+            genome_start = 0;
+        }
+
+        Translation down(genome, genome_start, crispr.start, K_FRAGMENT, false);
+
+        size_t genome_end = crispr.end + UPSTREAM_SIZE;
+        if (genome_end < crispr.end)
+        {
+            genome_end = genome.size()-1;
+        }
+        Translation up(genome, crispr.end, genome_end, K_FRAGMENT, true);
         downstreams.push_back(down);
         upstreams.push_back(up);
     }
@@ -425,23 +438,24 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 
 void finish()
 {
+    fmt::print("terminate called\n");
     exit(0);
 }
 
-#if DEBUG == 1
 void debug(vector<Crispr> crisprs, string genome)
 {
+    sort(crisprs.begin(), crisprs.end(), CrisprUtil::heuristic_less);
     int how_many = crisprs.size();
     for (size_t i = 0; i < how_many; i++)
     {
-        if (crisprs[i].k > 29 && crisprs[i].k < 31)
+        Crispr c = crisprs[i];
+        if (c.start > 1577782 - 100 && c.end < 1578027 + 100)
         {
             crisprs[i].print(genome);
         }
     }
     finish();
 }
-#endif
 
 vector<string> load_genomes(string dir)
 {
@@ -453,71 +467,79 @@ vector<string> load_genomes(string dir)
 
 
 
+typedef unsigned long long ull;
+
+map<char, ull> _scheme {
+    {'A', 0},
+    {'C', 1},
+    {'G', 2},
+    {'T', 3}
+};
+const ull bits = 2;
+
+ull compute(ull e1, ull e2)
+{
+    ull _xor = (e1 ^ e2);
+    ull evenBits = _xor & 0xAAAAAAAAAAAAAAAAull;
+    ull oddBits = _xor & 0x5555555555555555ull;
+    ull comp = (evenBits >> 1) | oddBits;
+    return popcount(comp);
+}
 
 
+ull encode(string kmer)
+{
+    ull encoding = 0;
+    for (int i = 0; i < kmer.size(); i++)
+        encoding += _scheme[kmer[i]] << i * bits;
+    return encoding;
+}
+
+void print_encoding(ull encoding)
+{
+    bitset<64> a(encoding);
+    cout << a << endl;
+}
 
 int main()
 {
-
-    // vector<unsigned long long> encoding = encoded("AAAAAAAAAAAAAAAAAAAAAAAAA");
-
-    // debug_encoding(encoding);
-
+    // ull a = encode("TGT");
+    // ull b = encode("TAC");
+    // print_encoding(a);
+    // print_encoding(b);
+    // fmt::print("{}\n", compute(a, b));
     // finish();
-
-    // for (const auto& [c1, e1] : scheme)
-    // {
-    //     bitset<4> _bs(e1);
-    //     cout << c1 << " " << _bs << endl;
-    // }
-    // cout << endl;
-
-    // for (const auto& [c1, e1] : scheme)
-    // {
-    //     for (const auto& [c2, e2] : scheme)
-    //     {
-    //         unsigned long long _xor = (e1 ^ e2) & e1;
-    //         bitset<4> bs(_xor);
-    //         cout << c1 << " XOR " << c2 << " = " << bs << endl;  
-    //     }
-    //     cout << endl;
-    // }
-
-
-    // finish();
-
-
 
     printf("running main...\n");
     double start = omp_get_wtime();
-
 
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     string genome = load_genomes(genome_dir)[1];
 
-
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
     
     CrisprUtil::cache_crispr_information(crisprs, genome);
     
+    printf("good heuristics...\n");
     vector<Crispr> good_heuristic_crisprs;
     for (const Crispr& crispr : crisprs)
     {
-        #if DEBUG == 0
-        if (crispr.overall_heuristic > 0.5)
-        #endif
+        if (crispr.overall_heuristic > 0.70)
         {
+            fmt::print("heuristic {}\n", crispr.overall_heuristic);
             good_heuristic_crisprs.push_back(crispr);
         }
     }
 
+
+    debug(good_heuristic_crisprs, genome);
+
+
+    fmt::print("sort {} crisprs...\n", crisprs.size());
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
 
-    #if DEBUG == 1
-        debug(good_heuristic_crisprs, genome);
-    #endif
 
     vector<Crispr> final = CrisprUtil::get_domain_best(good_heuristic_crisprs);
 

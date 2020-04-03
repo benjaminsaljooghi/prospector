@@ -131,10 +131,19 @@ void Crispr::update(string& genome)
 	this->start = genome_indices[0];
 	this->end = (genome_indices[size-1]) + k - 1;
 
-	this->conservation_repeats = get_conservation_consensus(repeats);
-	this->conservation_spacers = get_conservation_spacer(spacers);
-	this->spacer_variance = get_spacer_variance(spacers);
-	this->overall_heuristic = (conservation_repeats) - (conservation_spacers * (1 + spacer_variance) * 2); // high conservation_repeats and low conservation_spacers is ideal
+	this->conservation_repeats = get_conservation_consensus(repeats); // 1 - 2 (2 is better)
+	this->conservation_spacers = get_conservation_spacer(spacers); // (1 - 2) (2 is better)
+	this->spacer_variance = get_spacer_variance(spacers) / 100;
+
+	// double variance_score = 1 / (spacer_variance + 1)
+	// double spacer_score = 1 + conservation_spacers;/
+
+	// we want a lower variance
+	// so inhibit the spacer penalty 
+
+	double subtraction = (2.5*conservation_spacers) + spacer_variance;
+	this->overall_heuristic = conservation_repeats - subtraction;
+	// this->overall_heuristic = (conservation_repeats) - (conservation_spacers * (spacer_variance) * 2); // high conservation_repeats and low conservation_spacers is ideal
 }
 
 

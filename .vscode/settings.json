@@ -74,6 +74,8 @@
         "__nullptr": "cpp",
         "__config": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "__locale": "cpp",
+        "__string": "cpp"
     }
 }
