@@ -13,7 +13,7 @@ LIB_CUDA = -L/usr/local/cuda/lib64 -lcudart
 
 # LIB = $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -L/usr/local/lib -lfmt
 # LIB = $(LIB_ARGS) $(LIB_NCBI) -L/usr/local/lib -lfmt
-LIB = $(LIB_CUDA) -L/usr/local/lib -lfmt
+LIB_CPP = -L/usr/local/lib -lfmt
 
 # BLAST_ARGS = -Wno-format-y2k  -pthread -fPIC -D_DEBUG -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE   -D_MT -D_REENTRANT -D_THREAD_SAFE
 
@@ -37,16 +37,22 @@ $(B)/crispr.o: crispr.* $(B)/util.o
 # $(B)/blast.o: blast.* $(B)/util.o $(B)/crispr.o
 	# $(CPP) -c $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(B)/blast.o
 
+
+# ALT GPU
+PROSP = $(B)/prospector.o $(B)/dlinked.o
+LIB_ALL = $(LIB_CPP) $(LIB_CUDA)
 $(B)/dlinked.o: $(B)/prospector.o
 	$(NVCC) -dlink $(B)/prospector.o -o $(B)/dlinked.o
-
 $(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
 	$(NVCC) -dc prospector.cu -o $(B)/prospector.o
 
+# ALT CPU
+# PROSP = $(B)/prospector.o
+# LIB_ALL = $(LIB_CPP)
 # $(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
-	# $(CPP) -c prospector.cpp -o $(B)/prospector.o
+# 	$(CPP) -c prospector.cpp -o $(B)/prospector.o
 
-$(B)/main.out: main.* $(B)/prospector.o $(B)/dlinked.o $(B)/crispr.o $(B)/util.o
+$(B)/main.out: main.* $(PROSP) $(B)/crispr.o $(B)/util.o
 	$(CPP) -c main.cpp -o $(B)/main.o
-	$(CPP) $(B)/*.o $(LIB) -o $(B)/main.out -fuse-ld=lld
+	$(CPP) $(B)/*.o $(LIB_ALL) -o $(B)/main.out -fuse-ld=lld
 

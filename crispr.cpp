@@ -74,59 +74,67 @@ double get_conservation_spacer2(vector<string> spacers)
 }
 
 
-double bp_match_score(string a, string b, bool differential)
-{
-	size_t a_len = a.length();
-	size_t b_len = b.length();
+// double left_aligned_spacer_similarity(vector<string> spacers)
+// {
 
-	size_t small_length;
-	size_t big_length;
+// }
 
-	if (a_len < b_len)
-	{
-		small_length = a_len;
-		big_length = b_len;
-	}
-	else
-	{
-		small_length = b_len;
-		big_length = a_len;
-	}
+
+// double right_aligned_spacer
+
+// double bp_match_score(string a, string b, bool differential)
+// {
+// 	size_t a_len = a.length();
+// 	size_t b_len = b.length();
+
+// 	size_t small_length;
+// 	size_t big_length;
+
+// 	if (a_len < b_len)
+// 	{
+// 		small_length = a_len;
+// 		big_length = b_len;
+// 	}
+// 	else
+// 	{
+// 		small_length = b_len;
+// 		big_length = a_len;
+// 	}
 	
-	int matches = 0;
+// 	int matches = 0;
 
-	for (size_t i = 0; i < small_length; i++)
-		matches += a[i] == b[i] ? 1 : 0;
+// 	for (size_t i = 0; i < small_length; i++)
+// 		matches += a[i] == b[i] ? 1 : 0;
 
-	int max_possible_matches = differential ? big_length : small_length;
-	return (double) matches / (double) max_possible_matches;
-}
+// 	int max_possible_matches = differential ? big_length : small_length;
+// 	return (double) matches / (double) max_possible_matches;
+// }
 
 
-double get_conservation_spacer(vector<string> spacers)
-{
-	// perform a right aligned and a left aligned spacer mismatch score?
+// double get_conservation_spacer(vector<string> spacers)
+// {
+// 	// perform a right aligned and a left aligned spacer mismatch score?
 
-	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
-	double score_sum = 0;
-	int comparisons = 0;
-	for (size_t i = 0; i < spacers.size(); i++)
-	{
-		for (size_t j = 0; j < i; j++)
-		{
-			string a = spacers[i];
-			string b = spacers[j];
-			double score = bp_match_score(a, b, true);
-			score_sum += score;
-			comparisons++;
-		}
-	}
+// 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
+// 	double score_sum = 0;
+// 	int comparisons = 0;
+// 	for (size_t i = 0; i < spacers.size(); i++)
+// 	{
+// 		for (size_t j = 0; j < i; j++)
+// 		{
+// 			string a = spacers[i];
+// 			string b = spacers[j];
+// 			double score = bp_match_score(a, b, true);
+// 			score_sum += score;
+// 			comparisons++;
+// 		}
+// 	}
 
-	double mean_score = score_sum / (double) comparisons;
+// 	double mean_score = score_sum / (double) comparisons;
 
-	// divide the score by the number of spacers to punish having more spacers
-	return mean_score / (double) spacers.size();
-}
+// 	// divide the score by the number of spacers to punish having more spacers
+// 	return mean_score / (double) spacers.size();
+// }
 
 double get_spacer_variance(vector<string> spacers)
 {
@@ -185,19 +193,13 @@ void Crispr::update(string& genome)
 	this->end = (genome_indices[size-1]) + k - 1;
 
 	this->conservation_repeats = get_conservation_consensus(repeats);
-	this->conservation_spacers = get_conservation_spacer(spacers); 
+	// this->conservation_spacers = get_conservation_spacer(spacers); 
 	this->spacer_variance = get_spacer_variance(spacers) / 100;
 	this->conservation_spacers2 = get_conservation_spacer2(spacers);
 
-	// double variance_score = 1 / (spacer_variance + 1)
-	// double spacer_score = 1 + conservation_spacers;/
-
-	// we want a lower variance
-	// so inhibit the spacer penalty 
 
 	double subtraction = (0.85*conservation_spacers2) + (4*spacer_variance);
 	this->overall_heuristic = conservation_repeats - subtraction;
-	// this->overall_heuristic = (conservation_repeats) - (conservation_spacers * (spacer_variance) * 2); // high conservation_repeats and low conservation_spacers is ideal
 }
 
 
@@ -205,7 +207,7 @@ void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 {
 	// header
 	printf("%d - %d %d\n\n", start, end, k);
-	printf("\t%fh %fr %fs %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers, conservation_spacers2, spacer_variance);
+	printf("\t%fh %fr %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
 
 	// repeats
 	printf("\trepeats (%zd)\n", repeats.size());

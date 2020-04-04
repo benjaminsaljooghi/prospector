@@ -513,13 +513,6 @@ void print_encoding(ull encoding)
 
 int main()
 {
-    // ull a = encode("TGT");
-    // ull b = encode("TAC");
-    // print_encoding(a);
-    // print_encoding(b);
-    // fmt::print("{}\n", compute(a, b));
-    // finish();
-
     printf("running main...\n");
     double start = omp_get_wtime();
 
@@ -529,6 +522,8 @@ int main()
     string genome = load_genomes(genome_dir)[1];
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
+
+    // finish();
     
     CrisprUtil::cache_crispr_information(crisprs, genome);
     
@@ -536,15 +531,15 @@ int main()
     vector<Crispr> good_heuristic_crisprs;
     for (const Crispr& crispr : crisprs)
     {
-        if (crispr.overall_heuristic > 0.60)
+        if (crispr.overall_heuristic > 0.90)
         {
-            fmt::print("heuristic {}\n", crispr.overall_heuristic);
+            // fmt::print("heuristic {}\n", crispr.overall_heuristic);
             good_heuristic_crisprs.push_back(crispr);
         }
     }
 
 
-    debug(good_heuristic_crisprs, genome);
+    // debug(good_heuristic_crisprs, genome);
 
 
     fmt::print("sort {} crisprs...\n", crisprs.size());

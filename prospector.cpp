@@ -1,184 +1,155 @@
-// #include "prospector.h"
+#include "prospector.h"
+
+#include "fmt/core.h"
+#include "fmt/format.h"
 
 
-// // #include "cuda.h"
-// // #include "cuda_runtime.h"
-// // #include "device_launch_parameters.h"
-// // #include "cuda_fp16.h"
-// #include <bitset>
-// #include "fmt/core.h"
-// #include "fmt/format.h"
-
-// // #ifdef __CUDACC__
-// // #define CUDA_CALLABLE_MEMBER __host__ __device__
-// // #define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-// // #define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-// // #define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
-// // #else
-// // #define CUDA_CALLABLE_MEMBER
-// // #define KERNEL_ARGS2(grid, block)
-// // #define KERNEL_ARGS3(grid, block, sh_mem)
-// // #define KERNEL_ARGS4(grid, block, sh_mem, stream)
-// // #endif
+typedef unsigned long long ull;
+typedef unsigned int ui;
 
 
-
-// typedef unsigned long long ull;
-
-// #define BITS 4
-// #define SIZE 16
-// map<char, ull> scheme {
-//     {'A', 1},
-//     {'C', 2},
-//     {'G', 4},
-//     {'T', 8} 
-// };
+#define BITS 4
+#define SIZE 16
+map<char, ull> scheme {
+    {'A', 1},
+    {'C', 2},
+    {'G', 4},
+    {'T', 8} 
+};
 
 
-// ull encoded(const string& kmer)
-// {
-//     assert(kmer.size() == SIZE);
-//     ull e = 0;
-//     for (int i = 0; i < kmer.size(); i++)
-//         e += scheme.at(kmer[i]) << (i * BITS);
-//     return e;
-// }
+ull encoded(const string& kmer)
+{
+    assert(kmer.size() == SIZE);
+    ull e = 0;
+    for (int i = 0; i < kmer.size(); i++)
+        e += scheme.at(kmer[i]) << (i * BITS);
+    return e;
+}
 
-// vector<ull> encoded_genome(const string& genome)
-// {
-//     double __start = omp_get_wtime();
-//     vector<ull> encoding;
-//     for (size_t i = 0; i < genome.size() - SIZE + 1; i++)
-//     {
-//         string kmer = genome.substr(i, SIZE);
-//         encoding.push_back(encoded(kmer));
-//     }
-//     done(__start, "\t\tencoding");
-//     return encoding;
-// }
+ull* encoded_genome(const string& genome)
+{
+    double __start = omp_get_wtime();
+    ull num = genome.size() - SIZE + 1;
+    ull* encoding = (ull*) malloc(sizeof(ull) * num);
+    printf("\t\tgenome encoding... ");
+    #pragma omp parallel for
+    for (ull i = 0; i < num; i++) encoding[i] = encoded(genome.substr(i, SIZE));
+    done(__start);
+    return encoding;
+}
 
-// ull difference(const ull& _a, const ull& _b)
-// {
-//     ull _xor = _a ^ _b;
-//     ull _and = _xor & _a;
-//     ull _pc = __builtin_popcountll(_and);
-//     return _pc;
-// }
+ull difference(const ull& _a, const ull& _b)
+{
+    ull _xor = _a ^ _b;
+    ull _and = _xor & _a;
+    ull _pc = __builtin_popcountll(_and);
+    return _pc;
+}
 
-// bool mutant(const string& genome, const vector<ull>& genome_encoding, const unsigned int& i, const unsigned int& j, const unsigned int& k, const unsigned int& allowed_mutations)
-// {
-//     ull diff = 0;
-//     const int chunks = k / SIZE;
-//     for (int chunk = 0; chunk < chunks; chunk++)
-//     {
-//         diff += difference(genome_encoding[i + (chunk * SIZE)], genome_encoding[j + (chunk * SIZE)]);
-//         if (diff > allowed_mutations)
-//         {
-//             return false;
-//         }
-//     }
+bool mutant(const string& genome, const ull* genome_encoding, const ui& i, const ui& j, const ui& k, const ui& allowed_mutations)
+{
+    ull diff = 0;
+    const int chunks = k / SIZE;
+    for (int chunk = 0; chunk < chunks; chunk++)
+    {
+        diff += difference(genome_encoding[i + (chunk * SIZE)], genome_encoding[j + (chunk * SIZE)]);
+        if (diff > allowed_mutations)
+        {
+            return false;
+        }
+    }
 
-//     // compute final diffs
-//     const int chars = k - (chunks * SIZE);
-//     for (int z = 0; z < chars; z++)
-//     {
-//         diff += genome[i + (chunks * SIZE) +  z] == genome[j + (chunks * SIZE) +  z] ? 0 : 1;
-//     }
-//     return diff <= allowed_mutations;
-//     return true;
-// }
+    // compute final diffs
+    const int chars = k - (chunks * SIZE);
+    for (int z = 0; z < chars; z++)
+    {
+        diff += genome[i + (chunks * SIZE) +  z] == genome[j + (chunks * SIZE) +  z] ? 0 : 1;
+    }
+    return diff <= allowed_mutations;
+    return true;
+}
 
+vector<vector<unsigned int>> substrate(const string& genome, const unsigned int& k, const ull* genome_encoding, const ull& genome_encoding_size)
+{
+    double start = omp_get_wtime();
+    unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+    vector<vector<unsigned int>> k_crisprs;
+    printf("\t\t%d...", k);
+    for (unsigned int query = 0; query < genome_encoding_size; query++)
+    {
+        vector<unsigned int> crispr; crispr.push_back(query);
+        unsigned int bound = query + k + SPACER_SKIP;
+        for (unsigned int target = bound; target - bound <= SPACER_MAX && target < genome_encoding_size; target++)
+        { 
+            if (mutant(genome, genome_encoding, query, target, k, allowed_mutations))
+            {
+                crispr.push_back(target);
+                bound = target + k + SPACER_SKIP;
+                target = bound;
+            }
+        }
+        k_crisprs.push_back(crispr);
+    }
 
-// // note: can repartition the 8-mer size differently depending on the current k.
-// // k20: 1 16-mer comparison + ...
-// // k21: 1 16-mer comparison + ...
-// // k24: 3 8-mer comparisons + 0
-// // k31: 3 8-mer comparisons + ...
-// // k32: 2 16-mer comparisons + 0
-// // k33: 2 16-mer comparisons + ...
-// // k40: 5 8-mer comparisons + 0
-// // k41: 4 8-mer comparisons + ...
+    done(start, "substrate");
+    return k_crisprs;
+}
 
-// vector<vector<unsigned int>> substrate(const string& genome, const unsigned int& k, const vector<ull>& genome_encoding)
-// {
-//     double start = omp_get_wtime();
-//     unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
-//     vector<vector<unsigned int>> k_crisprs;
-//     printf("\t\t%d...", k);
-//     for (unsigned int query = 0; query < genome_encoding.size(); query++)
-//     {
-//         vector<unsigned int> crispr; crispr.push_back(query);
-//         unsigned int bound = query + k + SPACER_SKIP;
-//         for (unsigned int target = bound; target - bound <= SPACER_MAX && target < genome_encoding.size(); target++)
-//         { 
-//             if (mutant(genome, genome_encoding, query, target, k, allowed_mutations))
-//             {
-//                 crispr.push_back(target);
-//                 bound = target + k + SPACER_SKIP;
-//                 target = bound;
-//             }
-//         }
-//         k_crisprs.push_back(crispr);
-//     }
+vector<Crispr> crispr_formation_pure(const string& genome)
+{
+    double start = omp_get_wtime();
+    vector<vector<vector<unsigned int>>> crisprs; 
 
-//     done(start, "substrate");
-//     return k_crisprs;
-// }
+    ull* genome_encoding = encoded_genome(genome);
 
-// vector<Crispr> crispr_formation_pure(const string& genome)
-// {
-//     double start = omp_get_wtime();
-//     vector<vector<vector<unsigned int>>> crisprs; 
+    for (unsigned int k = K_START; k < K_END; k++)
+    {
+        vector<vector<unsigned int>> k_crisprs = substrate(genome, k, genome_encoding, genome.size() - k + 1);   
+        crisprs.push_back(k_crisprs);
+    }
+    done(start, "\t\tcrispr collection");
 
-//     vector<ull> genome_encoding = encoded_genome(genome);
-
-//     for (unsigned int k = K_START; k < K_END; k++)
-//     {
-//         vector<vector<unsigned int>> k_crisprs = substrate(genome, k, genome_encoding);   
-//         crisprs.push_back(k_crisprs);
-//     }
-//     done(start, "\t\tcrispr collection");
-
-//     start = omp_get_wtime();
-//     vector<Crispr> _crisprs;
-//     for (unsigned int i = 0; i < K_COUNT; i++)
-//     {
-//         for (vector<unsigned int> c : crisprs[i])
-//         {
-//             if (c.size() >= MIN_REPEATS)
-//             {
-//                 Crispr _c(K_START + i, c, c.size());
-//                 _crisprs.push_back(_c);   
-//             }
-//         }
-//     }
-//     done(start, "\t\tcrispr initialization");
-//     return _crisprs;
-// }
+    start = omp_get_wtime();
+    vector<Crispr> _crisprs;
+    for (unsigned int i = 0; i < K_COUNT; i++)
+    {
+        for (vector<unsigned int> c : crisprs[i])
+        {
+            if (c.size() >= MIN_REPEATS)
+            {
+                Crispr _c(K_START + i, c, c.size());
+                _crisprs.push_back(_c);   
+            }
+        }
+    }
+    done(start, "\t\tcrispr initialization");
+    return _crisprs;
+}
 
 
-// vector<Crispr> prospector_main_gpu(const string& genome)
-// {
-//     double start;
-//     start = omp_get_wtime();
-//     printf("\tcrispr formation\n");
-//     vector<Crispr> crisprs = crispr_formation_pure(genome);
-//     done(start, "\tcrispr formation");
-//     return crisprs;
-// }
+vector<Crispr> prospector_main_gpu(const string& genome)
+{
+    double start;
+    start = omp_get_wtime();
+    printf("\tcrispr formation\n");
+    vector<Crispr> crisprs = crispr_formation_pure(genome);
+    done(start, "\tcrispr formation");
+    return crisprs;
+}
 
 
-// vector<Crispr> Prospector::prospector_main(const string& genome)
-// {
-//     printf("genome has size %zd\n", genome.size());
+vector<Crispr> Prospector::prospector_main(const string& genome)
+{
+    printf("genome has size %zd\n", genome.size());
     
-//     double start;
-//     printf("prospector\n");
-//     start = omp_get_wtime();
-//     vector<Crispr> crisprs = prospector_main_gpu(genome);
-//     done(start, "prospector");
+    double start;
+    printf("prospector\n");
+    start = omp_get_wtime();
+    vector<Crispr> crisprs = prospector_main_gpu(genome);
+    done(start, "prospector");
 
-//     return crisprs;
-// }
+    return crisprs;
+}
 
 
