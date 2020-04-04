@@ -77,12 +77,12 @@ double get_conservation_consensus(vector<string> repeats)
 double left_aligned_spacer_similarity(string a, string b)
 {
 	ull len = min(a.size(), b.size());
-	ull dif = 0;
+	ull matches = 0;
 	for (ull i = 0; i < len; i++)
 	{
-		dif += a[i] == b[i] ? 1 : 0;
+		matches += a[i] == b[i] ? 1 : 0;
 	}
-	return (double) dif / (double) len;
+	return (double) matches / (double) len;
 }
 
 double right_aligned_spacer_similarity(string a, string b)
@@ -100,44 +100,18 @@ double right_aligned_spacer_similarity(string a, string b)
 		_big = b;
 		_small = a;
 	}
+
+
+	ull len = _small.size();
+	ull offset = _big.size() - len;
 	
-
-
+	ull matches = 0;
 	for (ull i = 0; i < len; i++)
 	{
-
+		matches += _big[i + offset] == _small[i] ? 1 : 0;
 	}
+	return (double) matches / (double) len;
 }
-
-
-double bp_match_score(string a, string b, bool differential)
-{
-	size_t a_len = a.length();
-	size_t b_len = b.length();
-
-	size_t small_length;
-	size_t big_length;
-
-	if (a_len < b_len)
-	{
-		small_length = a_len;
-		big_length = b_len;
-	}
-	else
-	{
-		small_length = b_len;
-		big_length = a_len;
-	}
-	
-	int matches = 0;
-
-	for (size_t i = 0; i < small_length; i++)
-		matches += a[i] == b[i] ? 1 : 0;
-
-	int max_possible_matches = differential ? big_length : small_length;
-	return (double) matches / (double) max_possible_matches;
-}
-
 
 double get_conservation_spacer2(vector<string> spacers)
 {
@@ -152,7 +126,7 @@ double get_conservation_spacer2(vector<string> spacers)
 		{
 			string a = spacers[i];
 			string b = spacers[j];
-			double score = bp_match_score(a, b, true);
+			double score = (left_aligned_spacer_similarity(a, b) + right_aligned_spacer_similarity(a, b)) / 2.0;
 			score_sum += score;
 			comparisons++;
 		}
@@ -163,6 +137,61 @@ double get_conservation_spacer2(vector<string> spacers)
 	// divide the score by the number of spacers to punish having more spacers
 	return mean_score / (double) spacers.size();
 }
+
+
+// double bp_match_score(string a, string b, bool differential)
+// {
+// 	size_t a_len = a.length();
+// 	size_t b_len = b.length();
+
+// 	size_t small_length;
+// 	size_t big_length;
+
+// 	if (a_len < b_len)
+// 	{
+// 		small_length = a_len;
+// 		big_length = b_len;
+// 	}
+// 	else
+// 	{
+// 		small_length = b_len;
+// 		big_length = a_len;
+// 	}
+	
+// 	int matches = 0;
+
+// 	for (size_t i = 0; i < small_length; i++)
+// 		matches += a[i] == b[i] ? 1 : 0;
+
+// 	int max_possible_matches = differential ? big_length : small_length;
+// 	return (double) matches / (double) max_possible_matches;
+// }
+
+
+// double get_conservation_spacer3(vector<string> spacers)
+// {
+// 	// perform a right aligned and a left aligned spacer mismatch score?
+
+// 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
+// 	double score_sum = 0;
+// 	int comparisons = 0;
+// 	for (size_t i = 0; i < spacers.size(); i++)
+// 	{
+// 		for (size_t j = 0; j < i; j++)
+// 		{
+// 			string a = spacers[i];
+// 			string b = spacers[j];
+// 			double score = bp_match_score(a, b, true);
+// 			score_sum += score;
+// 			comparisons++;
+// 		}
+// 	}
+
+// 	double mean_score = score_sum / (double) comparisons;
+
+// 	// divide the score by the number of spacers to punish having more spacers
+// 	return mean_score / (double) spacers.size();
+// }
 
 double get_spacer_variance(vector<string> spacers)
 {
@@ -225,7 +254,7 @@ void Crispr::update(const string& genome)
 	this->spacer_variance = get_spacer_variance(spacers) / 100;
 	this->conservation_spacers2 = get_conservation_spacer2(spacers);
 
-	double subtraction = (0.85*conservation_spacers2) + (4*spacer_variance);
+	double subtraction = (conservation_spacers2) + (4*spacer_variance);
 	this->overall_heuristic = conservation_repeats - subtraction;
 }
 
