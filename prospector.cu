@@ -28,9 +28,7 @@
 
 
 
-// typedef unsigned long long ull;
 
-typedef unsigned int ui;
 
 #define BITS 2
 #define SIZE 16
@@ -290,6 +288,22 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     er = cudaMemcpy(map64, device_map64, bytes_map64, cudaMemcpyDeviceToHost); checkCuda(er);
 
     cudaFree(device_genome);
+
+
+
+    // debug
+    // ui query = 1283501;
+    // ui q = genome_encoding[query];
+    // for (ui i = 0; i < 1000; i++)
+    // {
+    //     ui pos = query + K_START + SPACER_SKIP + i;
+    //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
+
+    //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
+    // }
+
+
+
 
     vector<ui> queries = q_substrate(map64, genome_encoding_size);
     
