@@ -116,6 +116,10 @@ double right_aligned_spacer_similarity(string a, string b)
 double get_conservation_spacer2(vector<string> spacers)
 {
 	// perform a right aligned and a left aligned spacer mismatch score?
+	// if (spacers.size() == 1)
+	// {
+		// return 0;
+	// }
 
 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
 	double score_sum = 0;

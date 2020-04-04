@@ -185,7 +185,7 @@ vector<ui> q_substrate(unsigned char* map64, ui genome_encoding_size)
         }
     }
     done(start);
-    printf("%d %d\n", genome_encoding_size-200, queries.size());
+    printf("%d %zd\n", genome_encoding_size-200, queries.size());
     // return count;
     return queries;
 }
@@ -331,6 +331,8 @@ vector<Crispr> prospector_main_gpu(const string& genome)
 
 vector<Crispr> Prospector::prospector_main(const string& genome)
 {
+    assert(K_START >= SIZE);
+
     printf("genome has size %zd\n", genome.size());
     
     double start = omp_get_wtime(); 

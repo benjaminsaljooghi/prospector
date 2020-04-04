@@ -495,20 +495,22 @@ void print_encoding(ull encoding)
 
 int main()
 {
+    
+
     printf("running main...\n");
     double start = omp_get_wtime();
 
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    const string genome = load_genomes(genome_dir)[0];
+    const string genome = load_genomes(genome_dir)[1];
 
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
        
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
-    // debug(crisprs, genome, 1283502, 1283729);
+    // debug(crisprs, genome, 1684700, 1684833);
 
     vector<Crispr> good_heuristic_crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.7; });
 
