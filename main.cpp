@@ -519,7 +519,7 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    string genome = load_genomes(genome_dir)[1];
+    const string genome = load_genomes(genome_dir)[1];
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
 
