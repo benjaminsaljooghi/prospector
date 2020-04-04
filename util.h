@@ -21,7 +21,7 @@
 #define K_COUNT (K_END - K_START)
 
 
-#define MUTANT_TOLERANCE_RATIO 5
+#define MUTANT_TOLERANCE_RATIO 6
 #define REPEAT_MIN 20
 #define REPEAT_MAX 60
 #define SPACER_MIN 21

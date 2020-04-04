@@ -32,6 +32,7 @@
 
 
 typedef unsigned long long ull;
+typedef unsigned int ui;
 
 using namespace std;
 
