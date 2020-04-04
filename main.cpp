@@ -444,15 +444,25 @@ void finish()
 
 void debug(vector<Crispr> crisprs, string genome)
 {
-    sort(crisprs.begin(), crisprs.end(), CrisprUtil::heuristic_less);
-    int how_many = crisprs.size();
-    for (size_t i = 0; i < how_many; i++)
+    fmt::print("sort {} crisprs...\n", crisprs.size());
+
+    vector<Crispr> filtered;
+
+    for (Crispr c : crisprs)
     {
-        Crispr c = crisprs[i];
-        if (c.start > 1577782 - 100 && c.end < 1578027 + 100)
+        // if(c.start > 1085434-100 && c.end < 1086854 + 100)
+        if(c.start > 1577774-100 && c.end < 1578026+100)
         {
-            crisprs[i].print(genome);
+            filtered.push_back(c);
         }
+    }
+
+    sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
+
+    int how_many = 10;
+    for (size_t i = filtered.size()-how_many; i < filtered.size(); i++)
+    {
+        filtered[i].print(genome);
     }
     finish();
 }
@@ -526,7 +536,7 @@ int main()
     vector<Crispr> good_heuristic_crisprs;
     for (const Crispr& crispr : crisprs)
     {
-        if (crispr.overall_heuristic > 0.70)
+        if (crispr.overall_heuristic > 0.60)
         {
             fmt::print("heuristic {}\n", crispr.overall_heuristic);
             good_heuristic_crisprs.push_back(crispr);

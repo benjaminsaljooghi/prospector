@@ -236,6 +236,8 @@ vector<Crispr> crispr_formation_single(const char* device_genome, const ull* dev
     er = cudaMemset(device_starts, 0, bytes_starts); checkCuda(er);
     er = cudaMemset(device_sizes, 0, bytes_sizes); checkCuda(er);
 
+    printf("\t\tkernel... ");
+    double start = omp_get_wtime();
     discover_crisprs KERNEL_ARGS3(C_GRID, C_BLOCK, 0) 
     (
         device_genome,
@@ -251,12 +253,14 @@ vector<Crispr> crispr_formation_single(const char* device_genome, const ull* dev
 
     cwait();
 
+    done(start);
+
     er = cudaMemcpy(buffer, device_buffer, bytes_buffer, cudaMemcpyDeviceToHost); checkCuda(er);
     er = cudaMemcpy(starts, device_starts, bytes_starts, cudaMemcpyDeviceToHost); checkCuda(er);
     er = cudaMemcpy(sizes, device_sizes, bytes_sizes, cudaMemcpyDeviceToHost); checkCuda(er);
 
 
-    double start = omp_get_wtime();
+    start = omp_get_wtime();
     
     printf("\t\textract...");
     vector<Crispr> crisprs;

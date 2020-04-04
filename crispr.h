@@ -21,6 +21,7 @@ class Crispr
         vector<string> spacers;
         double conservation_repeats;
         double conservation_spacers;
+        double conservation_spacers2;
         double spacer_variance;
         double overall_heuristic;
 

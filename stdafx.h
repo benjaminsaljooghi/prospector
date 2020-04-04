@@ -29,6 +29,7 @@
 #include <cmath>
 
 
+typedef unsigned long long ull;
 
 using namespace std;
 
