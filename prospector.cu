@@ -141,225 +141,34 @@ cudaError_t checkCuda(cudaError_t result)
 #define TOTAL_BUFFER_COUNT (K_COUNT * K_BUFFER_COUNT)
 
 
-__global__ void compute_query_map32(
+__global__ void compute_query_map64(
     const ui* genome_encoding,
     const ui genome_encoding_size,
-    unsigned char* query_map32
+    unsigned char* query_map64
 )
 {
     const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     const ui stride = blockDim.x * gridDim.x;
 
-    // for each q, compute the mutation scores for the downrange 32 indices, packed all into a vector
+    // for each q, compute the mutation scores for the downrange 64 indices, packed all into a vector
     // then iterate over those scores and form the crisprs
 
     // do the popcounts of the initiating 8-mers have <= (8/MUTANT_TOLERANCE_RATIO=1) popcount?
-    // compute the popcounts of each query compared to the next 32 indices
+    // compute the popcounts of each query compared to the next 64 indices
     // this should be an extremely efficient computation, and involves zero branching
     for (ui query = thread_id; query < genome_encoding_size - 200; query += stride)
     {
         ui q = genome_encoding[query];
-        for (ui i = 0; i < 32; i++)
+        for (ui i = 0; i < 64; i++)
         {
             ui t = genome_encoding[query + K_START + SPACER_SKIP + i];
-            query_map32[(query*32) + i] = difference(q, t);
+            query_map64[(query*64) + i] = difference(q, t);
         }
     }
 }
 
-// __global__ void discover_crisprs(
-//         const char* genome,
-//         const ui* genome_encoding,
-//         const ui genome_encoding_size,
-//         ui* buffer,
-//         ui* starts,
-//         unsigned char* sizes,
-//         ui buffer_start,
-//         ui query_start,
-//         const ui k,
-//         const ui allowed_mutations,
-//         char* query_map32
-//     )
-// {
-//     const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-//     const ui stride = blockDim.x * gridDim.x;
 
-//     const ui thread_buffer_start = buffer_start + (thread_id * THREAD_BUFFER_COUNT);
-//     const ui thread_buffer_limit = thread_buffer_start + THREAD_BUFFER_COUNT;
-
-//     // now, we are only permitted to use those popcounts to generate queries, not allowed to look beyond the bound + 32 indices.
-//     // this implementation may need to either be CPU or another kernel, slightly more complex because it involves branching
-
-//     ui buffer_pointer = thread_buffer_start;
-//     for (ui query = thread_id; query < genome_encoding_size - 200; query += stride) // -200 so we don't overflow in the inner loop
-//     {
-//         ui bound = query + k + SPACER_SKIP;
-//         starts[query] = buffer_pointer;
-//         buffer[buffer_pointer++] = query;
-//         for (ui target = bound; target - bound <= SPACER_MAX; target++)
-//         {
-//             // for each q, compute mutation scores for the downrange 100
-
-//             {
-//                 buffer[buffer_pointer++] = target;
-//                 bound = target + k + SPACER_SKIP;
-//                 target = bound;
-//             }
-//         }
-
-//         sizes[query] = buffer_pointer - starts[query];
-
-
-//         #if DEBUG == 1
-//             if (buffer_pointer  >= thread_buffer_limit)
-//             {
-//                 printf("FATAL: exceeded thread buffer limit. %lu/%lu\n", buffer_pointer, thread_buffer_limit);
-//             }
-//         #endif
-
-//     }
-
-// }
-
-vector<Crispr> crispr_formation_single(const char* device_genome, const ui* device_genome_encoding, const ui genome_size, const ui genome_encoding_size, const ui k, unsigned char* device_map32)
-{
-
-
-
-
-
-
-
-
-    // cudaError er;
-
-    // ui count_buffer = K_BUFFER_COUNT;
-    // ui count_starts = genome_size - k + 1; // will form (at least) a singleton crispr for each i in the genome
-    // ui count_sizes = genome_size - k + 1;
-
-    // ui bytes_buffer = 4 * count_buffer;
-    // ui bytes_starts = 4 * count_starts;
-    // ui bytes_sizes = 1 * count_sizes;
-
-    // // buffer info
-    // unsigned int* buffer, *device_buffer;
-    // unsigned int* starts, *device_starts;
-    // unsigned char* sizes, *device_sizes;
-
-    // er = cudaMallocHost(&buffer, bytes_buffer); checkCuda(er);
-    // er = cudaMallocHost(&starts, bytes_starts); checkCuda(er);
-    // er = cudaMallocHost(&sizes, bytes_sizes); checkCuda(er);
-
-
-    // er = cudaMalloc(&device_buffer, bytes_buffer); checkCuda(er);
-    // er = cudaMalloc(&device_starts, bytes_starts); checkCuda(er);
-    // er = cudaMalloc(&device_sizes, bytes_sizes); checkCuda(er);
-
-
-    // er = cudaMemset(device_buffer, 0, bytes_buffer); checkCuda(er);
-    // er = cudaMemset(device_starts, 0, bytes_starts); checkCuda(er);
-    // er = cudaMemset(device_sizes, 0, bytes_sizes); checkCuda(er);
-
-
-
-    // // discover_crisprs KERNEL_ARGS3(C_GRID, C_BLOCK, 0) 
-    // // (
-    // //     device_genome,
-    // //     device_genome_encoding,
-    // //     genome_encoding_size,
-    // //     device_buffer,
-    // //     device_starts,
-    // //     device_sizes,
-    // //     0,
-    // //     0,
-    // //     k,
-    // //     k / MUTANT_TOLERANCE_RATIO
-    // // );
-
-    // double start = omp_get_wtime();
-    // printf("\t\tmap32... ");
-    // cwait();
-    // done(start);
-
-    // // er = cudaMemcpy(buffer, device_buffer, bytes_buffer, cudaMemcpyDeviceToHost); checkCuda(er);
-    // // er = cudaMemcpy(starts, device_starts, bytes_starts, cudaMemcpyDeviceToHost); checkCuda(er);
-    // // er = cudaMemcpy(sizes, device_sizes, bytes_sizes, cudaMemcpyDeviceToHost); checkCuda(er);
-
-
-    // start = omp_get_wtime();
-    
-    // printf("\t\textract...");
-    // vector<Crispr> crisprs;
-    // // for (ui q = 0; q < count_starts; q++)
-    // // {
-    // //     unsigned char __size = *(sizes + q);
-    // //     if (__size >= MIN_REPEATS)
-    // //     {
-    // //         unsigned int start = *(starts + q);
-    // //         vector<unsigned int> genome_indices;
-    // //         for (int walk = 0; walk < __size; walk++)
-    // //         {
-    // //             genome_indices.push_back(  *(buffer + start + walk)  ); // just use indices/ptrs rather than a vector?
-    // //         }
-    // //         assert(__size == genome_indices.size()); // not necessary, just put it in to remind you later of double up on size in constructor
-    // //         Crispr crispr(k, genome_indices, genome_indices.size()); // why the double up here..? refactor crispr?
-    // //         crisprs.push_back(crispr);
-    // //     }
-    // // }
-    // done(start);
-
-    // return crisprs;
-
-    // // vector<Crispr> crisprs;
-    // // unsigned int __dyad_start = 0;
-    // // for (unsigned int i = 0; i < K_COUNT; i++)
-    // // {
-    // //     unsigned int k = K_START + i;
-    // //     vector<Crispr> crisprs;
-
-    // //     for (unsigned int dyad_index = 0; dyad_index < dyad_counts[i]; dyad_index++)
-    // //     {
-    // //         unsigned char __size = *(sizes + __dyad_start + dyad_index);
-    // //         if (__size >= MIN_REPEATS)
-    // //         {
-    // //             unsigned int start = *(starts + __dyad_start + dyad_index);
-    // //             unsigned int* _s = buffer + start;
-    // //             unsigned int* _e = _s + __size;
-    // //             Crispr crispr(k, _s, _e);
-    // //             crisprs.push_back(crispr);
-    // //         }
-    // //     }
-
-    // //     crisprs.insert(crisprs.end(), crisprs.begin(), crisprs.end());
-    // //     __dyad_start += dyad_counts[i];
-    // // }
-
-
-}
-
-vector<Crispr> crispr_formation(const char* device_genome, const ui* device_genome_encoding, const ui genome_size, const ui genome_encoding_size, unsigned char* device_map32)
-{
-    vector<Crispr> all_crisprs;
-    for (ui k = K_START; k < K_END; k++)
-    {
-        vector<Crispr> crisprs = crispr_formation_single(device_genome, device_genome_encoding, genome_size, genome_encoding_size, k, device_map32);
-        all_crisprs.insert(all_crisprs.end(), crisprs.begin(), crisprs.end());
-    }
-    return all_crisprs;
-}
-
-
-    // for (ui query = thread_id; query < genome_encoding_size - 200; query += stride)
-    // {
-    //     ui q = genome_encoding[query];
-    //     for (ui i = 0; i < 32; i++)
-    //     {
-    //         ui t = genome_encoding[query + K_START + SPACER_SKIP + i];
-    //         query_map32[(query*32) + i] = difference(q, t);
-    //     }
-    // }
-
-vector<ui> q_substrate(unsigned char* map32, ui genome_encoding_size)
+vector<ui> q_substrate(unsigned char* map64, ui genome_encoding_size)
 {
     // how many qs in this map are containment oriented
     printf("q_substrate...");
@@ -368,9 +177,9 @@ vector<ui> q_substrate(unsigned char* map32, ui genome_encoding_size)
     vector<ui> queries;
     for (ui query = 0; query < genome_encoding_size - 200; query++)
     {
-        for (ui i = 0; i < 32; i++)
+        for (ui i = 0; i < 64; i++)
         {
-            if (map32[(query*32) + i] <= 1) // 1 because 8 / 5 = 1
+            if (map64[(query*64) + i] <= (SIZE / MUTANT_TOLERANCE_RATIO)) // 1 because 8 / 5 = 1
             {
                 queries.push_back(query);
                 break;
@@ -390,8 +199,8 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
     const ui chunks = k / SIZE;
     // may generate a lot of crisprs that are filtered later (expensive) given that SIZE is large (16) here.
     // option is to do a more accurate mutation calculation either using per-char post the chunk division
-    // or to encode entire kmers up to 32 into ull's to compute the difference efficiently.
-    // post k=32 we can use the 32-long ull initially, and then compute a per-char difference afterwards.
+    // or to encode entire kmers up to 64 into ull's to compute the difference efficiently.
+    // post k=64 we can use the 64-long ull initially, and then compute a per-char difference afterwards.
 
     for (ui chunk = 0; chunk < chunks; chunk++)
     {
@@ -416,6 +225,7 @@ vector<vector<ui>> single_k_from_q_substrate(const char* genome, vector<ui> quer
 {
     vector<vector<ui>> crisprs;
     ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+
     for (ui _q = 0; _q < queries.size(); _q++)
     {
         ui q = queries[_q];
@@ -450,6 +260,7 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     ui* genome_encoding = encoded_genome(genome);
     ui genome_encoding_size = genome.size() - SIZE + 1;
 
+
     char* device_genome;
     ui* device_genome_encoding;
 
@@ -459,28 +270,28 @@ vector<Crispr> prospector_main_gpu(const string& genome)
         er = cudaMalloc(&device_genome_encoding, 4 * genome_encoding_size); checkCuda(er);
         er = cudaMemcpy(device_genome, genome.c_str(), 1 * genome.length(), cudaMemcpyHostToDevice); checkCuda(er);
         er = cudaMemcpy(device_genome_encoding, &genome_encoding[0], 4 * genome_encoding_size, cudaMemcpyHostToDevice); checkCuda(er);
-        ui count_map32 = genome_encoding_size * 32;
-        ui bytes_map32 = 1 * count_map32;
-        unsigned char* map32, *device_map32;
-        er = cudaMallocHost(&map32, bytes_map32); checkCuda(er);
-        er = cudaMalloc(&device_map32, bytes_map32); checkCuda(er);
-        er = cudaMemset(device_map32, 0, bytes_map32); checkCuda(er);
+        ui count_map64 = genome_encoding_size * 64;
+        ui bytes_map64 = 1 * count_map64;
+        unsigned char* map64, *device_map64;
+        er = cudaMallocHost(&map64, bytes_map64); checkCuda(er);
+        er = cudaMalloc(&device_map64, bytes_map64); checkCuda(er);
+        er = cudaMemset(device_map64, 0, bytes_map64); checkCuda(er);
     done(start);
 
-    compute_query_map32 KERNEL_ARGS3(C_GRID, C_BLOCK, 0)
+    compute_query_map64 KERNEL_ARGS3(C_GRID, C_BLOCK, 0)
     (
         device_genome_encoding,
         genome_encoding_size,
-        device_map32
+        device_map64
     );
 
     cwait();
 
-    er = cudaMemcpy(map32, device_map32, bytes_map32, cudaMemcpyDeviceToHost); checkCuda(er);
+    er = cudaMemcpy(map64, device_map64, bytes_map64, cudaMemcpyDeviceToHost); checkCuda(er);
 
     cudaFree(device_genome);
 
-    vector<ui> queries = q_substrate(map32, genome_encoding_size);
+    vector<ui> queries = q_substrate(map64, genome_encoding_size);
     
     printf("a..."); start = omp_get_wtime();
         vector<Crispr> all_crisprs;
@@ -508,10 +319,16 @@ vector<Crispr> Prospector::prospector_main(const string& genome)
 {
     printf("genome has size %zd\n", genome.size());
     
-    double start;
+    double start = omp_get_wtime(); 
     printf("prospector\n");
-    start = omp_get_wtime();
-    vector<Crispr> crisprs = prospector_main_gpu(genome);
+
+
+
+
+    vector<Crispr> crisprs; 
+    crisprs = prospector_main_gpu(genome);
+    
+    
     done(start, "prospector");
 
     return crisprs;
