@@ -185,12 +185,9 @@ map<string, vector<CasProfile>> CasProfile::load_casprofiles(string dir, unsigne
     return profiles;
 }
 
-double index_computation = 0;
-
 template <typename T> vector<size_t> build_index_single(const vector<T>& query_kmers, const vector<T>& target_kmers)
 {
     vector<size_t> indices;
-    double start = omp_get_wtime();
     for (size_t i = 0; i < target_kmers.size(); i++)
     {
         if (contains(query_kmers, target_kmers[i]))
@@ -198,8 +195,6 @@ template <typename T> vector<size_t> build_index_single(const vector<T>& query_k
             indices.push_back(i);
         }
     } 
-    double end = omp_get_wtime();
-    index_computation += end - start;
     return indices;
 }
 
@@ -348,6 +343,8 @@ vector<gene_fragment> detect(const string& genome, const Translation* translatio
 
 void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 {
+    double start = omp_get_wtime();  
+
     map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
     vector<Translation> downstreams;
@@ -417,7 +414,6 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
     
 
     // place gene fragments into crispr buckets
-
     for (const Crispr& crispr : crisprs)
     {
         fmt::print("\tcrispr {} {}\n", crispr.start, crispr.k);
@@ -431,9 +427,9 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
     }
 
 
+    done(start, "cas");
 
 
-    fmt::print("index computation time {}\n", index_computation);
 }
 
 void finish()
@@ -444,7 +440,6 @@ void finish()
 
 void debug(vector<Crispr> crisprs, string genome)
 {
-    fmt::print("sort {} crisprs...\n", crisprs.size());
 
     vector<Crispr> filtered;
 
@@ -456,6 +451,8 @@ void debug(vector<Crispr> crisprs, string genome)
             filtered.push_back(c);
         }
     }
+
+    fmt::print("DEBUG sort {} crisprs...\n", filtered.size());
 
     sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
 
@@ -519,54 +516,26 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    const string genome = load_genomes(genome_dir)[1];
+    const string genome = load_genomes(genome_dir)[0];
+
 
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
-
-    // finish();
-    
+       
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
+    vector<Crispr> good_heuristic_crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.7; });
 
-
-    // danger
-    // CrisprUtil::print(genome, crisprs);
-
-
-
-
-    printf("good heuristics...\n");
-    vector<Crispr> good_heuristic_crisprs;
-    for (const Crispr& crispr : crisprs)
-    {
-        if (crispr.overall_heuristic > 0.60)
-        {
-            // fmt::print("heuristic {}\n", crispr.overall_heuristic);
-            good_heuristic_crisprs.push_back(crispr);
-        }
-    }
-
-    // debug(good_heuristic_crisprs, genome);
-
-    fmt::print("sort {} crisprs...\n", crisprs.size());
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
-
 
     vector<Crispr> final = CrisprUtil::get_domain_best(good_heuristic_crisprs);
 
-    // map<string, int> spacer_scores = CrisprUtil::get_spacer_scores(domain_best, target_db_path);
-    // vector<Crispr> final = CrisprUtil::spacer_score_filtered(domain_best, spacer_scores);
-    // CrisprUtil::print(genome, final, spacer_scores);
-
-    sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) {
-        return a.start < b.start;
-    });
+    sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
 
     CrisprUtil::print(genome, final);
 
-    double cas_start = omp_get_wtime();    
+  
     cas(genome, final, cas_dir);
-    done(cas_start, "cas_gene_detection");
+
 
     done(start, "main");
 

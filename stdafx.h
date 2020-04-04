@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <cmath>
+#include <csignal>
+
 
 
 typedef unsigned long long ull;

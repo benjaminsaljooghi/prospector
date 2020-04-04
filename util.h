@@ -120,8 +120,6 @@ const map <char, char> complement_table = {
 
 
 
-
-
 double duration (double);
 void done(double, string);
 void done(double);
@@ -129,6 +127,14 @@ bool subset(vector<int>, vector<int>);
 
 
 
+template <typename T, typename Pred> vector<T> filter(vector<T> in, Pred predicate)
+{
+    vector<T> out;
+    for (T el : in)
+        if (predicate(el))
+            out.push_back(el);
+    return out;
+}
 
 
 template <typename T> T mean(vector<T> scores)
