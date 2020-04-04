@@ -171,7 +171,7 @@ Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, size_t size)
 	this->size = size;;
 }
 		
-void Crispr::update(string& genome)
+void Crispr::update(const string& genome)
 {
 	this->repeats = vector<string>(size);
 	this->spacers = vector<string>(size-1);
@@ -203,7 +203,7 @@ void Crispr::update(string& genome)
 }
 
 
-void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
+void Crispr::print_generic(const string& genome, function<void(string)>& print_spacer)
 {
 	// header
 	printf("%d - %d %d\n\n", start, end, k);
@@ -247,7 +247,7 @@ void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 
 }
 
-void Crispr::print(string& genome, map<string, int> spacer_scores)
+void Crispr::print(const string& genome, map<string, int> spacer_scores)
 {
 	function<void(string)> print_spacer = [&](string spacer) {
 		printf("%d/%zd", spacer_scores[spacer], spacer.length());
@@ -256,7 +256,7 @@ void Crispr::print(string& genome, map<string, int> spacer_scores)
 	print_generic(genome, print_spacer);
 }
 
-void Crispr::print(string& genome)
+void Crispr::print(const string& genome)
 {
 	function<void(string)> print_spacer = [](string spacer) {
 		printf("%d/%zd", -1, spacer.length());
@@ -406,15 +406,15 @@ vector<Crispr> CrisprUtil::spacer_score_filtered(vector<Crispr> crisprs, map<str
     return crisprs_filtered;
 }
 
-void CrisprUtil::cache_crispr_information(vector<Crispr>& crisprs, string genome)
+void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& crisprs)
 {
     double start = omp_get_wtime();
 	printf("caching %zd crisprs... ", crisprs.size());
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         crisprs[i].update(genome);
-    }
+	}
     done(start);
 }
 

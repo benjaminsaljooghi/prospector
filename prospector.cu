@@ -384,10 +384,15 @@ vector<ui> q_substrate(unsigned char* map32, ui genome_encoding_size)
 }
 
 
-bool mutant(const ui* genome_encoding, const ui& k, const ui& allowed_mutations, const ui& i, const ui& j)
+bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui& allowed_mutations, const ui& i, const ui& j)
 {
     ui diff = 0;
     const ui chunks = k / SIZE;
+    // may generate a lot of crisprs that are filtered later (expensive) given that SIZE is large (16) here.
+    // option is to do a more accurate mutation calculation either using per-char post the chunk division
+    // or to encode entire kmers up to 32 into ull's to compute the difference efficiently.
+    // post k=32 we can use the 32-long ull initially, and then compute a per-char difference afterwards.
+
     for (ui chunk = 0; chunk < chunks; chunk++)
     {
         ui _i = genome_encoding[i + (chunk * SIZE)];
@@ -395,8 +400,43 @@ bool mutant(const ui* genome_encoding, const ui& k, const ui& allowed_mutations,
         diff += difference_cpu(_i, _j);
     }
 
-    return diff <= (chunks * SIZE) / MUTANT_TOLERANCE_RATIO;
+    const ui checked_so_far = (chunks * SIZE);
 
+    for (ui __i = checked_so_far; i < k; __i++)
+    {
+        diff += genome[i + checked_so_far + __i] == genome[j + checked_so_far + __i] ? 0 : 1; 
+    }
+
+    return diff <= allowed_mutations;
+    // return diff <= (chunks * SIZE) / MUTANT_TOLERANCE_RATIO;
+}
+
+
+vector<vector<ui>> single_k_from_q_substrate(const char* genome, vector<ui> queries, ui* genome_encoding, const ui& k)
+{
+    vector<vector<ui>> crisprs;
+    ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+    for (ui _q = 0; _q < queries.size(); _q++)
+    {
+        ui q = queries[_q];
+
+        vector<ui> crispr;
+        crispr.push_back(q);
+
+        ui bound = q + k + SPACER_SKIP;
+        
+        for (ui t = bound; t - bound <= SPACER_MAX; t++)
+        {
+            if (mutant(genome, genome_encoding, k, allowed_mutations, q, t))
+            {
+                crispr.push_back(t);
+                bound = t + k + SPACER_SKIP;
+                t = bound;
+            }
+        }
+        crisprs.push_back(crispr);
+    }
+    return crisprs;
 }
 
 
@@ -442,50 +482,25 @@ vector<Crispr> prospector_main_gpu(const string& genome)
 
     vector<ui> queries = q_substrate(map32, genome_encoding_size);
     
-
-
-    // for 36-mer crisprs on the cpu
-
-    printf("crispr collection from substrate...");
-    start = omp_get_wtime();
-        vector<vector<ui>> crisprs;
-        ui allowed_mutations = 36 / 5;
-        for (ui _q = 0; _q < queries.size(); _q++)
+    printf("a..."); start = omp_get_wtime();
+        vector<Crispr> all_crisprs;
+        for (ui k = K_START; k < K_END; k++)
         {
-            ui q = queries[_q];
+            vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, genome_encoding, k);
 
-            vector<ui> crispr;
-            crispr.push_back(q);
-
-            ui bound = q + 36 + SPACER_SKIP;
-            
-            for (ui t = bound; t - bound <= SPACER_MAX; t++)
+            for (vector<ui> c : crisprs)
             {
-                if (mutant(genome_encoding, 36, allowed_mutations, q, t))
+                if (c.size() >= MIN_REPEATS)
                 {
-                    crispr.push_back(t);
-                    bound = t + 36 + SPACER_SKIP;
-                    t = bound;
+                    Crispr _c(k, c, c.size());
+                    all_crisprs.push_back(_c);   
                 }
             }
-            crisprs.push_back(crispr);
         }
     done(start);
 
-    printf("crispr initialization...");
-    start = omp_get_wtime();
-        vector<Crispr> _crisprs;
-        for (vector<ui> c : crisprs)
-        {
-            if (c.size() >= MIN_REPEATS)
-            {
-                Crispr _c(36, c, c.size());
-                _crisprs.push_back(_c);   
-            }
-        }
-    done(start);
 
-    return _crisprs;
+    return all_crisprs;
 }
 
 

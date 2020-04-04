@@ -525,22 +525,28 @@ int main()
 
     // finish();
     
-    CrisprUtil::cache_crispr_information(crisprs, genome);
-    
+    CrisprUtil::cache_crispr_information(genome, crisprs);
+
+
+
+    // danger
+    // CrisprUtil::print(genome, crisprs);
+
+
+
+
     printf("good heuristics...\n");
     vector<Crispr> good_heuristic_crisprs;
     for (const Crispr& crispr : crisprs)
     {
-        if (crispr.overall_heuristic > 0.90)
+        if (crispr.overall_heuristic > 0.60)
         {
             // fmt::print("heuristic {}\n", crispr.overall_heuristic);
             good_heuristic_crisprs.push_back(crispr);
         }
     }
 
-
     // debug(good_heuristic_crisprs, genome);
-
 
     fmt::print("sort {} crisprs...\n", crisprs.size());
     sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
