@@ -438,29 +438,16 @@ void finish()
     exit(0);
 }
 
-void debug(vector<Crispr> crisprs, string genome)
+void debug(vector<Crispr> crisprs, string genome, ui start, ui end)
 {
 
-    vector<Crispr> filtered;
-
-    for (Crispr c : crisprs)
-    {
-        // if(c.start > 1085434-100 && c.end < 1086854 + 100)
-        if(c.start > 1577774-100 && c.end < 1578026+100)
-        {
-            filtered.push_back(c);
-        }
-    }
-
-    fmt::print("DEBUG sort {} crisprs...\n", filtered.size());
+    vector<Crispr> filtered = filter(crisprs, [&](Crispr c) { return c.start > start-100 && c.end < end+100; } );
 
     sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
 
-    int how_many = 10;
+    int how_many = filtered.size();
     for (size_t i = filtered.size()-how_many; i < filtered.size(); i++)
-    {
         filtered[i].print(genome);
-    }
     finish();
 }
 
@@ -473,8 +460,6 @@ vector<string> load_genomes(string dir)
 }
 
 
-
-typedef unsigned long long ull;
 
 map<char, ull> _scheme {
     {'A', 0},
@@ -522,6 +507,8 @@ int main()
     vector<Crispr> crisprs = Prospector::prospector_main(genome);
        
     CrisprUtil::cache_crispr_information(genome, crisprs);
+
+    // debug(crisprs, genome, 1283502, 1283729);
 
     vector<Crispr> good_heuristic_crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.7; });
 
