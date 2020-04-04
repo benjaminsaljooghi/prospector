@@ -32,14 +32,14 @@
 
 typedef unsigned int ui;
 
-#define BITS 4
-#define SIZE 8
+#define BITS 2
+#define SIZE 16
 
 map<char, ui> scheme {
-    {'A', 1},
-    {'C', 2},
-    {'G', 4},
-    {'T', 8} 
+    {'A', 0},
+    {'C', 1},
+    {'G', 2},
+    {'T', 3} 
 };
 
 
@@ -65,22 +65,40 @@ ui* encoded_genome(const string& genome)
 }
 
 
+// __host__ ui difference_cpu(const ui& _a, const ui& _b)
+// {
+//     ui _xor = _a ^ _b;
+//     ui _and = _xor & _a;
+//     ui _pc = __builtin_popcount(_and);
+//     return _pc;
+// }
+
+// __device__ unsigned char difference(const ui& _a, const ui& _b)
+// {
+//     ui _xor = _a ^ _b;
+//     ui _and = _xor & _a;
+//     unsigned char _pc = __popc(_and);
+//     return _pc;
+// }
+
+
 __host__ ui difference_cpu(const ui& _a, const ui& _b)
 {
-    ui _xor = _a ^ _b;
-    ui _and = _xor & _a;
-    ui _pc = __builtin_popcount(_and);
-    return _pc;
+    ui _xor = (_a ^ _b);
+    ui evenBits = _xor & 0xAAAAAAAAAAAAAAAAull;
+    ui oddBits = _xor & 0x5555555555555555ull;
+    ui comp = (evenBits >> 1) | oddBits;
+    return __builtin_popcount(comp);
 }
 
 __device__ unsigned char difference(const ui& _a, const ui& _b)
 {
-    ui _xor = _a ^ _b;
-    ui _and = _xor & _a;
-    unsigned char _pc = __popc(_and);
-    return _pc;
+    ui _xor = (_a ^ _b);
+    ui evenBits = _xor & 0xAAAAAAAAAAAAAAAAull;
+    ui oddBits = _xor & 0x5555555555555555ull;
+    ui comp = (evenBits >> 1) | oddBits;
+    return __popc(comp);
 }
-
 
 
 void cwait()
