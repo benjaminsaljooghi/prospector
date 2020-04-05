@@ -121,6 +121,7 @@ const map <char, char> complement_table = {
 
 
 double duration (double);
+void done(double, string, string);
 void done(double, string);
 void done(double);
 bool subset(vector<int>, vector<int>);
@@ -129,13 +130,12 @@ bool subset(vector<int>, vector<int>);
 
 template <typename T, typename Pred> vector<T> filter(vector<T> in, Pred predicate)
 {
-    printf("filtering %zd items...", in.size());
     double start = omp_get_wtime();
     vector<T> out;
     for (T el : in)
         if (predicate(el))
             out.push_back(el);
-    done(start);
+    done(start, "filter");
     return out;
 }
 

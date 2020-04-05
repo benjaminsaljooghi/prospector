@@ -6,9 +6,14 @@ double duration (double begin)
   return omp_get_wtime() - begin;
 }
 
+void done(double start, string out, string indent)
+{
+	printf("%s%.2fs %s\n", indent.c_str(), duration(start), out.c_str());
+}
+
 void done (double start, string out)
 {
-	printf("%s done in %.3f seconds\n", out.c_str(), duration(start));
+	done(start, out, "");
 }
 
 void done (double start)

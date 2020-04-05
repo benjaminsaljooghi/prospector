@@ -55,10 +55,9 @@ ui* encoded_genome(const string& genome)
     double __start = omp_get_wtime();
     ui num = genome.size() - SIZE + 1;
     ui* encoding = (ui*) malloc(sizeof(ui) * num);
-    printf("genome encoding... ");
     #pragma omp parallel for
     for (ui i = 0; i < num; i++) encoding[i] = encoded(genome.substr(i, SIZE));
-    done(__start);
+    done(__start, "genome encoding", "\t");
     return encoding;
 }
 
@@ -102,14 +101,13 @@ __device__ unsigned char difference(const ui& _a, const ui& _b)
 void cwait()
 {
     double start = omp_get_wtime();
-    printf("kernel... ");
 	cudaError err = cudaDeviceSynchronize();
 	if (err != cudaSuccess)
 	{
 		fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__, cudaGetErrorString(err));
 		exit(err);
 	}
-    done(start);
+    done(start, "kernel", "\t");
 }
 
 
@@ -169,7 +167,6 @@ __global__ void compute_query_map64(
 vector<ui> q_substrate(unsigned char* map64, ui genome_encoding_size)
 {
     // how many qs in this map are containment oriented
-    printf("q_substrate...");
     double start = omp_get_wtime();
     // ui count = 0;
     vector<ui> queries;
@@ -184,8 +181,8 @@ vector<ui> q_substrate(unsigned char* map64, ui genome_encoding_size)
             }
         }
     }
-    done(start);
-    printf("%d %zd\n", genome_encoding_size-200, queries.size());
+    done(start, "q_substrate", "\t");
+    // printf("%d %zd\n", genome_encoding_size-200, queries.size());
     // return count;
     return queries;
 }
@@ -263,18 +260,17 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     ui* device_genome_encoding;
 
     double start = omp_get_wtime();
-    printf("meminit...");
-        er = cudaMalloc(&device_genome, 1 * genome.length()); checkCuda(er);
-        er = cudaMalloc(&device_genome_encoding, 4 * genome_encoding_size); checkCuda(er);
-        er = cudaMemcpy(device_genome, genome.c_str(), 1 * genome.length(), cudaMemcpyHostToDevice); checkCuda(er);
-        er = cudaMemcpy(device_genome_encoding, &genome_encoding[0], 4 * genome_encoding_size, cudaMemcpyHostToDevice); checkCuda(er);
-        ui count_map64 = genome_encoding_size * 64;
-        ui bytes_map64 = 1 * count_map64;
-        unsigned char* map64, *device_map64;
-        er = cudaMallocHost(&map64, bytes_map64); checkCuda(er);
-        er = cudaMalloc(&device_map64, bytes_map64); checkCuda(er);
-        er = cudaMemset(device_map64, 0, bytes_map64); checkCuda(er);
-    done(start);
+    er = cudaMalloc(&device_genome, 1 * genome.length()); checkCuda(er);
+    er = cudaMalloc(&device_genome_encoding, 4 * genome_encoding_size); checkCuda(er);
+    er = cudaMemcpy(device_genome, genome.c_str(), 1 * genome.length(), cudaMemcpyHostToDevice); checkCuda(er);
+    er = cudaMemcpy(device_genome_encoding, &genome_encoding[0], 4 * genome_encoding_size, cudaMemcpyHostToDevice); checkCuda(er);
+    ui count_map64 = genome_encoding_size * 64;
+    ui bytes_map64 = 1 * count_map64;
+    unsigned char* map64, *device_map64;
+    er = cudaMallocHost(&map64, bytes_map64); checkCuda(er);
+    er = cudaMalloc(&device_map64, bytes_map64); checkCuda(er);
+    er = cudaMemset(device_map64, 0, bytes_map64); checkCuda(er);
+    done(start, "meminit", "\t");
 
     compute_query_map64 KERNEL_ARGS3(C_GRID, C_BLOCK, 0)
     (
@@ -305,22 +301,22 @@ vector<Crispr> prospector_main_gpu(const string& genome)
 
     vector<ui> queries = q_substrate(map64, genome_encoding_size);
     
-    printf("a..."); start = omp_get_wtime();
-        vector<Crispr> all_crisprs;
-        for (ui k = K_START; k < K_END; k++)
-        {
-            vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, genome_encoding, k);
+    start = omp_get_wtime();
+    vector<Crispr> all_crisprs;
+    for (ui k = K_START; k < K_END; k++)
+    {
+        vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, genome_encoding, k);
 
-            for (vector<ui> c : crisprs)
+        for (vector<ui> c : crisprs)
+        {
+            if (c.size() >= MIN_REPEATS)
             {
-                if (c.size() >= MIN_REPEATS)
-                {
-                    Crispr _c(k, c, c.size());
-                    all_crisprs.push_back(_c);   
-                }
+                Crispr _c(k, c, c.size());
+                all_crisprs.push_back(_c);   
             }
         }
-    done(start);
+    }
+    done(start, "crispr collection", "\t");
 
     return all_crisprs;
 }
