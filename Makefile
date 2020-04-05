@@ -34,6 +34,9 @@ $(B)/util.o: util.*
 $(B)/crispr.o: crispr.* $(B)/util.o
 	$(CPP) -c crispr.cpp -o $(B)/crispr.o
 
+$(B)/cas.o: cas.* $(B)/util.o $(B)/crispr.o
+	$(CPP) -c cas.cpp -o $(B)/cas.o
+
 # $(B)/blast.o: blast.* $(B)/util.o $(B)/crispr.o
 	# $(CPP) -c $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(B)/blast.o
 
@@ -52,7 +55,7 @@ $(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
 # $(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
 # 	$(CPP) -c prospector.cpp -o $(B)/prospector.o
 
-$(B)/main.out: main.* $(PROSP) $(B)/crispr.o $(B)/util.o
+$(B)/main.out: main.* $(PROSP) $(B)/crispr.o $(B)/util.o $(B)/cas.o
 	$(CPP) -c main.cpp -o $(B)/main.o
 	$(CPP) $(B)/*.o $(LIB_ALL) -o $(B)/main.out -fuse-ld=lld
 
