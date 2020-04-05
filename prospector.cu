@@ -44,7 +44,9 @@ map<char, ui> scheme {
 
 ui encoded(const string& kmer)
 {
+    #if DEBUG == 1
     assert(kmer.size() == SIZE);
+    #endif
     ui e = 0;
     for (int i = 0; i < kmer.size(); i++)
         e |= scheme.at(kmer[i]) << (i * BITS);
