@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 #define K_FRAGMENT 5
 
 
-vector<unsigned int> frames{
+vector<ui> frames{
     0,
     1,
     2
@@ -26,7 +26,7 @@ vector<unsigned int> frames{
 
 const size_t encoding_size = 5;
 
-map<char, int> amino_encoding {
+map<char, ui> amino_encoding {
     {'F', 0},
     {'L', 1},
     {'I', 2},
@@ -50,11 +50,11 @@ map<char, int> amino_encoding {
     {'G', 20},
 };
 
-int str_to_int(string kmer)
+ui str_to_int(string kmer)
 {
     assert(kmer.size() == encoding_size);
-    int my_int = 0;
-    for (int i = 0; i < encoding_size; i++)
+    ui my_int = 0;
+    for (ui i = 0; i < encoding_size; i++)
     {
         my_int += amino_encoding[kmer[i]] << encoding_size * i;
     }
@@ -62,9 +62,9 @@ int str_to_int(string kmer)
 }
 
 
-vector<int> kmers_encoded(vector<string> kmers)
+vector<ui> kmers_encoded(vector<string> kmers)
 {
-    vector<int> encoded;
+    vector<ui> encoded;
     for (string kmer : kmers)
     {
         encoded.push_back(str_to_int(kmer));
@@ -79,18 +79,18 @@ class Translation
     public:
         size_t genome_start;
         size_t genome_end;
-        map<unsigned int, string> translations_raw;
-        map<unsigned int, string> translations_pure;
-        map<unsigned int, vector<string>> translations_pure_kmerized;
-        map<unsigned int, vector<int>> translations_pure_kmerized_encoded;
-        map<unsigned int, vector<size_t>> pure_mapping;
+        map<ui, string> translations_raw;
+        map<ui, string> translations_pure;
+        map<ui, vector<string>> translations_pure_kmerized;
+        map<ui, vector<ui>> translations_pure_kmerized_encoded;
+        map<ui, vector<size_t>> pure_mapping;
 
-        Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k, bool rc);
+        Translation(const string& genome, size_t genome_start, size_t genome_end, ui k, bool rc);
         const char* to_string();
 };
 
 
-Translation::Translation(const string& genome, size_t genome_start, size_t genome_end, unsigned int k, bool rc)
+Translation::Translation(const string& genome, size_t genome_start, size_t genome_end, ui k, bool rc)
 
 {
     this->genome_start = genome_start;
@@ -162,14 +162,14 @@ class CasProfile
         string name;
         string type;
         vector<string> kmers;
-        vector<int> encoded_kmers;
+        vector<ui> encoded_kmers;
 		
-		CasProfile(string, unsigned int);
+		CasProfile(string, ui);
 
-        static vector<CasProfile> load_casprofiles(string, unsigned int);
+        static vector<CasProfile> load_casprofiles(string, ui);
 };
 
-CasProfile::CasProfile(string _path, unsigned int _k)
+CasProfile::CasProfile(string _path, ui _k)
 {
 	this->name = fs::path(_path).stem();
 	this->kmers = kmerize(parse_fasta_single(_path), _k);
@@ -177,7 +177,7 @@ CasProfile::CasProfile(string _path, unsigned int _k)
     this->type = this->name.substr(0, this->name.find("_"));
 }
 
-vector<CasProfile> CasProfile::load_casprofiles(string dir, unsigned int k)
+vector<CasProfile> CasProfile::load_casprofiles(string dir, ui k)
 {   
     vector<CasProfile> profiles;  
     for (const auto& entry : fs::directory_iterator(dir))
