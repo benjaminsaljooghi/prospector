@@ -235,18 +235,18 @@ size_t demarc_end_clusters(const vector<vector<size_t>>& clusters)
 }
 
 
-bool gene_fragment_less(const gene_fragment& a, const gene_fragment& b)
+bool gene_fragment_less(const Fragment& a, const Fragment& b)
 {
     return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
 }
 
-size_t gene_fragment_length(const gene_fragment& a)
+size_t gene_fragment_length(const Fragment& a)
 {
     return demarc_end_clusters(a.clusters) - demarc_start_clusters(a.clusters); 
 }
 
 // a is contained within b
-bool fragment_contains(const gene_fragment& a, const gene_fragment& b)
+bool fragment_contains(const Fragment& a, const Fragment& b)
 {
     size_t a_start = demarc_start_clusters(a.clusters);
     size_t a_end = demarc_end_clusters(a.clusters);
@@ -258,7 +258,7 @@ bool fragment_contains(const gene_fragment& a, const gene_fragment& b)
     return (!equivalent) && a_start >= b_start && a_end <= b_end;
 }
 
-void print_gene_fragment(const gene_fragment& gene)
+void print_gene_fragment(const Fragment& gene)
 {
     size_t index_kmer_start = demarc_start_clusters(gene.clusters);
     size_t index_kmer_end = demarc_end_clusters(gene.clusters);
@@ -280,15 +280,15 @@ void print_gene_fragment(const gene_fragment& gene)
             );
 }
 
-vector<gene_fragment> detect(const string& genome, const Translation* translation, const CasProfile* cas_profile, const Crispr* crispr)
+vector<Fragment> detect(const string& genome, const Translation* translation, const CasProfile* cas_profile, const Crispr* crispr)
 {
-    vector<gene_fragment> fragments;
+    vector<Fragment> fragments;
     for (auto const& [frame, crispr_profile] : translation->translations_pure_kmerized_encoded)
     {
         optional<vector<vector<size_t>>> clusters = detect_single(crispr_profile, cas_profile->encoded_kmers);
         if (clusters)
         {
-            gene_fragment fragment = {
+            Fragment fragment = {
                 crispr,
                 translation,
                 cas_profile,
@@ -315,20 +315,20 @@ Translation Translation::from_crispr_down(const string& genome, const Crispr& c)
     return Translation(genome, c.end, genome_end, K_FRAGMENT, true);
 }
 
-vector<gene_fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams)
+vector<Fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams)
 {
     double start = omp_get_wtime();  
 
     vector<CasProfile> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
 
-    vector<gene_fragment> fragments;
+    vector<Fragment> fragments;
     for (ull i = 0; i < crisprs.size(); i++)
     {   
         for (ull j = 0; j < cas_profiles.size(); j++)
         {
-            vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &cas_profiles[j], &crisprs[i]);
-            vector<gene_fragment> _fragments = detect(genome, &upstreams[i], &cas_profiles[j], &crisprs[i]);
+            vector<Fragment> __fragments = detect(genome, &downstreams[i], &cas_profiles[j], &crisprs[i]);
+            vector<Fragment> _fragments = detect(genome, &upstreams[i], &cas_profiles[j], &crisprs[i]);
             fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
             fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
         }
@@ -339,12 +339,12 @@ vector<gene_fragment> Cas::cas(const string& genome, const vector<Crispr>& crisp
     sort(fragments.begin(), fragments.end(), gene_fragment_less);
 
     // remove any fragments that are a complete subset of any other fragments
-    vector<gene_fragment> fragments_filtered;
+    vector<Fragment> fragments_filtered;
 
-    for (gene_fragment a : fragments)
+    for (Fragment a : fragments)
     {
         bool do_not_include_a = false;
-        for (gene_fragment b : fragments)
+        for (Fragment b : fragments)
         {
             if (fragment_contains(a, b))
             {
@@ -364,12 +364,12 @@ vector<gene_fragment> Cas::cas(const string& genome, const vector<Crispr>& crisp
     return fragments_filtered;
 }
 
-void Cas::print_fragments(vector<Crispr> crisprs, vector<gene_fragment> fragments)
+void Cas::print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments)
 {
     for (const Crispr& crispr : crisprs)
     {
         fmt::print("\tcrispr {} {}\n", crispr.start, crispr.k);
-        for (const gene_fragment& g : fragments )
+        for (const Fragment& g : fragments )
         {
             if (g.reference_crispr->start == crispr.start && g.reference_crispr->k == crispr.k)
             {

@@ -43,7 +43,7 @@ class CasProfile
         static vector<CasProfile> load_casprofiles(string, ui);
 };
 
-struct gene_fragment
+struct Fragment
 {
     const Crispr* reference_crispr;
     const Translation* reference_translation;
@@ -54,6 +54,6 @@ struct gene_fragment
 
 namespace Cas
 {
-    vector<gene_fragment> cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams);
-    void print_fragments(vector<Crispr> crisprs, vector<gene_fragment> fragments);
+    vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams);
+    void print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments);
 }

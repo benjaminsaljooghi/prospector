@@ -101,7 +101,7 @@ void stdrun(const string& genome, string cas_dir)
 
     done(_start, "translation gen");
 
-    vector<gene_fragment> fragments = Cas::cas(genome, final, cas_dir, downstreams, upstreams);
+    vector<Fragment> fragments = Cas::cas(genome, final, cas_dir, downstreams, upstreams);
     Cas::print_fragments(final, fragments);
     done(start, "stdrun");
 }
