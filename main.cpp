@@ -497,6 +497,18 @@ void print_encoding(ull encoding)
     cout << a << endl;
 }
 
+void stdrun(const string& genome, string cas_dir)
+{
+    vector<Crispr> crisprs = Prospector::prospector_main(genome);      
+    CrisprUtil::cache_crispr_information(genome, crisprs);
+    vector<Crispr> good = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
+    sort(good.begin(), good.end(), CrisprUtil::heuristic_greater);
+    vector<Crispr> final = CrisprUtil::get_domain_best(good);
+    sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
+    // CrisprUtil::print(genome, final);
+    cas(genome, final, cas_dir);
+}
+
 int main()
 {
     
@@ -507,24 +519,13 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    const string genome = load_genomes(genome_dir)[1];
+    vector<string> genomes = load_genomes(genome_dir);
 
 
-    vector<Crispr> crisprs = Prospector::prospector_main(genome);
-       
-    CrisprUtil::cache_crispr_information(genome, crisprs);
+    stdrun(genomes[0], cas_dir);
+    stdrun(genomes[1], cas_dir);
 
-    vector<Crispr> good = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
 
-    sort(good.begin(), good.end(), CrisprUtil::heuristic_greater);
-
-    vector<Crispr> final = CrisprUtil::get_domain_best(good);
-
-    sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
-
-    // CrisprUtil::print(genome, final);
-
-    cas(genome, final, cas_dir);
 
     done(start, "main");
 
