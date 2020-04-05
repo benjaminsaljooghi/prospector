@@ -145,3 +145,12 @@ vector <string> kmerize (string seq, unsigned int k)
 }
 
 
+
+vector<string> load_genomes(string dir)
+{
+    vector<string> genomes;
+    for (const auto& entry : filesystem::directory_iterator(dir))
+        genomes.push_back(parse_fasta_single(entry.path()));
+    return genomes;
+}
+

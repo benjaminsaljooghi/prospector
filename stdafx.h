@@ -28,10 +28,16 @@
 #include <cmath>
 #include <csignal>
 
+#include <bitset>
+#include <cstddef>
+#include <filesystem>
 
+#include "fmt/core.h"
+#include "fmt/format.h"
+
+
+using namespace std;
+namespace fs = std::filesystem;
 
 typedef unsigned long long ull;
 typedef unsigned int ui;
-
-using namespace std;
-

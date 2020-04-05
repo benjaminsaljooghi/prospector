@@ -54,5 +54,7 @@ namespace CrisprUtil
 
     bool heuristic_less(const Crispr& a, const Crispr& b);
     bool heuristic_greater(const Crispr& a, const Crispr& b);
+
+    void debug(vector<Crispr>, const string& genome, ui start, ui end);
 }
 

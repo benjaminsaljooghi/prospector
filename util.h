@@ -5,12 +5,6 @@
 #define DEBUG 0
 
 
-
-
-
-
-
-
 #define K_START 20
 #define K_END 60
 #define K_COUNT (K_END - K_START)
@@ -113,8 +107,6 @@ const map <char, char> complement_table = {
 
 
 
-
-
 double duration (double);
 void done(double, string, string);
 void done(double, string);
@@ -190,3 +182,8 @@ string reverse_complement(string);
 int mismatch_count(string);
 string seqs_to_fasta(vector<string>);
 vector<string> kmerize(string, unsigned int);
+
+namespace Util
+{
+    vector<string> load_genomes(string dir);
+}

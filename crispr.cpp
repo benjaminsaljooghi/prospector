@@ -395,3 +395,17 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
 //         all_spacers.insert(crispr.spacers.begin(), crispr.spacers.end());
 //     return BLAST(all_spacers, target_db_path);
 // }
+
+
+
+void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, ui end)
+{
+
+    vector<Crispr> filtered = filter(crisprs, [&](Crispr c) { return c.start > start-100 && c.end < end+100; } );
+
+    sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
+
+    int how_many = filtered.size();
+    for (size_t i = filtered.size()-how_many; i < filtered.size(); i++)
+        filtered[i].print(genome);
+}

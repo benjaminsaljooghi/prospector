@@ -1,5 +1,7 @@
 #include "prospector.h"
 
+typedef unsigned long long ull;
+typedef unsigned int ui;
 
 #include "cuda.h"
 #include "cuda_runtime.h"
@@ -18,15 +20,6 @@
 #define KERNEL_ARGS3(grid, block, sh_mem)
 #define KERNEL_ARGS4(grid, block, sh_mem, stream)
 #endif
-
-
-
-
-
-
-
-
-
 
 
 
