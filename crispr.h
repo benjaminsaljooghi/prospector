@@ -40,7 +40,7 @@ class Crispr
 
 namespace CrisprUtil
 {
-    bool any_overlap(Crispr, Crispr);
+    bool any_overlap(const Crispr& a, const Crispr& b);
     void print(string genome, vector<Crispr> crisprs, map<string, int> spacer_scores);
     void print(string genome, vector<Crispr> crisprs);
     bool repeat_substring(Crispr b, unsigned int start, unsigned int end);

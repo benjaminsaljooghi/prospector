@@ -288,14 +288,14 @@ bool CrisprUtil::repeat_subset(Crispr a, Crispr b)
 }
 
 
-bool CrisprUtil::any_overlap(Crispr a, Crispr b)
+bool CrisprUtil::any_overlap(const Crispr& a, const Crispr& b)
 {
 
-	unsigned int a_start = a.genome_indices[0];
-	unsigned int a_end = a.genome_indices[a.size - 1] + a.k - 1;
+	ui a_start = a.genome_indices[0];
+	ui a_end = a.genome_indices[a.size - 1] + a.k - 1;
 
-	unsigned int b_start = b.genome_indices[0];
-	unsigned int b_end = b.genome_indices[b.size - 1] + b.k - 1;
+	ui b_start = b.genome_indices[0];
+	ui b_end = b.genome_indices[b.size - 1] + b.k - 1;
 
 
 	bool a_before_b = a_start <= b_start;
@@ -312,24 +312,21 @@ vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
 {
 	// this function expects the crisprs to be sorted
 
-    printf("filtering %zd crisprs... ", crisprs.size());
+    printf("generating domain best from %zd crisprs... ", crisprs.size());
     double start = omp_get_wtime();
 
     // get the best of each domain
     vector<Crispr> crisprs_domain_best;
     for (size_t i = 0; i < crisprs.size(); i++)
     {        
-        // if there are no overlaps for this crispr (it is unique), then it is a new crispr_best. We have to iterate through all crisprs to find all unique domains.
         Crispr crispr = crisprs[i];
 
-        // check if the domain exists
         bool best_already_exists = false;
         for (size_t j = 0; j < crisprs_domain_best.size(); j++)
         {
             Crispr other = crisprs_domain_best[j];
             if (CrisprUtil::any_overlap(crispr, other))
             {
-                // the best of the domain has already been added
                 best_already_exists = true;
                 break;
             }

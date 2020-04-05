@@ -129,10 +129,13 @@ bool subset(vector<int>, vector<int>);
 
 template <typename T, typename Pred> vector<T> filter(vector<T> in, Pred predicate)
 {
+    printf("filtering %zd items...", in.size());
+    double start = omp_get_wtime();
     vector<T> out;
     for (T el : in)
         if (predicate(el))
             out.push_back(el);
+    done(start);
     return out;
 }
 

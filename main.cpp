@@ -510,20 +510,17 @@ int main()
        
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
-    // debug(crisprs, genome, 1577776, 1578028);
+    vector<Crispr> good = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
 
-    vector<Crispr> good_heuristic_crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.7; });
+    sort(good.begin(), good.end(), CrisprUtil::heuristic_greater);
 
-    sort(good_heuristic_crisprs.begin(), good_heuristic_crisprs.end(), CrisprUtil::heuristic_greater);
-
-    vector<Crispr> final = CrisprUtil::get_domain_best(good_heuristic_crisprs);
+    vector<Crispr> final = CrisprUtil::get_domain_best(good);
 
     sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
 
     CrisprUtil::print(genome, final);
 
     cas(genome, final, cas_dir);
-
 
     done(start, "main");
 
