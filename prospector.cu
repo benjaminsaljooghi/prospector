@@ -303,8 +303,6 @@ vector<Crispr> prospector_main_gpu(const string& genome)
     // }
 
 
-
-
     vector<ui> queries = q_substrate(map64, genome_encoding_size);
     
     printf("a..."); start = omp_get_wtime();
@@ -324,7 +322,6 @@ vector<Crispr> prospector_main_gpu(const string& genome)
         }
     done(start);
 
-
     return all_crisprs;
 }
 
@@ -336,15 +333,9 @@ vector<Crispr> Prospector::prospector_main(const string& genome)
     printf("genome has size %zd\n", genome.size());
     
     double start = omp_get_wtime(); 
-    printf("prospector\n");
 
-
-
-
-    vector<Crispr> crisprs; 
-    crisprs = prospector_main_gpu(genome);
-    
-    
+    vector<Crispr> crisprs = prospector_main_gpu(genome);    
+   
     done(start, "prospector");
 
     return crisprs;

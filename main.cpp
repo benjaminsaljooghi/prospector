@@ -510,7 +510,7 @@ int main()
        
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
-    // debug(crisprs, genome, 1684700, 1684833);
+    // debug(crisprs, genome, 1577776, 1578028);
 
     vector<Crispr> good_heuristic_crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.7; });
 
@@ -522,7 +522,6 @@ int main()
 
     CrisprUtil::print(genome, final);
 
-  
     cas(genome, final, cas_dir);
 
 
