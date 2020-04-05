@@ -123,7 +123,7 @@ bool subset(vector<int>, vector<int>);
 
 
 
-template <typename T, typename Pred> vector<T> filter(vector<T> in, Pred predicate)
+template <typename T, typename Pred> vector<T> filter(const vector<T>& in, Pred predicate)
 {
     double start = omp_get_wtime();
     vector<T> out;

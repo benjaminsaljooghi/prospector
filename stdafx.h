@@ -20,7 +20,6 @@
 #include <thread>
 #include <cassert>
 #include <omp.h>
-#include <filesystem>
 #include <unistd.h>
 
 #include <sys/types.h>

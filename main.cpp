@@ -9,6 +9,9 @@
 #include <bitset>
 #include <cstddef>
 
+#include <filesystem>
+namespace fs = std::filesystem;
+
 
 #define UPSTREAM_SIZE 10000
 #define K_FRAGMENT 5
@@ -163,24 +166,24 @@ class CasProfile
 		
 		CasProfile(string, unsigned int);
 
-        static map<string, vector<CasProfile>> load_casprofiles(string, unsigned int);
+        static vector<CasProfile> load_casprofiles(string, unsigned int);
 };
 
 CasProfile::CasProfile(string _path, unsigned int _k)
 {
-	this->name = filesystem::path(_path).stem();
+	this->name = fs::path(_path).stem();
 	this->kmers = kmerize(parse_fasta_single(_path), _k);
     this->encoded_kmers = kmers_encoded(this->kmers);
     this->type = this->name.substr(0, this->name.find("_"));
 }
 
-map<string, vector<CasProfile>> CasProfile::load_casprofiles(string dir, unsigned int k)
+vector<CasProfile> CasProfile::load_casprofiles(string dir, unsigned int k)
 {   
-    map<string, vector<CasProfile>> profiles;  
-    for (const auto& entry : filesystem::directory_iterator(dir))
+    vector<CasProfile> profiles;  
+    for (const auto& entry : fs::directory_iterator(dir))
     {
         CasProfile cas_profile(entry.path(), k);
-        profiles[cas_profile.type].push_back(cas_profile);
+        profiles.push_back(cas_profile);
     }
     return profiles;
 }
@@ -298,7 +301,7 @@ bool fragment_contains(const gene_fragment& a, const gene_fragment& b)
     return (!equivalent) && a_start >= b_start && a_end <= b_end;
 }
 
-void print_gene_fragment(gene_fragment gene)
+void print_gene_fragment(const gene_fragment& gene)
 {
     size_t index_kmer_start = demarc_start_clusters(gene.clusters);
     size_t index_kmer_end = demarc_end_clusters(gene.clusters);
@@ -341,57 +344,39 @@ vector<gene_fragment> detect(const string& genome, const Translation* translatio
     return fragments;
 }
 
-void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
+Translation from_crispr_up(const string& genome, const Crispr& c)
+{
+    size_t genome_start = c.start - UPSTREAM_SIZE;
+    genome_start = genome_start < c.start ? genome_start : 0;
+    return Translation(genome, genome_start, c.start, K_FRAGMENT, false);
+}
+
+Translation from_crispr_down(const string& genome, const Crispr& c)
+{
+    size_t genome_end = c.end + UPSTREAM_SIZE;
+    genome_end = genome_end > c.end ? genome_end : genome.size()-1;
+    return Translation(genome, c.end, genome_end, K_FRAGMENT, true);
+}
+
+vector<gene_fragment> cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams)
 {
     double start = omp_get_wtime();  
 
-    map<string, vector<CasProfile>> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
+    vector<CasProfile> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
-    vector<Translation> downstreams;
-    vector<Translation> upstreams;
-
-    for (const Crispr& crispr : crisprs)
-    {
-        // guard against overflow
-        size_t genome_start = crispr.start - UPSTREAM_SIZE;
-        if (genome_start > crispr.start)
-        {
-            genome_start = 0;
-        }
-
-        Translation down(genome, genome_start, crispr.start, K_FRAGMENT, false);
-
-        size_t genome_end = crispr.end + UPSTREAM_SIZE;
-        if (genome_end < crispr.end)
-        {
-            genome_end = genome.size()-1;
-        }
-        Translation up(genome, crispr.end, genome_end, K_FRAGMENT, true);
-        downstreams.push_back(down);
-        upstreams.push_back(up);
-    }
 
     vector<gene_fragment> fragments;
-
-    #pragma omp parallel for
-    for (size_t i = 0; i < crisprs.size(); i++)
-    {
-        for (auto const& [type, profiles] : cas_profiles)
+    for (ull i = 0; i < crisprs.size(); i++)
+    {   
+        for (ull j = 0; j < cas_profiles.size(); j++)
         {
-            for (size_t j = 0; j < profiles.size(); j++)
-            {
-                vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &profiles[j], &crisprs[i]);
-                vector<gene_fragment> _fragments = detect(genome, &upstreams[i], &profiles[j], &crisprs[i]);
-
-                #pragma omp critical
-                {
-                    fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
-                    fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
-                }
-            }
+            vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &cas_profiles[j], &crisprs[i]);
+            vector<gene_fragment> _fragments = detect(genome, &upstreams[i], &cas_profiles[j], &crisprs[i]);
+            fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
+            fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
         }
-    }
 
+    }
 
     // organize fragments, sorted by position, then sorted by type, then sorted by fragment
     sort(fragments.begin(), fragments.end(), gene_fragment_less);
@@ -416,12 +401,18 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
         }
     }
     
+    
 
-    // place gene fragments into crispr buckets
+    done(start, "cas");
+    return fragments_filtered;
+}
+
+void print_fragments(vector<Crispr> crisprs, vector<gene_fragment> fragments)
+{
     for (const Crispr& crispr : crisprs)
     {
         fmt::print("\tcrispr {} {}\n", crispr.start, crispr.k);
-        for (const gene_fragment& g : fragments_filtered )
+        for (const gene_fragment& g : fragments )
         {
             if (g.reference_crispr->start == crispr.start && g.reference_crispr->k == crispr.k)
             {
@@ -429,12 +420,8 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
             }
         }
     }
-
-
-    done(start, "cas");
-
-
 }
+
 
 void finish()
 {
@@ -462,7 +449,6 @@ vector<string> load_genomes(string dir)
         genomes.push_back(parse_fasta_single(entry.path()));
     return genomes;
 }
-
 
 
 map<char, ull> _scheme {
@@ -499,14 +485,34 @@ void print_encoding(ull encoding)
 
 void stdrun(const string& genome, string cas_dir)
 {
+    double start = omp_get_wtime();
+
     vector<Crispr> crisprs = Prospector::prospector_main(genome);      
+
     CrisprUtil::cache_crispr_information(genome, crisprs);
     vector<Crispr> good = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
     sort(good.begin(), good.end(), CrisprUtil::heuristic_greater);
     vector<Crispr> final = CrisprUtil::get_domain_best(good);
     sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
     // CrisprUtil::print(genome, final);
-    cas(genome, final, cas_dir);
+
+
+    double _start = omp_get_wtime();
+
+    vector<Translation> downstreams;
+    vector<Translation> upstreams;
+
+    for (const Crispr& c : final)
+    {
+        downstreams.push_back(from_crispr_down(genome, c));
+        upstreams.push_back(from_crispr_up(genome, c));
+    }
+
+    done(_start, "translation gen");
+
+    vector<gene_fragment> fragments = cas(genome, final, cas_dir, downstreams, upstreams);
+    // print_fragments(final, fragments);
+    done(start, "stdrun");
 }
 
 int main()
@@ -521,10 +527,8 @@ int main()
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     vector<string> genomes = load_genomes(genome_dir);
 
-
     stdrun(genomes[0], cas_dir);
     stdrun(genomes[1], cas_dir);
-
 
 
     done(start, "main");

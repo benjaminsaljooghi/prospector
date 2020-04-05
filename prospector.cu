@@ -64,24 +64,6 @@ ui* encoded_genome(const string& genome)
     return encoding;
 }
 
-
-// __host__ ui difference_cpu(const ui& _a, const ui& _b)
-// {
-//     ui _xor = _a ^ _b;
-//     ui _and = _xor & _a;
-//     ui _pc = __builtin_popcount(_and);
-//     return _pc;
-// }
-
-// __device__ unsigned char difference(const ui& _a, const ui& _b)
-// {
-//     ui _xor = _a ^ _b;
-//     ui _and = _xor & _a;
-//     unsigned char _pc = __popc(_and);
-//     return _pc;
-// }
-
-
 __host__ ui difference_cpu(const ui& _a, const ui& _b)
 {
     ui _xor = (_a ^ _b);
@@ -91,7 +73,7 @@ __host__ ui difference_cpu(const ui& _a, const ui& _b)
     return __builtin_popcount(comp);
 }
 
-__device__ unsigned char difference(const ui& _a, const ui& _b)
+__device__ unsigned char difference_gpu(const ui& _a, const ui& _b)
 {
     ui _xor = (_a ^ _b);
     ui evenBits = _xor & 0xAAAAAAAAAAAAAAAAull;
@@ -114,8 +96,6 @@ void cwait()
 }
 
 
-
-inline
 cudaError_t checkCuda(cudaError_t result)
 {
 #if DEBUG == 1
@@ -128,17 +108,8 @@ cudaError_t checkCuda(cudaError_t result)
 }
 
 
-#define C_GRID 64
-#define C_BLOCK 512
-#define THREAD_BUFFER_COUNT 150 // this can be brought lower and lower until FATAL messages are received
-
-// #define C_GRID 1
-// #define C_BLOCK 1
-// #define THREAD_BUFFER_COUNT (150 * 64 * 512) 
-
-#define K_BUFFER_COUNT (THREAD_BUFFER_COUNT * C_GRID * C_BLOCK)
-#define TOTAL_BUFFER_COUNT (K_COUNT * K_BUFFER_COUNT)
-
+#define C_GRID 128
+#define C_BLOCK 1024
 
 __global__ void compute_qmap(
     const ui* genome_encoding,
@@ -161,7 +132,7 @@ __global__ void compute_qmap(
         for (ui i = 0; i < MAP_SIZE; i++)
         {
             ui t = genome_encoding[query + K_START + SPACER_SKIP + i];
-            qmap[(query*MAP_SIZE) + i] = difference(q, t);
+            qmap[(query*MAP_SIZE) + i] = difference_gpu(q, t);
         }
     }
 }
@@ -205,17 +176,24 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
         ui _i = genome_encoding[i + (chunk * SIZE)];
         ui _j = genome_encoding[j + (chunk * SIZE)];
         diff += difference_cpu(_i, _j);
+        if (diff > allowed_mutations)
+        {
+            return false;
+        }
     }
-
     const ui checked_so_far = (chunks * SIZE);
 
-    for (ui __i = checked_so_far; i < k; __i++)
-    {
-        diff += genome[i + checked_so_far + __i] == genome[j + checked_so_far + __i] ? 0 : 1; 
-    }
+    return diff <= checked_so_far / MUTANT_TOLERANCE_RATIO;
 
-    return diff <= allowed_mutations;
-    // return diff <= (chunks * SIZE) / MUTANT_TOLERANCE_RATIO;
+
+
+
+    // for (ui __i = checked_so_far; i < k; __i++)
+    // {
+        // diff += genome[i + checked_so_far + __i] == genome[j + checked_so_far + __i] ? 0 : 1; 
+    // }
+    // return diff <= allowed_mutations;
+    
 }
 
 
@@ -246,6 +224,21 @@ vector<vector<ui>> single_k_from_q_substrate(const char* genome, vector<ui> quer
     }
     return crisprs;
 }
+
+
+void debug_map()
+{
+    // ui query = 1283501;
+    // ui q = genome_encoding[query];
+    // for (ui i = 0; i < 1000; i++)
+    // {
+    //     ui pos = query + K_START + SPACER_SKIP + i;
+    //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
+
+    //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
+    // }
+}
+
 
 
 vector<Crispr> prospector_main_gpu(const string& genome)
@@ -284,28 +277,20 @@ vector<Crispr> prospector_main_gpu(const string& genome)
 
     er = cudaMemcpy(qmap, device_qmap, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er);
 
-    cudaFree(device_genome_encoding);
-    cudaFree(device_qmap);
-
-    // debug
-    // ui query = 1283501;
-    // ui q = genome_encoding[query];
-    // for (ui i = 0; i < 1000; i++)
-    // {
-    //     ui pos = query + K_START + SPACER_SKIP + i;
-    //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
-
-    //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
-    // }
-
+    cudaFree(device_genome_encoding); cudaFree(device_qmap);
 
     vector<ui> queries = q_substrate(qmap, genome_encoding_size);
     
+
+    double total_single_k_time = 0;
     start = omp_get_wtime();
     vector<Crispr> all_crisprs;
     for (ui k = K_START; k < K_END; k++)
     {
+        double __start = omp_get_wtime();
         vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, genome_encoding, k);
+        double __end = omp_get_wtime();
+        total_single_k_time += __end - __start;
 
         for (vector<ui> c : crisprs)
         {
@@ -316,6 +301,7 @@ vector<Crispr> prospector_main_gpu(const string& genome)
             }
         }
     }
+	printf("\t%.2fs total single k time\n", total_single_k_time);
     done(start, "crispr collection", "\t");
 
     return all_crisprs;
@@ -333,6 +319,8 @@ vector<Crispr> Prospector::prospector_main(const string& genome)
     vector<Crispr> crisprs = prospector_main_gpu(genome);    
    
     done(start, "prospector");
+
+    printf("%zd crisrps\n", crisprs.size());
 
     return crisprs;
 }

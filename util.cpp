@@ -3,12 +3,12 @@
 
 double duration (double begin)
 {
-  return omp_get_wtime() - begin;
+  return (omp_get_wtime() - begin) * 1000;
 }
 
 void done(double start, string out, string indent)
 {
-	printf("%s%.2fs %s\n", indent.c_str(), duration(start), out.c_str());
+	printf("%s%.0fms %s\n", indent.c_str(), duration(start), out.c_str());
 }
 
 void done (double start, string out)
