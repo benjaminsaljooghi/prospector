@@ -77,7 +77,12 @@ double get_conservation_spacer(vector<string> spacers)
 		{
 			string a = spacers[i];
 			string b = spacers[j];
-			double score = (left_aligned_spacer_similarity(a, b) + right_aligned_spacer_similarity(a, b)) / 2.0;
+
+			double score = left_aligned_spacer_similarity(a, b);
+			if (a.size() != b.size())
+			{
+				score = (score + right_aligned_spacer_similarity(a, b)) / 2.0;
+			}
 			score_sum += score;
 			comparisons++;
 		}
