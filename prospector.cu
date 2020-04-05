@@ -301,7 +301,7 @@ vector<Crispr> prospector_main_gpu(const string& genome)
             }
         }
     }
-	printf("\t%.2fs total single k time\n", total_single_k_time);
+	printf("\t%.0fms total single k time\n", total_single_k_time * 1000.0);
     done(start, "crispr collection", "\t");
 
     return all_crisprs;
@@ -311,8 +311,6 @@ vector<Crispr> prospector_main_gpu(const string& genome)
 vector<Crispr> Prospector::prospector_main(const string& genome)
 {
     assert(K_START >= SIZE);
-
-    printf("genome has size %zd\n", genome.size());
     
     double start = omp_get_wtime(); 
 
