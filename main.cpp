@@ -373,6 +373,7 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
 
     vector<gene_fragment> fragments;
 
+    #pragma omp parallel for
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         for (auto const& [type, profiles] : cas_profiles)
@@ -382,8 +383,11 @@ void cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir)
                 vector<gene_fragment> __fragments = detect(genome, &downstreams[i], &profiles[j], &crisprs[i]);
                 vector<gene_fragment> _fragments = detect(genome, &upstreams[i], &profiles[j], &crisprs[i]);
 
-                fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
-                fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
+                #pragma omp critical
+                {
+                    fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
+                    fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
+                }
             }
         }
     }
@@ -518,7 +522,7 @@ int main()
 
     sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
 
-    CrisprUtil::print(genome, final);
+    // CrisprUtil::print(genome, final);
 
     cas(genome, final, cas_dir);
 
