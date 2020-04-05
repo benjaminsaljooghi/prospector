@@ -1,5 +1,5 @@
 
-OPT = -O3
+OPT = -O0
 
 CPP = clang++ $(OPT) --std=gnu++2a -g -Wall -fopenmp
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp $(OPT) 
@@ -46,7 +46,7 @@ PROSP = $(B)/prospector.o $(B)/dlinked.o
 LIB_ALL = $(LIB_CPP) $(LIB_CUDA)
 $(B)/dlinked.o: $(B)/prospector.o
 	$(NVCC) -dlink $(B)/prospector.o -o $(B)/dlinked.o
-$(B)/prospector.o: prospector.* $(B)/util.o $(B)/crispr.o
+$(B)/prospector.o: prospector.*
 	$(NVCC) -dc prospector.cu -o $(B)/prospector.o
 
 # ALT CPU

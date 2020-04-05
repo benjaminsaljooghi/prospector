@@ -11,6 +11,10 @@ namespace fs = std::filesystem;
 #include "crispr.h"
 
 
+#define UPSTREAM_SIZE 10000
+#define K_FRAGMENT 5
+
+
 
 class Translation
 {
@@ -54,6 +58,6 @@ struct Fragment
 
 namespace Cas
 {
-    vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams);
+    vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Translation>& downstreams, const vector<Translation>& upstreams);
     void print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments);
 }

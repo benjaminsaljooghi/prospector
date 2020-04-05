@@ -2,10 +2,6 @@
 
 
 
-#define UPSTREAM_SIZE 10000
-#define K_FRAGMENT 5
-
-
 vector<ui> frames{
     0,
     1,
@@ -315,11 +311,9 @@ Translation Translation::from_crispr_down(const string& genome, const Crispr& c)
     return Translation(genome, c.end, genome_end, K_FRAGMENT, true);
 }
 
-vector<Fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, string cas_dir, const vector<Translation>& downstreams, const vector<Translation>& upstreams)
+vector<Fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Translation>& downstreams, const vector<Translation>& upstreams)
 {
     double start = omp_get_wtime();  
-
-    vector<CasProfile> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
 
     vector<Fragment> fragments;

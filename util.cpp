@@ -146,7 +146,7 @@ vector <string> kmerize (string seq, unsigned int k)
 
 
 
-vector<string> load_genomes(string dir)
+vector<string> Util::load_genomes(string dir)
 {
     vector<string> genomes;
     for (const auto& entry : filesystem::directory_iterator(dir))
