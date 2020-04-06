@@ -35,7 +35,7 @@ ui* encoded_genome(const string& genome)
     ui* encoding = (ui*) malloc(sizeof(ui) * num);
     #pragma omp parallel for
     for (ui i = 0; i < num; i++) encoding[i] = encoded(genome.substr(i, SIZE));
-    done(__start, "genome encoding", "\t");
+    done(__start, "genome encoding");
     return encoding;
 }
 
@@ -66,7 +66,7 @@ vector<ui> q_substrate(unsigned char* qmap, ui genome_encoding_size)
             }
         }
     }
-    done(start, "q_substrate", "\t");
+    done(start, "q_substrate");
     // printf("%d %zd\n", genome_encoding_size-200, queries.size());
     // return count;
     return queries;
@@ -178,6 +178,7 @@ vector<Crispr> prospector_main(const string& genome)
             }
         }
     }
+    fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
     return all_crisprs;
 }
 
@@ -203,6 +204,8 @@ vector<Crispr> get_crisprs(const string& genome)
 
 void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
 {
+    double start = omp_get_wtime();
+
     vector<Crispr> crisprs = get_crisprs(genome);
 
     vector<Translation> downstreams;
@@ -213,8 +216,11 @@ void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
     
     vector<Fragment> fragments = Cas::cas(genome, crisprs, cas_profiles, downstreams, upstreams);
 
-    CrisprUtil::print(genome, crisprs);
-    Cas::print_fragments(crisprs, fragments);
+    // CrisprUtil::print(genome, crisprs);
+    // Cas::print_fragments(crisprs, fragments);
+
+    done(start, "stdrun");
+    fmt::print("\n\n");
 }
 
 int main()

@@ -28,7 +28,8 @@
 
 typedef unsigned long long ull;
 typedef unsigned int ui;
-
+typedef signed long int li;
+typedef unsigned char uc;
 
 
 namespace Prospector

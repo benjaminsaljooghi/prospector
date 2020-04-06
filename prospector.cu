@@ -7,7 +7,8 @@
 #include "cuda_fp16.h"
 
 #include <cassert>
-
+#include <chrono>
+#include <stdio.h>
 
 
 #ifdef __CUDACC__
@@ -66,28 +67,56 @@ __global__ void compute_qmap(const ui* genome_encoding, const ui genome_encoding
 }
 
 
+std::chrono::_V2::system_clock::time_point time()
+{
+    return std::chrono::high_resolution_clock::now();
+}
+
+std::chrono::_V2::system_clock::time_point time(std::chrono::_V2::system_clock::time_point start, const char* message)
+{
+    auto curr = time();
+    printf("%ldms %s\n", std::chrono::duration_cast<std::chrono::milliseconds>(curr - start).count(), message);
+    return curr;
+}
+
+
 unsigned char* Prospector::get_qmap(ui* genome_encoding, ui genome_encoding_size)
 {
+    std::chrono::_V2::system_clock::time_point start;
+
     assert(K_START >= SIZE);
 
     cudaError er;
 
+    ui bytes_genome_encoding = sizeof(ui) * genome_encoding_size;
+    ui bytes_qmap = sizeof(uc) * genome_encoding_size * MAP_SIZE;
+    
     ui* d_genome_encoding;
+    uc* d_qmap;
 
-    er = cudaMalloc(&d_genome_encoding, 4 * genome_encoding_size); checkCuda(er);
-    er = cudaMemcpy(d_genome_encoding, &genome_encoding[0], 4 * genome_encoding_size, cudaMemcpyHostToDevice); checkCuda(er);
-    ui count_qmap = genome_encoding_size * MAP_SIZE;
-    ui bytes_qmap = 1 * count_qmap;
-    unsigned char* qmap, *d_qmap;
-    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
+    start = time();
+    
+    er = cudaMalloc(&d_genome_encoding, bytes_genome_encoding); checkCuda(er);
+    er = cudaMemcpy(d_genome_encoding, genome_encoding, bytes_genome_encoding, cudaMemcpyHostToDevice); checkCuda(er);
+    start = time(start, "genome encoding cudainit");
+
     er = cudaMalloc(&d_qmap, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap malloc");
+
     er = cudaMemset(d_qmap, 0, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap memcpy");
 
     compute_qmap KERNEL_ARGS3(C_GRID, C_BLOCK, 0) (d_genome_encoding, genome_encoding_size, d_qmap);
 
+    uc* qmap;
+    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap mallochost");
+
     cudaDeviceSynchronize();
+    start = time(start, "kernel");
 
     er = cudaMemcpy(qmap, d_qmap, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er);
+    start = time(start, "qmap memcpy");
 
     cudaFree(d_genome_encoding); cudaFree(d_qmap);
 
