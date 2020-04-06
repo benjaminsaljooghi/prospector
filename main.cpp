@@ -121,7 +121,7 @@ void debug_map()
 
 
 
-vector<vector<ui>> single_k_from_q_substrate(const char* genome, vector<ui> queries, ui* genome_encoding, const ui& k)
+vector<vector<ui>> single_k_from_q_substrate(const char* genome, const vector<ui>& queries, ui* genome_encoding, const ui& k)
 {
     vector<vector<ui>> crisprs;
     ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
@@ -184,7 +184,7 @@ vector<Crispr> prospector_main(const string& genome)
 
 
 
-void stdrun(const string& genome, string cas_dir)
+void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
 {
     double start = omp_get_wtime();
 
@@ -196,7 +196,6 @@ void stdrun(const string& genome, string cas_dir)
     sort(good.begin(), good.end(), CrisprUtil::heuristic_greater);
     vector<Crispr> final = CrisprUtil::get_domain_best(good);
     sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
-    CrisprUtil::print(genome, final);
 
     double _start = omp_get_wtime();
 
@@ -212,10 +211,11 @@ void stdrun(const string& genome, string cas_dir)
     done(_start, "translation gen");
 
 
-    vector<CasProfile> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
-
     vector<Fragment> fragments = Cas::cas(genome, final, cas_profiles, downstreams, upstreams);
-    Cas::print_fragments(final, fragments);
+
+
+    // CrisprUtil::print(genome, final);
+    // Cas::print_fragments(final, fragments);
     done(start, "stdrun");
 }
 
@@ -228,9 +228,10 @@ int main()
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     vector<string> genomes = Util::load_genomes(genome_dir);
+    vector<CasProfile> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
 
-    stdrun(genomes[0], cas_dir);
-    stdrun(genomes[1], cas_dir);
+    stdrun(genomes[0], cas_profiles);
+    stdrun(genomes[1], cas_profiles);
 
     done(start, "main");
 
