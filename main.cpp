@@ -184,39 +184,37 @@ vector<Crispr> prospector_main(const string& genome)
 
 
 
-void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
+vector<Crispr> get_crisprs(const string& genome)
 {
-    double start = omp_get_wtime();
-
-    vector<Crispr> crisprs;
-    crisprs = prospector_main(genome);      
+    vector<Crispr> crisprs = prospector_main(genome);      
 
     CrisprUtil::cache_crispr_information(genome, crisprs);
-    vector<Crispr> good = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
-    sort(good.begin(), good.end(), CrisprUtil::heuristic_greater);
-    vector<Crispr> final = CrisprUtil::get_domain_best(good);
-    sort(final.begin(), final.end(), [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
 
-    double _start = omp_get_wtime();
+    crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
+
+    sort(crisprs, CrisprUtil::heuristic_greater);
+
+    crisprs = CrisprUtil::get_domain_best(crisprs);
+
+    sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
+
+    return crisprs;
+}
+
+void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
+{
+    vector<Crispr> crisprs = get_crisprs(genome);
 
     vector<Translation> downstreams;
     vector<Translation> upstreams;
 
-    for (const Crispr& c : final)
-    {
-        downstreams.push_back(Translation::from_crispr_down(genome, c));
-        upstreams.push_back(Translation::from_crispr_up(genome, c));
-    }
+    for (const Crispr& c : crisprs) downstreams.push_back(Translation::from_crispr_down(genome, c));
+    for (const Crispr& c: crisprs) upstreams.push_back(Translation::from_crispr_up(genome, c));
+    
+    vector<Fragment> fragments = Cas::cas(genome, crisprs, cas_profiles, downstreams, upstreams);
 
-    done(_start, "translation gen");
-
-
-    vector<Fragment> fragments = Cas::cas(genome, final, cas_profiles, downstreams, upstreams);
-
-
-    // CrisprUtil::print(genome, final);
-    // Cas::print_fragments(final, fragments);
-    done(start, "stdrun");
+    CrisprUtil::print(genome, crisprs);
+    Cas::print_fragments(crisprs, fragments);
 }
 
 int main()

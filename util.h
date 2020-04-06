@@ -155,6 +155,13 @@ template <typename T> T most_frequent(vector<T> elements)
 	return consensus;
 }
 
+template <typename Iterable, typename Comp> void sort(Iterable& iterable, Comp comp)
+{
+    double start = omp_get_wtime();
+    sort(iterable.begin(), iterable.end(), comp);
+    string str = fmt::format("sort {} items", iterable.size());
+    done(start, str);
+}
 
 
 map<string, string> parse_fasta(string);
