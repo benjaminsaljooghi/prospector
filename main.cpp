@@ -180,7 +180,7 @@ void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
     auto start = time();
 
     vector<Crispr> crisprs = get_crisprs(genome);
-    vector<Flanks> flanks = TransUtil::get_flanks(genome, crisprs);
+    vector<Flanks> flanks = CasUtil::get_flanks(genome, crisprs);
     vector<Fragment> fragments = CasUtil::cas(genome, crisprs, cas_profiles, flanks);
 
     CrisprUtil::print(genome, crisprs);

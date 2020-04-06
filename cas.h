@@ -16,19 +16,15 @@ namespace fs = std::filesystem;
 
 
 
-class Translation
+struct Translation
 {
-    public:
-        size_t genome_start;
-        size_t genome_end;
-        map<ui, string> translations_raw;
-        map<ui, string> translations_pure;
-        map<ui, vector<string>> translations_pure_kmerized;
-        map<ui, vector<ui>> translations_pure_kmerized_encoded;
-        map<ui, vector<size_t>> pure_mapping;
-
-        Translation(const string& genome, size_t genome_start, size_t genome_end, ui k, bool rc);
-
+    size_t genome_start;
+    size_t genome_end;
+    map<ui, string> translations_raw;
+    map<ui, string> translations_pure;
+    map<ui, vector<string>> translations_pure_kmerized;
+    map<ui, vector<ui>> translations_pure_kmerized_encoded;
+    map<ui, vector<size_t>> pure_mapping;
 };
 
 struct Flanks
@@ -38,16 +34,12 @@ struct Flanks
 };
 
 
-class CasProfile
+struct CasProfile
 {
-    public:
-        string name;
-        string type;
-        vector<string> kmers;
-        vector<ui> encoded_kmers;
-		
-		CasProfile(string, ui);
-
+    string name;
+    string type;
+    vector<string> kmers;
+    vector<ui> encoded_kmers;
 };
 
 struct Fragment
@@ -60,19 +52,10 @@ struct Fragment
 };
 
 
-
-namespace TransUtil
-{
-
-    const char* to_string(const Translation&);
-    vector<Flanks> get_flanks(const string& genome, const vector<Crispr>&);
-}
-
-
-
 namespace CasUtil
 {
-    vector<CasProfile> load(string, ui);
+    vector<Flanks> get_flanks(const string& genome, const vector<Crispr>&);    
     vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>&);
     void print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments);
+    vector<CasProfile> load(string, ui);
 }
