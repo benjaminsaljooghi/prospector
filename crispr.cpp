@@ -1,36 +1,5 @@
 #include "crispr.h"
 
-// Private helper functions
-
-double bp_match_score(string a, string b, bool differential)
-{
-	size_t a_len = a.length();
-	size_t b_len = b.length();
-
-	size_t small_length;
-	size_t big_length;
-
-	if (a_len < b_len)
-	{
-		small_length = a_len;
-		big_length = b_len;
-	}
-	else
-	{
-		small_length = b_len;
-		big_length = a_len;
-	}
-	
-	int matches = 0;
-
-	for (size_t i = 0; i < small_length; i++)
-		matches += a[i] == b[i] ? 1 : 0;
-
-	int max_possible_matches = differential ? big_length : small_length;
-	return (double) matches / (double) max_possible_matches;
-}
-
-
 double get_conservation_consensus(vector<string> repeats)
 {
 	string consensus = most_frequent(repeats);
@@ -52,8 +21,53 @@ double get_conservation_consensus(vector<string> repeats)
 }
 
 
+double left_aligned_spacer_similarity(string a, string b)
+{
+	ull len = min(a.size(), b.size());
+	ull matches = 0;
+	for (ull i = 0; i < len; i++)
+	{
+		matches += a[i] == b[i] ? 1 : 0;
+	}
+	return (double) matches / (double) len;
+}
+
+double right_aligned_spacer_similarity(string a, string b)
+{
+	string _big;
+	string _small;
+
+	if (a.size() > b.size())
+	{
+		_big = a;
+		_small = b;
+	}
+	else
+	{
+		_big = b;
+		_small = a;
+	}
+
+
+	ull len = _small.size();
+	ull offset = _big.size() - len;
+	
+	ull matches = 0;
+	for (ull i = 0; i < len; i++)
+	{
+		matches += _big[i + offset] == _small[i] ? 1 : 0;
+	}
+	return (double) matches / (double) len;
+}
+
 double get_conservation_spacer(vector<string> spacers)
 {
+	// perform a right aligned and a left aligned spacer mismatch score?
+	// if (spacers.size() == 1)
+	// {
+		// return 0;
+	// }
+
 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
 	double score_sum = 0;
 	int comparisons = 0;
@@ -63,7 +77,12 @@ double get_conservation_spacer(vector<string> spacers)
 		{
 			string a = spacers[i];
 			string b = spacers[j];
-			double score = bp_match_score(a, b, true);
+
+			double score = left_aligned_spacer_similarity(a, b);
+			if (a.size() != b.size())
+			{
+				score = (score + right_aligned_spacer_similarity(a, b)) / 2.0;
+			}
 			score_sum += score;
 			comparisons++;
 		}
@@ -102,14 +121,15 @@ double get_spacer_variance(vector<string> spacers)
 
 // Crispr
 
-Crispr::Crispr(unsigned int _k, unsigned int* inclusive, unsigned int* exclusive)
+Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, size_t size)
 {
-	k = _k;
-	genome_indices = inclusive;
-	size = exclusive - inclusive;
+	// printf("%d %zd\n", genome_indices[0], size);
+	this->k = k;
+	this->genome_indices = genome_indices;
+	this->size = size;;
 }
 		
-void Crispr::update(string& genome)
+void Crispr::update(const string& genome)
 {
 	this->repeats = vector<string>(size);
 	this->spacers = vector<string>(size-1);
@@ -127,22 +147,24 @@ void Crispr::update(string& genome)
 		spacers[i] = genome.substr(current_repeat_end, spacer_size);
 	}
 
-	this->start = *genome_indices;
+	this->start = genome_indices[0];
 	this->end = (genome_indices[size-1]) + k - 1;
 
 	this->conservation_repeats = get_conservation_consensus(repeats);
-	this->conservation_spacers = get_conservation_spacer(spacers);
-	this->spacer_variance = get_spacer_variance(spacers);
-	this->overall_heuristic = (conservation_repeats) - (conservation_spacers * (1 + spacer_variance) * 2); // high conservation_repeats and low conservation_spacers is ideal
+	// this->conservation_spacers = get_conservation_spacer(spacers); 
+	this->spacer_variance = get_spacer_variance(spacers) / 100;
+	this->conservation_spacers2 = get_conservation_spacer(spacers);
+
+	double subtraction = (conservation_spacers2) + (4*spacer_variance);
+	this->overall_heuristic = conservation_repeats - subtraction;
 }
 
 
-void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
+void Crispr::print_generic(const string& genome, function<void(string)>& print_spacer)
 {
 	// header
 	printf("%d - %d %d\n\n", start, end, k);
-	printf("\t%fh %fr %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers, spacer_variance);
-
+	printf("\t%fh %fr %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
 
 	// repeats
 	printf("\trepeats (%zd)\n", repeats.size());
@@ -182,7 +204,7 @@ void Crispr::print_generic(string& genome, function<void(string)>& print_spacer)
 
 }
 
-void Crispr::print(string& genome, map<string, int> spacer_scores)
+void Crispr::print(const string& genome, map<string, int> spacer_scores)
 {
 	function<void(string)> print_spacer = [&](string spacer) {
 		printf("%d/%zd", spacer_scores[spacer], spacer.length());
@@ -191,12 +213,11 @@ void Crispr::print(string& genome, map<string, int> spacer_scores)
 	print_generic(genome, print_spacer);
 }
 
-void Crispr::print(string& genome)
+void Crispr::print(const string& genome)
 {
 	function<void(string)> print_spacer = [](string spacer) {
 		printf("%d/%zd", -1, spacer.length());
 	};
-
 	print_generic(genome, print_spacer);
 }
 
@@ -267,14 +288,14 @@ bool CrisprUtil::repeat_subset(Crispr a, Crispr b)
 }
 
 
-bool CrisprUtil::any_overlap(Crispr a, Crispr b)
+bool CrisprUtil::any_overlap(const Crispr& a, const Crispr& b)
 {
 
-	unsigned int a_start = a.genome_indices[0];
-	unsigned int a_end = a.genome_indices[a.size - 1] + a.k - 1;
+	ui a_start = a.genome_indices[0];
+	ui a_end = a.genome_indices[a.size - 1] + a.k - 1;
 
-	unsigned int b_start = b.genome_indices[0];
-	unsigned int b_end = b.genome_indices[b.size - 1] + b.k - 1;
+	ui b_start = b.genome_indices[0];
+	ui b_end = b.genome_indices[b.size - 1] + b.k - 1;
 
 
 	bool a_before_b = a_start <= b_start;
@@ -291,24 +312,21 @@ vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
 {
 	// this function expects the crisprs to be sorted
 
-    printf("filtering %zd crisprs... ", crisprs.size());
-    double start = omp_get_wtime();
+    // printf("generating domain best from %zd crisprs... ", crisprs.size());
+    auto start = time();
 
     // get the best of each domain
     vector<Crispr> crisprs_domain_best;
     for (size_t i = 0; i < crisprs.size(); i++)
     {        
-        // if there are no overlaps for this crispr (it is unique), then it is a new crispr_best. We have to iterate through all crisprs to find all unique domains.
         Crispr crispr = crisprs[i];
 
-        // check if the domain exists
         bool best_already_exists = false;
         for (size_t j = 0; j < crisprs_domain_best.size(); j++)
         {
             Crispr other = crisprs_domain_best[j];
             if (CrisprUtil::any_overlap(crispr, other))
             {
-                // the best of the domain has already been added
                 best_already_exists = true;
                 break;
             }
@@ -319,13 +337,13 @@ vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
             crisprs_domain_best.push_back(crispr);
         }
     }
-    done(start);
+	time(start, "domain best");
     return crisprs_domain_best;
 }
 
 vector<Crispr> CrisprUtil::spacer_score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores)
 {
-    double start_time = omp_get_wtime();
+    auto start_time = time();
     vector<Crispr> crisprs_filtered;
     for (Crispr crispr : crisprs)
     {
@@ -338,20 +356,19 @@ vector<Crispr> CrisprUtil::spacer_score_filtered(vector<Crispr> crisprs, map<str
 
         crisprs_filtered.push_back(crispr);
     }
-    done(start_time, "final filtering");
+    time(start_time, "final filtering");
     return crisprs_filtered;
 }
 
-void CrisprUtil::cache_crispr_information(vector<Crispr>& crisprs, string genome)
+void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& crisprs)
 {
-    double start = omp_get_wtime();
-	printf("caching %zd crisprs... ", crisprs.size());
+    auto start = time();
     #pragma omp parallel for
     for (size_t i = 0; i < crisprs.size(); i++)
     {
         crisprs[i].update(genome);
-    }
-    done(start);
+	}
+    time(start, "cache crisprs");
 }
 
 // void CrisprUtil::debug(string genome, vector<Crispr> crisprs)
@@ -369,10 +386,29 @@ void CrisprUtil::cache_crispr_information(vector<Crispr>& crisprs, string genome
 //     exit(0);
 // }
 
-map<string, int> CrisprUtil::get_spacer_scores(vector<Crispr>& crisprs, string target_db_path)
+
+
+// map<string, int> CrisprUtil::get_spacer_scores(vector<Crispr>& crisprs, string target_db_path)
+// {
+//     set<string> all_spacers;
+//     for (Crispr& crispr : crisprs)
+//         all_spacers.insert(crispr.spacers.begin(), crispr.spacers.end());
+//     return BLAST(all_spacers, target_db_path);
+// }
+
+
+
+void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, ui end)
 {
-    set<string> all_spacers;
-    for (Crispr& crispr : crisprs)
-        all_spacers.insert(crispr.spacers.begin(), crispr.spacers.end());
-    return BLAST(all_spacers, target_db_path);
+
+    vector<Crispr> filtered = filter(crisprs, [&](Crispr c) { return c.start > start-100 && c.end < end+100; } );
+
+    sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
+
+    int how_many = filtered.size();
+    for (size_t i = filtered.size()-how_many; i < filtered.size(); i++)
+        filtered[i].print(genome);
+
+	fmt::print("terminating after debug\n");
+	exit(0);
 }

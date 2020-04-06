@@ -1,20 +1,8 @@
 #include "util.h"
 
 
-double duration (double begin)
-{
-  return omp_get_wtime() - begin;
-}
 
-void done (double start, string out)
-{
-	printf("%s done in %.3f seconds\n", out.c_str(), duration(start));
-}
 
-void done (double start)
-{
-	done(start, "");
-}
 
 bool subset (vector <int> a, vector <int> b)
 {
@@ -30,8 +18,8 @@ bool subset (vector <int> a, vector <int> b)
 
 map <string, string> parse_fasta (string file_path)
 {
-	printf("reading %s... ", file_path.c_str());
-	double start = omp_get_wtime();
+	// printf("reading %s... ", file_path.c_str());
+	// auto start = time();
 	ifstream input(file_path);
 	if (!input.good())
 	{
@@ -79,7 +67,7 @@ map <string, string> parse_fasta (string file_path)
 		seqs[name] = content;
 	}
 
-	done(start);
+	// done(start);
 	return seqs;
 }
 
@@ -139,4 +127,13 @@ vector <string> kmerize (string seq, unsigned int k)
 	return kmers;
 }
 
+
+
+vector<string> Util::load_genomes(string dir)
+{
+    vector<string> genomes;
+    for (const auto& entry : filesystem::directory_iterator(dir))
+        genomes.push_back(parse_fasta_single(entry.path()));
+    return genomes;
+}
 

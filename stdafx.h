@@ -1,5 +1,3 @@
-#pragma once
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -20,15 +18,30 @@
 #include <thread>
 #include <cassert>
 #include <omp.h>
-#include <filesystem>
 #include <unistd.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <cmath>
+#include <csignal>
+
+#include <bitset>
+#include <cstddef>
+#include <filesystem>
+
+#include <chrono>
+
+
+
+#include "fmt/core.h"
+#include "fmt/format.h"
+#include "time.h"
 
 
 
 using namespace std;
+namespace fs = std::filesystem;
 
+typedef unsigned long long ull;
+typedef unsigned int ui;

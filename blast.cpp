@@ -21,7 +21,7 @@ USING_SCOPE(blast);
 
 map <string, int> BLAST (set <string> _seqs, string target_db_path)
 {
-    double start = omp_get_wtime();
+    auto start = time();
 
     vector<string> seqs;
     size_t max = 0;
@@ -83,6 +83,6 @@ map <string, int> BLAST (set <string> _seqs, string target_db_path)
         seq_max_scores[seqs[i]] = max_score;
     }
 
-    done(start);
+    time(start);
     return seq_max_scores;
 }
