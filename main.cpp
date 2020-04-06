@@ -9,35 +9,9 @@
 #include "cas.h"
 
 
-map<char, ui> scheme {
-    {'A', 0},
-    {'C', 1},
-    {'G', 2},
-    {'T', 3} 
-};
 
 
-ui encoded(const string& kmer)
-{
-    #if DEBUG == 1
-    assert(kmer.size() == SIZE);
-    #endif
-    ui e = 0;
-    for (int i = 0; i < kmer.size(); i++)
-        e |= scheme.at(kmer[i]) << (i * BITS);
-    return e;
-}
 
-ui* encoded_genome(const string& genome)
-{
-    double __start = omp_get_wtime();
-    ui num = genome.size() - SIZE + 1;
-    ui* encoding = (ui*) malloc(sizeof(ui) * num);
-    #pragma omp parallel for
-    for (ui i = 0; i < num; i++) encoding[i] = encoded(genome.substr(i, SIZE));
-    done(__start, "genome encoding");
-    return encoding;
-}
 
 ui difference_cpu(const ui& _a, const ui& _b)
 {
@@ -153,10 +127,10 @@ vector<vector<ui>> single_k_from_q_substrate(const char* genome, const vector<ui
 
 vector<Crispr> prospector_main(const string& genome)
 {
-    ui* genome_encoding = encoded_genome(genome);
+    Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
     ui genome_encoding_size = genome.size() - SIZE + 1;
 
-    unsigned char* qmap = Prospector::get_qmap(genome_encoding, genome_encoding_size);
+    unsigned char* qmap = Prospector::get_qmap(encoding.d_encoding, genome_encoding_size);
 
     vector<ui> queries = q_substrate(qmap, genome_encoding_size);
     
@@ -165,7 +139,7 @@ vector<Crispr> prospector_main(const string& genome)
     for (ui k = K_START; k < K_END; k++)
     {
         double __start = omp_get_wtime();
-        vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, genome_encoding, k);
+        vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, encoding.encoding, k);
         double __end = omp_get_wtime();
         total_single_k_time += __end - __start;
 
@@ -216,8 +190,8 @@ void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
     
     vector<Fragment> fragments = Cas::cas(genome, crisprs, cas_profiles, downstreams, upstreams);
 
-    // CrisprUtil::print(genome, crisprs);
-    // Cas::print_fragments(crisprs, fragments);
+    CrisprUtil::print(genome, crisprs);
+    Cas::print_fragments(crisprs, fragments);
 
     done(start, "stdrun");
     fmt::print("\n\n");
@@ -225,6 +199,9 @@ void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
 
 int main()
 {
+    Prospector::device_init();
+
+
     printf("running main...\n");
     double start = omp_get_wtime();
 

@@ -40,6 +40,7 @@ cudaError_t checkCuda(cudaError_t result)
     return result;
 }
 
+__device__ int __popc (unsigned int x);
 
 __device__ unsigned char difference_gpu(const ui& _a, const ui& _b)
 {
@@ -80,37 +81,103 @@ std::chrono::_V2::system_clock::time_point time(std::chrono::_V2::system_clock::
 }
 
 
-unsigned char* Prospector::get_qmap(ui* genome_encoding, ui genome_encoding_size)
+__device__ ui scheme(const char c)
 {
-    std::chrono::_V2::system_clock::time_point start;
+    switch (c)
+    {
+        case 'A':
+            return 0;
+        case 'C':
+            return 1;
+        case 'G':
+            return 2;
+        case 'T':
+            return 3;
+    }
+}
 
-    assert(K_START >= SIZE);
+__global__ void compute_encoding(const char* genome, ui* genome_encoding, ui genome_size, ui genome_encoding_size)
+{
+    const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    const ui stride = blockDim.x * gridDim.x;
+
+    for (ui i = thread_id; i < genome_encoding_size; i += stride)
+    {
+        ui e = 0;
+        for (int j = 0; j < SIZE; j++)
+        {
+            e |= scheme(genome[i + j]) << (j * BITS);
+        }
+        genome_encoding[i] = e;
+    }
+}
+
+
+
+void Prospector::device_init()
+{
+    std::chrono::_V2::system_clock::time_point start = time();
+    cudaFree(0);
+    time(start, "device init");
+}
+
+
+Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui genome_size)
+{
+    std::chrono::_V2::system_clock::time_point start = time();
 
     cudaError er;
+    
+    char* d_genome;
+    ui bytes_genome = sizeof(char) * genome_size;
+    er = cudaMalloc(&d_genome, bytes_genome); checkCuda(er);
+    er = cudaMemcpy(d_genome, genome, bytes_genome, cudaMemcpyHostToDevice); checkCuda(er);
 
-    ui bytes_genome_encoding = sizeof(ui) * genome_encoding_size;
+    ui* d_genome_encoding;
+    ui genome_encoding_size = genome_size - SIZE + 1;
+    ui bytes_genome_encoding = sizeof(ui) * genome_encoding_size; 
+    er = cudaMalloc(&d_genome_encoding, bytes_genome_encoding); checkCuda(er);
+
+    compute_encoding KERNEL_ARGS3(C_GRID, C_BLOCK, 0) (d_genome, d_genome_encoding, genome_size, genome_encoding_size);
+
+    ui* genome_encoding;
+    er = cudaMallocHost(&genome_encoding, bytes_genome_encoding); checkCuda(er);
+
+    cudaDeviceSynchronize();
+
+    er = cudaMemcpy(genome_encoding, d_genome_encoding, bytes_genome_encoding, cudaMemcpyDeviceToHost); checkCuda(er);
+
+    time(start, "genome encoding total");
+
+
+    Prospector::Encoding encoding;
+
+    encoding.encoding = genome_encoding;
+    encoding.d_encoding = d_genome_encoding;
+
+    return encoding;
+}
+
+
+uc* Prospector::get_qmap(ui* d_encoding, ui genome_encoding_size)
+{
+    assert(K_START >= SIZE);
+    cudaError er; 
+    std::chrono::_V2::system_clock::time_point start = time();
+
+
     ui bytes_qmap = sizeof(uc) * genome_encoding_size * MAP_SIZE;
     
-    ui* d_genome_encoding;
     uc* d_qmap;
-
-    start = time();
     
-    er = cudaMalloc(&d_genome_encoding, bytes_genome_encoding); checkCuda(er);
-    er = cudaMemcpy(d_genome_encoding, genome_encoding, bytes_genome_encoding, cudaMemcpyHostToDevice); checkCuda(er);
-    start = time(start, "genome encoding cudainit");
-
     er = cudaMalloc(&d_qmap, bytes_qmap); checkCuda(er);
     start = time(start, "qmap malloc");
-
-    er = cudaMemset(d_qmap, 0, bytes_qmap); checkCuda(er);
-    start = time(start, "qmap memcpy");
-
-    compute_qmap KERNEL_ARGS3(C_GRID, C_BLOCK, 0) (d_genome_encoding, genome_encoding_size, d_qmap);
 
     uc* qmap;
     er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
     start = time(start, "qmap mallochost");
+
+    compute_qmap KERNEL_ARGS3(C_GRID, C_BLOCK, 0) (d_encoding, genome_encoding_size, d_qmap);
 
     cudaDeviceSynchronize();
     start = time(start, "kernel");
@@ -118,7 +185,7 @@ unsigned char* Prospector::get_qmap(ui* genome_encoding, ui genome_encoding_size
     er = cudaMemcpy(qmap, d_qmap, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er);
     start = time(start, "qmap memcpy");
 
-    cudaFree(d_genome_encoding); cudaFree(d_qmap);
+    cudaFree(d_qmap);
 
     return qmap;
 }

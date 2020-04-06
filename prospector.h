@@ -34,6 +34,13 @@ typedef unsigned char uc;
 
 namespace Prospector
 {
-    unsigned char* get_qmap(ui* genome_encoding, ui genome_encoding_size);
+    struct Encoding {
+        ui* encoding;
+        ui* d_encoding;
+    };
+
+    void device_init();
+    uc* get_qmap(ui* genome_encoding, ui genome_encoding_size);
+    Encoding get_genome_encoding(const char* genome, ui genome_size);
 }
 
