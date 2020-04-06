@@ -9,6 +9,7 @@
 #include <cassert>
 #include <chrono>
 #include <stdio.h>
+#include "time.h"
 
 
 #ifdef __CUDACC__
@@ -65,19 +66,6 @@ __global__ void compute_qmap(const ui* genome_encoding, const ui genome_encoding
             qmap[(query*MAP_SIZE) + i] = difference_gpu(q, t);
         }
     }
-}
-
-
-std::chrono::_V2::system_clock::time_point time()
-{
-    return std::chrono::high_resolution_clock::now();
-}
-
-std::chrono::_V2::system_clock::time_point time(std::chrono::_V2::system_clock::time_point start, const char* message)
-{
-    auto curr = time();
-    printf("%ldms %s\n", std::chrono::duration_cast<std::chrono::milliseconds>(curr - start).count(), message);
-    return curr;
 }
 
 

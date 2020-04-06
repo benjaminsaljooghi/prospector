@@ -1,25 +1,8 @@
 #include "util.h"
 
 
-double duration (double begin)
-{
-  return (omp_get_wtime() - begin) * 1000;
-}
 
-void done(double start, string out, string indent)
-{
-	printf("%s%.0fms %s\n", indent.c_str(), duration(start), out.c_str());
-}
 
-void done (double start, string out)
-{
-	done(start, out, "");
-}
-
-void done (double start)
-{
-	done(start, "");
-}
 
 bool subset (vector <int> a, vector <int> b)
 {
@@ -36,7 +19,7 @@ bool subset (vector <int> a, vector <int> b)
 map <string, string> parse_fasta (string file_path)
 {
 	// printf("reading %s... ", file_path.c_str());
-	// double start = omp_get_wtime();
+	// auto start = time();
 	ifstream input(file_path);
 	if (!input.good())
 	{

@@ -29,7 +29,7 @@ ull encoded(const string& kmer)
 
 ull* encoded_genome(const string& genome)
 {
-    double __start = omp_get_wtime();
+    auto __start = time();
     ull num = genome.size() - SIZE + 1;
     ull* encoding = (ull*) malloc(sizeof(ull) * num);
     printf("\t\tgenome encoding... ");
@@ -72,7 +72,7 @@ bool mutant(const string& genome, const ull* genome_encoding, const ui& i, const
 
 vector<vector<unsigned int>> substrate(const string& genome, const unsigned int& k, const ull* genome_encoding, const ull& genome_encoding_size)
 {
-    double start = omp_get_wtime();
+    auto start = time();
     unsigned int allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
     vector<vector<unsigned int>> k_crisprs;
     printf("\t\t%d...", k);
@@ -98,7 +98,7 @@ vector<vector<unsigned int>> substrate(const string& genome, const unsigned int&
 
 vector<Crispr> crispr_formation_pure(const string& genome)
 {
-    double start = omp_get_wtime();
+    auto start = time();
     vector<vector<vector<unsigned int>>> crisprs; 
 
     ull* genome_encoding = encoded_genome(genome);
@@ -110,7 +110,7 @@ vector<Crispr> crispr_formation_pure(const string& genome)
     }
     done(start, "\t\tcrispr collection");
 
-    start = omp_get_wtime();
+    start = time();
     vector<Crispr> _crisprs;
     for (unsigned int i = 0; i < K_COUNT; i++)
     {
@@ -130,8 +130,8 @@ vector<Crispr> crispr_formation_pure(const string& genome)
 
 vector<Crispr> prospector_main_gpu(const string& genome)
 {
-    double start;
-    start = omp_get_wtime();
+    auto start;
+    start = time();
     printf("\tcrispr formation\n");
     vector<Crispr> crisprs = crispr_formation_pure(genome);
     done(start, "\tcrispr formation");
@@ -143,9 +143,9 @@ vector<Crispr> Prospector::prospector_main(const string& genome)
 {
     printf("genome has size %zd\n", genome.size());
     
-    double start;
+    auto start;
     printf("prospector\n");
-    start = omp_get_wtime();
+    start = time();
     vector<Crispr> crisprs = prospector_main_gpu(genome);
     done(start, "prospector");
 
