@@ -61,7 +61,7 @@ template <typename T> vector<T> flatten(vector<vector<T>> vecs)
     return flattened;
 }
 
-template <typename T> bool contains(vector<T> target, T query)
+template <typename T> bool contains(const vector<T>& target, const T& query)
 {
     for (T elem : target)
         if (elem == query)

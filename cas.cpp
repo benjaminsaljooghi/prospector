@@ -370,7 +370,6 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
 {
     auto start = time();  
 
-
     vector<Fragment> fragments;
     for (ull i = 0; i < crisprs.size(); i++)
     {   
@@ -381,7 +380,6 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
             fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
             fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
         }
-
     }
 
     // organize fragments, sorted by position, then sorted by type, then sorted by fragment
