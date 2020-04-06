@@ -8,9 +8,7 @@
 #include "blast.h"
 #include "cas.h"
 
-
-
-
+#include "time.h"
 
 
 ui difference_cpu(const ui& _a, const ui& _b)
@@ -26,7 +24,7 @@ ui difference_cpu(const ui& _a, const ui& _b)
 vector<ui> q_substrate(unsigned char* qmap, ui genome_encoding_size)
 {
     // how many qs in this map are containment oriented
-    double start = omp_get_wtime();
+    auto start = time();
     // ui count = 0;
     vector<ui> queries;
     for (ui query = 0; query < genome_encoding_size - 200; query++)
@@ -40,7 +38,7 @@ vector<ui> q_substrate(unsigned char* qmap, ui genome_encoding_size)
             }
         }
     }
-    done(start, "q_substrate");
+    time(start, "q_substrate");
     // printf("%d %zd\n", genome_encoding_size-200, queries.size());
     // return count;
     return queries;
@@ -134,14 +132,12 @@ vector<Crispr> prospector_main(const string& genome)
 
     vector<ui> queries = q_substrate(qmap, genome_encoding_size);
     
-    double total_single_k_time = 0;
+    auto start = time();
+
     vector<Crispr> all_crisprs;
     for (ui k = K_START; k < K_END; k++)
     {
-        double __start = omp_get_wtime();
         vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, encoding.encoding, k);
-        double __end = omp_get_wtime();
-        total_single_k_time += __end - __start;
 
         for (vector<ui> c : crisprs)
         {
@@ -152,6 +148,8 @@ vector<Crispr> prospector_main(const string& genome)
             }
         }
     }
+    time(start, "crisps from q_substrate");
+
     fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
     return all_crisprs;
 }
@@ -176,24 +174,19 @@ vector<Crispr> get_crisprs(const string& genome)
     return crisprs;
 }
 
+
 void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
 {
-    double start = omp_get_wtime();
+    auto start = time();
 
     vector<Crispr> crisprs = get_crisprs(genome);
-
-    vector<Translation> downstreams;
-    vector<Translation> upstreams;
-
-    for (const Crispr& c : crisprs) downstreams.push_back(Translation::from_crispr_down(genome, c));
-    for (const Crispr& c: crisprs) upstreams.push_back(Translation::from_crispr_up(genome, c));
-    
-    vector<Fragment> fragments = Cas::cas(genome, crisprs, cas_profiles, downstreams, upstreams);
+    vector<Flanks> flanks = TransUtil::get_flanks(genome, crisprs);
+    vector<Fragment> fragments = CasUtil::cas(genome, crisprs, cas_profiles, flanks);
 
     CrisprUtil::print(genome, crisprs);
-    Cas::print_fragments(crisprs, fragments);
+    CasUtil::print_fragments(crisprs, fragments);
 
-    done(start, "stdrun");
+    time(start, "stdrun");
     fmt::print("\n\n");
 }
 
@@ -203,18 +196,18 @@ int main()
 
 
     printf("running main...\n");
-    double start = omp_get_wtime();
+    auto start = time();
 
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     vector<string> genomes = Util::load_genomes(genome_dir);
-    vector<CasProfile> cas_profiles = CasProfile::load_casprofiles(cas_dir, K_FRAGMENT);
+    vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, K_FRAGMENT);
 
     stdrun(genomes[0], cas_profiles);
     stdrun(genomes[1], cas_profiles);
 
-    done(start, "main");
+    time(start, "main");
 
     return 0;                                                                                                           
 }

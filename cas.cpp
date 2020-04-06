@@ -35,6 +35,73 @@ map<char, ui> amino_encoding {
     {'G', 20},
 };
 
+const map <string, string> codon_table = {
+    {"TTT", "F"},
+    {"TTC", "F"},
+    {"TTA", "L"},
+    {"TTG", "L"},
+    {"CTT", "L"},
+    {"CTC", "L"},
+    {"CTA", "L"},
+    {"CTG", "L"},
+    {"ATT", "I"},
+    {"ATC", "I"},
+    {"ATA", "I"},
+    {"ATG", "M"},
+    {"GTT", "V"},
+    {"GTC", "V"},
+    {"GTA", "V"},
+    {"GTG", "V"},
+    {"TCT", "S"},
+    {"TCC", "S"},
+    {"TCA", "S"},
+    {"TCG", "S"},
+    {"CCT", "P"},
+    {"CCC", "P"},
+    {"CCA", "P"},
+    {"CCG", "P"},
+    {"ACT", "T"},
+    {"ACC", "T"},
+    {"ACA", "T"},
+    {"ACG", "T"},
+    {"GCT", "A"},
+    {"GCC", "A"},
+    {"GCA", "A"},
+    {"GCG", "A"},
+    {"TAT", "Y"},
+    {"TAC", "Y"},
+    {"TAA", STOP},
+    {"TAG", STOP},
+    {"CAT", "H"},
+    {"CAC", "H"},
+    {"CAA", "Q"},
+    {"CAG", "Q"},
+    {"AAT", "N"},
+    {"AAC", "N"},
+    {"AAA", "K"},
+    {"AAG", "K"},
+    {"GAT", "D"},
+    {"GAC", "D"},
+    {"GAA", "E"},
+    {"GAG", "E"},
+    {"TGT", "C"},
+    {"TGC", "C"},
+    {"TGA", STOP},
+    {"TGG", "W"},
+    {"CGT", "R"},
+    {"CGC", "R"},
+    {"CGA", "R"},
+    {"CGG", "R"},
+    {"AGT", "S"},
+    {"AGC", "S"},
+    {"AGA", "R"},
+    {"AGG", "R"},
+    {"GGT", "G"},
+    {"GGC", "G"},
+    {"GGA", "G"},
+    {"GGG", "G"}
+};
+
 
 
 
@@ -118,15 +185,7 @@ Translation::Translation(const string& genome, size_t genome_start, size_t genom
 	}
 }
 
-const char* Translation::to_string()
-{
-	// size_t frame_count = 3;
-	string result = "";
-	for (size_t frame : frames)
-		result += fmt::format("{}:\n{}\n\n", frame, this->translations_raw[frame]);
 
-	return result.c_str();
-}
 
 
 
@@ -138,7 +197,7 @@ CasProfile::CasProfile(string _path, ui _k)
     this->type = this->name.substr(0, this->name.find("_"));
 }
 
-vector<CasProfile> CasProfile::load_casprofiles(string dir, ui k)
+vector<CasProfile> CasUtil::load(string dir, ui k)
 {   
     vector<CasProfile> profiles;  
     for (const auto& entry : fs::directory_iterator(dir))
@@ -297,23 +356,53 @@ vector<Fragment> detect(const string& genome, const Translation* translation, co
     return fragments;
 }
 
-Translation Translation::from_crispr_up(const string& genome, const Crispr& c)
+
+
+
+const char* TransUtil::to_string(const Translation& translation)
 {
-    size_t genome_start = c.start - UPSTREAM_SIZE;
-    genome_start = genome_start < c.start ? genome_start : 0;
-    return Translation(genome, genome_start, c.start, K_FRAGMENT, false);
+	// size_t frame_count = 3;
+	string result = "";
+	for (size_t frame : frames)
+		result += fmt::format("{}:\n{}\n\n", frame, translation.translations_raw.at(frame));
+
+	return result.c_str();
 }
 
-Translation Translation::from_crispr_down(const string& genome, const Crispr& c)
+
+vector<Flanks> TransUtil::get_flanks(const string& genome, const vector<Crispr>& crisprs)
 {
-    size_t genome_end = c.end + UPSTREAM_SIZE;
-    genome_end = genome_end > c.end ? genome_end : genome.size()-1;
-    return Translation(genome, c.end, genome_end, K_FRAGMENT, true);
+    auto get_flank = [&](const Crispr& c)
+    {
+        size_t genome_start = c.start - UPSTREAM_SIZE;
+        genome_start = genome_start < c.start ? genome_start : 0;
+        Translation up = Translation(genome, genome_start, c.start, K_FRAGMENT, false);
+
+        size_t genome_end = c.end + UPSTREAM_SIZE;
+        genome_end = genome_end > c.end ? genome_end : genome.size()-1;
+        Translation down = Translation(genome, c.end, genome_end, K_FRAGMENT, true);
+
+        Flanks flanks {
+            up,
+            down,
+        };
+
+        return flanks;
+    };
+
+
+    auto start = time();
+    vector<Flanks> flanks;
+    for (const Crispr& c : crisprs)
+        flanks.push_back(get_flank(c));
+    time(start, "get flanks");
+    return flanks;
 }
 
-vector<Fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Translation>& downstreams, const vector<Translation>& upstreams)
+
+vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>& flanks)
 {
-    double start = omp_get_wtime();  
+    auto start = time();  
 
 
     vector<Fragment> fragments;
@@ -321,8 +410,8 @@ vector<Fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, c
     {   
         for (ull j = 0; j < cas_profiles.size(); j++)
         {
-            vector<Fragment> __fragments = detect(genome, &downstreams[i], &cas_profiles[j], &crisprs[i]);
-            vector<Fragment> _fragments = detect(genome, &upstreams[i], &cas_profiles[j], &crisprs[i]);
+            vector<Fragment> __fragments = detect(genome, &flanks[i].down, &cas_profiles[j], &crisprs[i]);
+            vector<Fragment> _fragments = detect(genome, &flanks[i].up, &cas_profiles[j], &crisprs[i]);
             fragments.insert(fragments.end(), __fragments.begin(), __fragments.end());
             fragments.insert(fragments.end(), _fragments.begin(), _fragments.end());
         }
@@ -354,11 +443,11 @@ vector<Fragment> Cas::cas(const string& genome, const vector<Crispr>& crisprs, c
     
     
 
-    done(start, "cas");
+    time(start, "cas");
     return fragments_filtered;
 }
 
-void Cas::print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments)
+void CasUtil::print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments)
 {
     for (const Crispr& crispr : crisprs)
     {

@@ -28,11 +28,15 @@ class Translation
         map<ui, vector<size_t>> pure_mapping;
 
         Translation(const string& genome, size_t genome_start, size_t genome_end, ui k, bool rc);
-        const char* to_string();
 
-        static Translation from_crispr_up(const string& genome, const Crispr& c);
-        static Translation from_crispr_down(const string& genonme, const Crispr& c);
 };
+
+struct Flanks
+{
+    Translation up;
+    Translation down;
+};
+
 
 class CasProfile
 {
@@ -44,7 +48,6 @@ class CasProfile
 		
 		CasProfile(string, ui);
 
-        static vector<CasProfile> load_casprofiles(string, ui);
 };
 
 struct Fragment
@@ -56,8 +59,20 @@ struct Fragment
     size_t frame;
 };
 
-namespace Cas
+
+
+namespace TransUtil
 {
-    vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Translation>& downstreams, const vector<Translation>& upstreams);
+
+    const char* to_string(const Translation&);
+    vector<Flanks> get_flanks(const string& genome, const vector<Crispr>&);
+}
+
+
+
+namespace CasUtil
+{
+    vector<CasProfile> load(string, ui);
+    vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>&);
     void print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments);
 }
