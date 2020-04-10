@@ -155,7 +155,7 @@ void Crispr::update(const string& genome)
 	this->spacer_variance = get_spacer_variance(spacers) / 100;
 	this->conservation_spacers2 = get_conservation_spacer(spacers);
 
-	double subtraction = (conservation_spacers2) + (4*spacer_variance);
+	double subtraction = (1.25 * conservation_spacers2) + (4*spacer_variance);
 	this->overall_heuristic = conservation_repeats - subtraction;
 }
 
@@ -371,20 +371,6 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
     time(start, "cache crisprs");
 }
 
-// void CrisprUtil::debug(string genome, vector<Crispr> crisprs)
-// {
-//     vector<Crispr> of_interest;
-//     for (Crispr crispr : crisprs)
-//     {
-//         if (crispr.start >= DEBUG_START && crispr.end <= DEBUG_END)
-//         {
-//             of_interest.push_back(crispr);
-//         }
-
-//     }
-//     sort(of_interest.begin(), of_interest.end(), greater<Crispr>());
-//     exit(0);
-// }
 
 
 
