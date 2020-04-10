@@ -24,10 +24,16 @@ const map <char, char> complement_table = {
 	{'n', 'n'},
 };
 
-
-
-bool subset(vector<int>, vector<int>);
-
+// a is a subset of b
+template <typename T> bool subset (vector <T> a, vector <T> b)
+{
+	for (int e : a)
+	{
+		if (find(b.begin(), b.end(), e) == b.end())
+			return false;
+	}
+	return true;
+}
 
 
 template <typename T, typename Pred> vector<T> filter(const vector<T>& in, Pred predicate)

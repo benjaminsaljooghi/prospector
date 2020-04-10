@@ -4,17 +4,6 @@
 
 
 
-bool subset (vector <int> a, vector <int> b)
-{
-	for (int e : a)
-	{
-		if (find(b.begin(), b.end(), e) == b.end())
-			return false;
-	}
-	return true;
-}
-
-
 
 map <string, string> parse_fasta (string file_path)
 {
