@@ -93,61 +93,110 @@ void debug_map()
 
 
 
-vector<vector<ui>> single_k_from_q_substrate(const char* genome, const vector<ui>& queries, ui* genome_encoding, const ui& k)
-{
-    vector<vector<ui>> crisprs;
-    ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+// vector<vector<ui>> single_k_from_q_substrate(const char* genome, const vector<ui>& queries, ui* genome_encoding, const ui& k)
+// {
+//     vector<vector<ui>> crisprs;
+//     ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
 
-    for (ui _q = 0; _q < queries.size(); _q++)
-    {
-        ui q = queries[_q];
+   
+//     for (ui q : queries)
+//     {
+//         // is this query contained within the previous crispr?
+//         // bool cont = false;
+//         // for (vector<ui> c : crisprs)
+//         // {
+//         //     if (contains(c, q))
+//         //     {
+//         //         cont = true;
+//         //         break;
+//         //     }
+//         // }
+//         // if (cont) continue;
 
-        vector<ui> crispr;
-        crispr.push_back(q);
+//         vector<ui> crispr;
+//         crispr.push_back(q);
 
-        ui bound = q + k + SPACER_SKIP;
+//         ui bound = q + k + SPACER_SKIP;
         
-        for (ui t = bound; t - bound <= SPACER_MAX; t++)
-        {
-            if (mutant(genome, genome_encoding, k, allowed_mutations, q, t))
-            {
-                crispr.push_back(t);
-                bound = t + k + SPACER_SKIP;
-                t = bound;
-            }
-        }
-        crisprs.push_back(crispr);
-    }
-    return crisprs;
-}
+//         for (ui t = bound; t - bound <= SPACER_MAX; t++)
+//         {
+//             if (mutant(genome, genome_encoding, k, allowed_mutations, q, t))
+//             {
+//                 crispr.push_back(t);
+//                 bound = t + k + SPACER_SKIP;
+//                 t = bound;
+//             }
+//         }
+//         crisprs.push_back(crispr);
+//     }
+//     return crisprs;
+// }
 
 
 
 vector<Crispr> prospector_main(const string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
-    ui genome_encoding_size = genome.size() - SIZE + 1;
 
-    unsigned char* qmap = Prospector::get_qmap(encoding.d_encoding, genome_encoding_size);
+    uc* qmap = Prospector::get_qmap(encoding.d_encoding, encoding.size);
 
-    vector<ui> queries = q_substrate(qmap, genome_encoding_size);
+    vector<ui> queries = q_substrate(qmap, encoding.size);
     
-    auto start = time();
+    uc* qmap_3000 = Prospector::get_qmap3000(encoding.d_encoding, encoding.size, &queries[0], queries.size());
 
-    vector<Crispr> all_crisprs;
-    for (ui k = K_START; k < K_END; k++)
+
+    // per q_i proximal targets
+
+    vector<vector<ui>> proximal_targets;
+    ui tolerance = 16 / MUTANT_TOLERANCE_RATIO;
+
+    for (ui q_i = 0; q_i < queries.size(); q_i++)
     {
-        vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, encoding.encoding, k);
-
-        for (vector<ui> c : crisprs)
+        vector<ui> proximals;
+        for (ui i = 0; i < 3000; i++)
         {
-            if (c.size() >= MIN_REPEATS)
+            if (qmap_3000[q_i * 3000 + i] <= tolerance)
             {
-                Crispr _c(k, c, c.size());
-                all_crisprs.push_back(_c);   
+                proximals.push_back(i);
             }
         }
+        proximal_targets.push_back(proximals);
     }
+
+
+    auto start = time();
+
+
+    vector<Crispr> all_crisprs;
+
+    for (ui k = K_START; k < K_END; k++)
+    {
+        // build the largest crispr, and then leap to the next crispr
+        for (ui query_i = 0; query_i < queries.size(); query_i++)
+        {
+            ui query = queries[query_i];
+
+            // form largest crispr by iterating over the targets of interest
+            
+
+        }
+
+    }
+
+    // vector<Crispr> all_crisprs;
+    // for (ui k = K_START; k < K_END; k++)
+    // {
+    //     vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, encoding.encoding, k);
+
+    //     for (vector<ui> c : crisprs)
+    //     {
+    //         if (c.size() >= MIN_REPEATS)
+    //         {
+    //             Crispr _c(k, c, c.size());
+    //             all_crisprs.push_back(_c);   
+    //         }
+    //     }
+    // }
     time(start, "crisps from q_substrate");
 
     fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
@@ -157,11 +206,52 @@ vector<Crispr> prospector_main(const string& genome)
 
 
 
+
 vector<Crispr> get_crisprs(const string& genome)
 {
     vector<Crispr> crisprs = prospector_main(genome);      
 
+    // how many crisprs are a perfect subset in that they contain an equal k value
+    // but just fewer repeats than another crispr in that all other crispr genome indices are the same
+    
+    // auto start = time();
+    // ui count = 0;
+    // vector<Crispr> __subset;
+    // for (ui i = 0; i < crisprs.size(); i++)
+    // {
+    //     bool include = true;
+    //     const Crispr& a = crisprs[i];
+    //     for (ui j = 0; j < crisprs.size(); j++)
+    //     {
+    //         const Crispr& b = crisprs[j];
+
+    //         if (i == j) continue;
+    //         if (a.k != b.k) continue;
+
+    //         // check that all starts in a are contained within b
+    //         if (subset(a.genome_indices, b.genome_indices))
+    //         {
+    //             // subset.push_back(a);
+    //             include = false;
+    //             break;
+    //         }
+    //     }
+    //     if (include)
+    //     {
+    //         __subset.push_back(a);
+    //     }
+    // }
+    // time(start, "subset removal");
+
+    // fmt::print("{} {}\n", __subset.size(), crisprs.size());
+    // crisprs = __subset;
+
+
     CrisprUtil::cache_crispr_information(genome, crisprs);
+
+
+    // CrisprUtil::debug(crisprs, genome, 1824943, 1827551);
+
 
     crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
 
@@ -204,7 +294,7 @@ int main()
     vector<string> genomes = Util::load_genomes(genome_dir);
     vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, K_FRAGMENT);
 
-    stdrun(genomes[0], cas_profiles);
+    // stdrun(genomes[0], cas_profiles);
     stdrun(genomes[1], cas_profiles);
 
     time(start, "main");

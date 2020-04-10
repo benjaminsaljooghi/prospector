@@ -37,10 +37,13 @@ namespace Prospector
     struct Encoding {
         ui* encoding;
         ui* d_encoding;
+        ui size;
     };
 
     void device_init();
-    uc* get_qmap(ui* genome_encoding, ui genome_encoding_size);
     Encoding get_genome_encoding(const char* genome, ui genome_size);
+
+    uc* get_qmap(ui* genome_encoding, ui genome_encoding_size);
+    uc* get_qmap3000(const ui* genome_encoding, const ui genome_encoding_size, const ui* queries, const ui queries_size);
 }
 
