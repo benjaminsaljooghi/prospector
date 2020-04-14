@@ -154,6 +154,7 @@ vector<Crispr> prospector_main(const string& genome)
 
     vector<Crispr> all_crisprs;
 
+    vector<ui> used;
 
     for (ui q_i = 0; q_i < queries.size(); q_i++)
     {            
@@ -180,6 +181,11 @@ vector<Crispr> prospector_main(const string& genome)
                 if (target < end || target - end < SPACER_MIN) continue; // || guards against overflow
                 if (target - end > SPACER_MAX) break;
 
+                if (contains(used, target)) 
+                {
+                    continue;
+                }
+
                 if (mutant(genome.c_str(), encoding.encoding, k, allowed_mutations, query, target))
                     genome_indices.push_back(target);
 
@@ -188,8 +194,13 @@ vector<Crispr> prospector_main(const string& genome)
 
             if (genome_indices.size() >= MIN_REPEATS)
             {
+
                 Crispr c(k, genome_indices, genome_indices.size());
                 candidates.push_back(c);
+
+
+                // we formed a Crispr. If any of these genome indices are located in queries then they need to be removed.
+                // can be removed more efficiently knowing that the array is sorted. Implement this optimization if needed.
             }
 
         }
@@ -201,6 +212,8 @@ vector<Crispr> prospector_main(const string& genome)
             ui best_size = candidates[0].size;
             for (const Crispr& crispr : candidates)
             {
+                used.insert(used.end(), crispr.genome_indices.begin(), crispr.genome_indices.end());
+
                 if (crispr.size == best_size)
                 {
                     all_crisprs.push_back(crispr);
@@ -213,6 +226,15 @@ vector<Crispr> prospector_main(const string& genome)
             }
         }
     }
+
+    // rather than doing a post domain-best all-against-all here, you could try
+    // doing the domain-best along the way of iterating over the queries.
+
+    // vector<Crispr> domain_best;
+    // for (ull i = 0; i < all_crisprs.size(); i++)
+    // {
+    //     Crispr crispr = all_crisprs[i];
+    // }
 
 
     time(start, "crisps from q_substrate");
@@ -270,7 +292,7 @@ vector<Crispr> get_crisprs(const string& genome)
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
 
-    CrisprUtil::debug(crisprs, genome, 1825295-1000, 1827567+1000);
+    // CrisprUtil::debug(crisprs, genome, 1825295-1000, 1827567+1000);
 
 
     crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
