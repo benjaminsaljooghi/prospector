@@ -113,5 +113,5 @@ vector<string> kmerize(string, unsigned int);
 
 namespace Util
 {
-    vector<string> load_genomes(string dir);
+    map<string, string> load_genomes(string dir);
 }

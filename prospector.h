@@ -3,7 +3,7 @@
 // #include "util.h"
 
 #define SIZE 16
-#define MAP_SIZE 50
+#define MAP_SIZE 64
 #define BITS 2
 #define MUTANT_TOLERANCE_RATIO 6
 
@@ -43,7 +43,7 @@ namespace Prospector
     void device_init();
     Encoding get_genome_encoding(const char* genome, ui genome_size);
 
-    uc* get_qmap(ui* genome_encoding, ui genome_encoding_size);
-    uc* get_qmap3000(const ui* genome_encoding, const ui genome_encoding_size, const ui* queries, const ui queries_size);
+    uc* get_qmap_small(ui* genome_encoding, ui genome_encoding_size);
+    uc* get_qmap_big(const ui* genome_encoding, const ui genome_encoding_size, const ui* queries, const ui queries_size, ui map_size);
 }
 

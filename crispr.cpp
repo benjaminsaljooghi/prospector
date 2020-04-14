@@ -387,9 +387,9 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
 void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, ui end)
 {
 
-    vector<Crispr> filtered = filter(crisprs, [&](Crispr c) { return c.start > start-100 && c.end < end+100; } );
+    vector<Crispr> filtered = filter(crisprs, [&](Crispr c) { return c.start > start && c.end < end; } );
 
-    sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
+    // sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
 
     int how_many = filtered.size();
     for (size_t i = filtered.size()-how_many; i < filtered.size(); i++)

@@ -93,71 +93,56 @@ void debug_map()
 
 
 
-// vector<vector<ui>> single_k_from_q_substrate(const char* genome, const vector<ui>& queries, ui* genome_encoding, const ui& k)
-// {
-//     vector<vector<ui>> crisprs;
-//     ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
-
-   
-//     for (ui q : queries)
-//     {
-//         // is this query contained within the previous crispr?
-//         // bool cont = false;
-//         // for (vector<ui> c : crisprs)
-//         // {
-//         //     if (contains(c, q))
-//         //     {
-//         //         cont = true;
-//         //         break;
-//         //     }
-//         // }
-//         // if (cont) continue;
-
-//         vector<ui> crispr;
-//         crispr.push_back(q);
-
-//         ui bound = q + k + SPACER_SKIP;
-        
-//         for (ui t = bound; t - bound <= SPACER_MAX; t++)
-//         {
-//             if (mutant(genome, genome_encoding, k, allowed_mutations, q, t))
-//             {
-//                 crispr.push_back(t);
-//                 bound = t + k + SPACER_SKIP;
-//                 t = bound;
-//             }
-//         }
-//         crisprs.push_back(crispr);
-//     }
-//     return crisprs;
-// }
-
 
 
 vector<Crispr> prospector_main(const string& genome)
 {
+
+    ui map_size_small = 64;
+    ui map_size_big = 3000;
+
+
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
 
-    uc* qmap = Prospector::get_qmap(encoding.d_encoding, encoding.size);
+    uc* qmap = Prospector::get_qmap_small(encoding.d_encoding, encoding.size);
 
     vector<ui> queries = q_substrate(qmap, encoding.size);
     
-    uc* qmap_3000 = Prospector::get_qmap3000(encoding.d_encoding, encoding.size, &queries[0], queries.size());
-
-
-    // per q_i proximal targets
+    uc* qmap_big = Prospector::get_qmap_big(encoding.d_encoding, encoding.size, &queries[0], queries.size(), map_size_big);
 
     vector<vector<ui>> proximal_targets;
     ui tolerance = 16 / MUTANT_TOLERANCE_RATIO;
 
     for (ui q_i = 0; q_i < queries.size(); q_i++)
     {
+        ui query = queries[q_i];
+        
+        // if (query < 1283501 || query > 1283730)
+        // {
+        //     continue;
+        // }
+
         vector<ui> proximals;
-        for (ui i = 0; i < 3000; i++)
+        for (ui t_i = 0; t_i < map_size_big; t_i++)
         {
-            if (qmap_3000[q_i * 3000 + i] <= tolerance)
+            ui qmap_index = q_i*map_size_big+t_i;
+            ui target = query + t_i;
+
+            if (qmap_big[qmap_index] <= tolerance)
             {
-                proximals.push_back(i);
+                // fmt::print(
+                //         "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n", 
+                //         query,
+                //         target,
+                //         qmap_big[qmap_index],
+                //         genome.substr(query, 16),
+                //         genome.substr(target, 16),
+                //         encoding.encoding[query],
+                //         encoding.encoding[target],
+                //         difference_cpu(encoding.encoding[query], encoding.encoding[target])
+                //     );
+
+                proximals.push_back(t_i);
             }
         }
         proximal_targets.push_back(proximals);
@@ -169,39 +154,74 @@ vector<Crispr> prospector_main(const string& genome)
 
     vector<Crispr> all_crisprs;
 
-    for (ui k = K_START; k < K_END; k++)
-    {
-        // build the largest crispr, and then leap to the next crispr
-        for (ui query_i = 0; query_i < queries.size(); query_i++)
-        {
-            ui query = queries[query_i];
 
-            // form largest crispr by iterating over the targets of interest
-            
+    for (ui q_i = 0; q_i < queries.size(); q_i++)
+    {            
+        vector<ui>& proximals = proximal_targets[q_i];
+
+        vector<Crispr> candidates;
+
+        // get the longest length Crispr? Or get the largest K crispr? Maybe both of the best? Or try both individually
+
+        for (ui k = K_END-1; k >= K_START; k--)
+        {
+            ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
+
+            ui query = queries[q_i];
+            vector<ui> genome_indices;
+
+            genome_indices.push_back(query);
+
+            for (ui t_i : proximals)
+            {
+                ui end = genome_indices[genome_indices.size()-1] + k;
+                ui target = query + K_START + SPACER_SKIP + t_i;
+
+                if (target < end || target - end < SPACER_MIN) continue; // || guards against overflow
+                if (target - end > SPACER_MAX) break;
+
+                if (mutant(genome.c_str(), encoding.encoding, k, allowed_mutations, query, target))
+                    genome_indices.push_back(target);
+
+            }
+
+
+            if (genome_indices.size() >= MIN_REPEATS)
+            {
+                Crispr c(k, genome_indices, genome_indices.size());
+                candidates.push_back(c);
+            }
 
         }
 
+   
+        if (candidates.size() > 0)
+        {
+            sort(candidates, [](const Crispr& a, const Crispr& b) {  return a.size > b.size; } );
+            ui best_size = candidates[0].size;
+            for (const Crispr& crispr : candidates)
+            {
+                if (crispr.size == best_size)
+                {
+                    all_crisprs.push_back(crispr);
+                }
+                else
+                {
+                    break;
+                }
+
+            }
+        }
     }
 
-    // vector<Crispr> all_crisprs;
-    // for (ui k = K_START; k < K_END; k++)
-    // {
-    //     vector<vector<ui>> crisprs = single_k_from_q_substrate(genome.c_str(), queries, encoding.encoding, k);
 
-    //     for (vector<ui> c : crisprs)
-    //     {
-    //         if (c.size() >= MIN_REPEATS)
-    //         {
-    //             Crispr _c(k, c, c.size());
-    //             all_crisprs.push_back(_c);   
-    //         }
-    //     }
-    // }
     time(start, "crisps from q_substrate");
 
     fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
     return all_crisprs;
 }
+
+
 
 
 
@@ -250,7 +270,7 @@ vector<Crispr> get_crisprs(const string& genome)
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
 
-    // CrisprUtil::debug(crisprs, genome, 1824943, 1827551);
+    CrisprUtil::debug(crisprs, genome, 1825295-1000, 1827567+1000);
 
 
     crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
@@ -291,11 +311,11 @@ int main()
     string genome_dir = "crispr-data/genome";
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
-    vector<string> genomes = Util::load_genomes(genome_dir);
+    map<string, string> genomes = Util::load_genomes(genome_dir);
     vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, K_FRAGMENT);
 
-    // stdrun(genomes[0], cas_profiles);
-    stdrun(genomes[1], cas_profiles);
+    stdrun(genomes["thermophilus"], cas_profiles);
+    // stdrun(genomes["pyogenes"], cas_profiles);
 
     time(start, "main");
 
