@@ -157,7 +157,30 @@ vector<Crispr> prospector_main(const string& genome)
     vector<ui> used;
 
     for (ui q_i = 0; q_i < queries.size(); q_i++)
-    {            
+    {
+        ui query = queries[q_i];
+
+
+        // if (used.size() > 0)
+        // {
+        //     // last used query
+        //     ui last = used[used.size()-1];
+
+
+        //     if (query < last)
+        //     {
+        //         continue;
+        //     }
+
+        //     if (query - last < K_START)
+        //     {
+        //         continue;
+        //     }
+        // }
+
+
+
+
         vector<ui>& proximals = proximal_targets[q_i];
 
         vector<Crispr> candidates;
@@ -168,7 +191,6 @@ vector<Crispr> prospector_main(const string& genome)
         {
             ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
 
-            ui query = queries[q_i];
             vector<ui> genome_indices;
 
             genome_indices.push_back(query);
@@ -224,6 +246,7 @@ vector<Crispr> prospector_main(const string& genome)
                 }
 
             }
+            std::sort(used.begin(), used.end());
         }
     }
 
@@ -253,47 +276,9 @@ vector<Crispr> get_crisprs(const string& genome)
 {
     vector<Crispr> crisprs = prospector_main(genome);      
 
-    // how many crisprs are a perfect subset in that they contain an equal k value
-    // but just fewer repeats than another crispr in that all other crispr genome indices are the same
-    
-    // auto start = time();
-    // ui count = 0;
-    // vector<Crispr> __subset;
-    // for (ui i = 0; i < crisprs.size(); i++)
-    // {
-    //     bool include = true;
-    //     const Crispr& a = crisprs[i];
-    //     for (ui j = 0; j < crisprs.size(); j++)
-    //     {
-    //         const Crispr& b = crisprs[j];
-
-    //         if (i == j) continue;
-    //         if (a.k != b.k) continue;
-
-    //         // check that all starts in a are contained within b
-    //         if (subset(a.genome_indices, b.genome_indices))
-    //         {
-    //             // subset.push_back(a);
-    //             include = false;
-    //             break;
-    //         }
-    //     }
-    //     if (include)
-    //     {
-    //         __subset.push_back(a);
-    //     }
-    // }
-    // time(start, "subset removal");
-
-    // fmt::print("{} {}\n", __subset.size(), crisprs.size());
-    // crisprs = __subset;
-
-
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
-
-    // CrisprUtil::debug(crisprs, genome, 1825295-1000, 1827567+1000);
-
+    // CrisprUtil::debug(crisprs, genome, 1085431-1000, 1086854+1000);
 
     crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
 

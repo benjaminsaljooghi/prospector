@@ -5,7 +5,7 @@
 #define SIZE 16
 #define MAP_SIZE 64
 #define BITS 2
-#define MUTANT_TOLERANCE_RATIO 6
+#define MUTANT_TOLERANCE_RATIO 8
 
 
 #define K_START 20
