@@ -385,10 +385,20 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
         }
     }
 
+    start = time(start, "cas raw fragment detection");
+
+
     // organize fragments, sorted by position, then sorted by type, then sorted by fragment
-    sort(fragments.begin(), fragments.end(), [](const Fragment& a, const Fragment& b) {
+    // sort(fragments.begin(), fragments.end(), [](const Fragment& a, const Fragment& b) {
+    //     return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
+    // });
+
+    sort(fragments, [](const Fragment& a, const Fragment& b) {
         return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
     });
+
+    start = time(start, "cas sort fragments");
+
 
     // remove any fragments that are a complete subset of any other fragments
     vector<Fragment> fragments_filtered;
@@ -410,7 +420,8 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
         }
     }
     
-    time(start, "cas");
+    start = time(start, "cas fragment prune");
+
     return fragments_filtered;
 }
 
