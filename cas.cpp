@@ -368,7 +368,10 @@ vector<Flanks> CasUtil::get_flanks(const string& genome, const vector<Crispr>& c
 
 vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>& flanks)
 {
+    fmt::print("\tidentifying cas genes in {} crisprs...\n", crisprs.size());
+
     auto start = time();  
+
 
     vector<Fragment> fragments;
     for (ull i = 0; i < crisprs.size(); i++)

@@ -21,7 +21,7 @@ ui difference_cpu(const ui& _a, const ui& _b)
 }
 
 
-vector<ui> q_substrate(unsigned char* qmap, ui genome_encoding_size)
+vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
 {
     // how many qs in this map are containment oriented
     auto start = time();
@@ -38,7 +38,7 @@ vector<ui> q_substrate(unsigned char* qmap, ui genome_encoding_size)
             }
         }
     }
-    time(start, "q_substrate");
+    time(start, "post qmap small candidate query genertion");
     // printf("%d %zd\n", genome_encoding_size-200, queries.size());
     // return count;
     return queries;
@@ -106,61 +106,99 @@ vector<Crispr> prospector_main(const string& genome)
 
     uc* qmap = Prospector::get_qmap_small(encoding.d_encoding, encoding.size);
 
-    vector<ui> queries = q_substrate(qmap, encoding.size);
+    vector<ui> queries = get_candidate_queries(qmap, encoding.size);
     
     uc* qmap_big = Prospector::get_qmap_big(encoding.d_encoding, encoding.size, &queries[0], queries.size(), map_size_big);
 
-    vector<vector<ui>> proximal_targets;
+    // vector<vector<ui>> proximal_targets;
+
+    auto start = time();
+
+
+    map<ui, vector<ui>> proximal_targets;
     ui tolerance = 16 / MUTANT_TOLERANCE_RATIO;
 
     for (ui q_i = 0; q_i < queries.size(); q_i++)
     {
         ui query = queries[q_i];
-        
-        // if (query < 1283501 || query > 1283730)
-        // {
-        //     continue;
-        // }
-
         vector<ui> proximals;
         for (ui t_i = 0; t_i < map_size_big; t_i++)
         {
             ui qmap_index = q_i*map_size_big+t_i;
-            ui target = query + t_i;
-
             if (qmap_big[qmap_index] <= tolerance)
             {
-                // fmt::print(
-                //         "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n", 
-                //         query,
-                //         target,
-                //         qmap_big[qmap_index],
-                //         genome.substr(query, 16),
-                //         genome.substr(target, 16),
-                //         encoding.encoding[query],
-                //         encoding.encoding[target],
-                //         difference_cpu(encoding.encoding[query], encoding.encoding[target])
-                //     );
-
-                proximals.push_back(t_i);
+                ui target = query + K_START + SPACER_SKIP + t_i;
+                proximals.push_back(target);
             }
         }
-        proximal_targets.push_back(proximals);
+
+        // if any of these proximals are included in an existing proximal, then we cannot include
+        bool include = true;
+        
+
+
+        // remove any exact subsetting
+
+        for ( auto const& [query, proximal] : proximal_targets)
+        {
+            for (ui p : proximals)
+            {
+                if (contains(proximal, p))
+                {
+                    include = false;
+                    break;
+                }
+            }
+            if (include == false)
+            {
+                break;
+            }
+        }
+
+
+
+        if (include)
+        {
+            proximal_targets[query] = proximals;
+        }
+
+
     }
 
+    // organize at the proximal level
 
-    auto start = time();
+
+
+    // // visualzie proximals
+    // for ( auto const& [query, proximal] : proximal_targets)
+    // {
+    //     // vector<ui> proximals = proximal_targets[q_i];
+    //     if (proximal.size() >= MIN_REPEATS)
+    //     {
+    //         // ui query = queries[q_i];
+    //         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
+    //         for (ui target : proximal)
+    //         {
+    //             // ui qmap_index = q_i * map_size_big + t_i;
+    //             // ui target = query + K_START + SPACER_SKIP + t_i;
+    //             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
+    //         }
+    //     }
+    //     fmt::print("\n");
+    // }
+
+
+    // exit(0);
+
+
 
 
     vector<Crispr> all_crisprs;
 
-    vector<ui> used;
+    // vector<ui> used;
 
-    for (ui q_i = 0; q_i < queries.size(); q_i++)
+    for ( auto const& [query, proximal] : proximal_targets)
     {
-        ui query = queries[q_i];
-
-
         // if (used.size() > 0)
         // {
         //     // last used query
@@ -179,10 +217,6 @@ vector<Crispr> prospector_main(const string& genome)
         // }
 
 
-
-
-        vector<ui>& proximals = proximal_targets[q_i];
-
         vector<Crispr> candidates;
 
         // get the longest length Crispr? Or get the largest K crispr? Maybe both of the best? Or try both individually
@@ -195,18 +229,18 @@ vector<Crispr> prospector_main(const string& genome)
 
             genome_indices.push_back(query);
 
-            for (ui t_i : proximals)
+            for (ui target : proximal)
             {
                 ui end = genome_indices[genome_indices.size()-1] + k;
-                ui target = query + K_START + SPACER_SKIP + t_i;
+                // ui target = query + K_START + SPACER_SKIP + t_i;
 
                 if (target < end || target - end < SPACER_MIN) continue; // || guards against overflow
                 if (target - end > SPACER_MAX) break;
 
-                if (contains(used, target)) 
-                {
-                    continue;
-                }
+                // if (contains(used, target)) 
+                // {
+                //     continue;
+                // }
 
                 if (mutant(genome.c_str(), encoding.encoding, k, allowed_mutations, query, target))
                     genome_indices.push_back(target);
@@ -234,7 +268,7 @@ vector<Crispr> prospector_main(const string& genome)
             ui best_size = candidates[0].size;
             for (const Crispr& crispr : candidates)
             {
-                used.insert(used.end(), crispr.genome_indices.begin(), crispr.genome_indices.end());
+                // used.insert(used.end(), crispr.genome_indices.begin(), crispr.genome_indices.end());
 
                 if (crispr.size == best_size)
                 {
@@ -246,7 +280,7 @@ vector<Crispr> prospector_main(const string& genome)
                 }
 
             }
-            std::sort(used.begin(), used.end());
+            // std::sort(used.begin(), used.end());
         }
     }
 
@@ -260,7 +294,7 @@ vector<Crispr> prospector_main(const string& genome)
     // }
 
 
-    time(start, "crisps from q_substrate");
+    time(start, "post-kernel crispr generation");
 
     fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
     return all_crisprs;
@@ -321,8 +355,8 @@ int main()
     map<string, string> genomes = Util::load_genomes(genome_dir);
     vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, K_FRAGMENT);
 
-    stdrun(genomes["thermophilus"], cas_profiles);
-    // stdrun(genomes["pyogenes"], cas_profiles);
+    // stdrun(genomes["thermophilus"], cas_profiles);
+    stdrun(genomes["pyogenes"], cas_profiles);
 
     time(start, "main");
 

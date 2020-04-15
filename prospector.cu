@@ -85,7 +85,7 @@ __global__ void compute_encoding(const char* genome, ui* genome_encoding, ui gen
 
 Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui genome_size)
 {
-    std::chrono::_V2::system_clock::time_point start = time();
+    auto start = time();
 
     cudaError er;
     
@@ -173,15 +173,19 @@ uc* Prospector::get_qmap_small(ui* encoding_d, ui encoding_size)
     uc* qmap;
     uc* qmap_d;
 
-    er = cudaMalloc(&qmap_d, bytes_qmap); checkCuda(er); start = time(start, "qmap malloc");
-    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er); start = time(start, "qmap mallochost");
+    er = cudaMalloc(&qmap_d, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap small malloc");
+
+    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap small mallochost");
 
     compute_qmap_small KERNEL_ARGS3(128, 1024, 0) (encoding_d, encoding_size, qmap_d);
 
     cudaWait();
-    start = time(start, "kernel");
+    start = time(start, "qmap small kernel");
 
-    er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); start = time(start, "qmap memcpy");
+    er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); 
+    start = time(start, "qmap small memcpy");
 
     cudaFree(qmap_d);
     return qmap;
@@ -190,6 +194,8 @@ uc* Prospector::get_qmap_small(ui* encoding_d, ui encoding_size)
 
 uc* Prospector::get_qmap_big(const ui* encoding_d, const ui encoding_size, const ui* queries, const ui queries_size, ui map_size)
 {
+    auto start = time();
+
     cudaError er; 
 
     ui bytes_queries = sizeof(ui) * queries_size;
@@ -197,18 +203,27 @@ uc* Prospector::get_qmap_big(const ui* encoding_d, const ui encoding_size, const
 
     ui* queries_d;
     er = cudaMalloc(&queries_d, bytes_queries); checkCuda(er);
+    start = time(start, "qmap big queries malloc");
+
     er = cudaMemcpy(queries_d, queries, bytes_queries, cudaMemcpyHostToDevice); checkCuda(er);
+    start = time(start, "qmap big queries memcpy");
 
     uc* qmap;
     uc* qmap_d;
+
     er = cudaMalloc(&qmap_d, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap big malloc");
+
     er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
+    start = time(start, "qmap big mallochost");
 
     compute_qmap_big KERNEL_ARGS3(128, 1024, 0) (encoding_d, encoding_size, queries_d, queries_size, qmap_d, map_size);
     
     cudaWait();
+    start = time(start, "qmap big kernel");
 
     er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); 
+    start = time(start, "qmap big memcpy");
 
     cudaFree(qmap_d);
     return qmap;
