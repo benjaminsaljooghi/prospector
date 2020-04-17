@@ -78,21 +78,37 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 }
 
 
-void debug_map()
-{
-    // ui query = 1283501;
-    // ui q = genome_encoding[query];
-    // for (ui i = 0; i < 1000; i++)
-    // {
-    //     ui pos = query + K_START + SPACER_SKIP + i;
-    //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
+// void debug_map()
+// {
+//     // ui query = 1283501;
+//     // ui q = genome_encoding[query];
+//     // for (ui i = 0; i < 1000; i++)
+//     // {
+//     //     ui pos = query + K_START + SPACER_SKIP + i;
+//     //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
 
-    //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
-    // }
-}
+//     //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
+//     // }
+// }
 
 
-
+// visualzie proximals
+// for ( auto const& [query, proximal] : proximal_targets)
+// {
+//     // vector<ui> proximals = proximal_targets[q_i];
+//     if (proximal.size() >= MIN_REPEATS)
+//     {
+//         // ui query = queries[q_i];
+//         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
+//         for (ui target : proximal)
+//         {
+//             // ui qmap_index = q_i * map_size_big + t_i;
+//             // ui target = query + K_START + SPACER_SKIP + t_i;
+//             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
+//         }
+//     }
+//     fmt::print("\n");
+// }
 
 
 vector<Crispr> prospector_main(const string& genome)
@@ -165,62 +181,13 @@ vector<Crispr> prospector_main(const string& genome)
 
     }
 
-    // organize at the proximal level
-
-
-
-    // // visualzie proximals
-    // for ( auto const& [query, proximal] : proximal_targets)
-    // {
-    //     // vector<ui> proximals = proximal_targets[q_i];
-    //     if (proximal.size() >= MIN_REPEATS)
-    //     {
-    //         // ui query = queries[q_i];
-    //         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
-    //         for (ui target : proximal)
-    //         {
-    //             // ui qmap_index = q_i * map_size_big + t_i;
-    //             // ui target = query + K_START + SPACER_SKIP + t_i;
-    //             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
-    //         }
-    //     }
-    //     fmt::print("\n");
-    // }
-
-
-    // exit(0);
-
-
 
 
     vector<Crispr> all_crisprs;
 
-    // vector<ui> used;
-
     for ( auto const& [query, proximal] : proximal_targets)
     {
-        // if (used.size() > 0)
-        // {
-        //     // last used query
-        //     ui last = used[used.size()-1];
-
-
-        //     if (query < last)
-        //     {
-        //         continue;
-        //     }
-
-        //     if (query - last < K_START)
-        //     {
-        //         continue;
-        //     }
-        // }
-
-
         vector<Crispr> candidates;
-
-        // get the longest length Crispr? Or get the largest K crispr? Maybe both of the best? Or try both individually
-
         for (ui k = K_END-1; k >= K_START; k--)
         {
             ui allowed_mutations = k / MUTANT_TOLERANCE_RATIO;
@@ -232,35 +199,20 @@ vector<Crispr> prospector_main(const string& genome)
             for (ui target : proximal)
             {
                 ui end = genome_indices[genome_indices.size()-1] + k;
-                // ui target = query + K_START + SPACER_SKIP + t_i;
-
                 if (target < end || target - end < SPACER_MIN) continue; // || guards against overflow
                 if (target - end > SPACER_MAX) break;
-
-                // if (contains(used, target)) 
-                // {
-                //     continue;
-                // }
 
                 if (mutant(genome.c_str(), encoding.encoding, k, allowed_mutations, query, target))
                     genome_indices.push_back(target);
 
             }
 
-
             if (genome_indices.size() >= MIN_REPEATS)
             {
-
                 Crispr c(k, genome_indices, genome_indices.size());
                 candidates.push_back(c);
-
-
-                // we formed a Crispr. If any of these genome indices are located in queries then they need to be removed.
-                // can be removed more efficiently knowing that the array is sorted. Implement this optimization if needed.
             }
-
         }
-
    
         if (candidates.size() > 0)
         {
@@ -268,30 +220,13 @@ vector<Crispr> prospector_main(const string& genome)
             ui best_size = candidates[0].size;
             for (const Crispr& crispr : candidates)
             {
-                // used.insert(used.end(), crispr.genome_indices.begin(), crispr.genome_indices.end());
-
-                if (crispr.size == best_size)
-                {
-                    all_crisprs.push_back(crispr);
-                }
-                else
-                {
+                if (crispr.size != best_size)
                     break;
-                }
 
+                all_crisprs.push_back(crispr);
             }
-            // std::sort(used.begin(), used.end());
         }
     }
-
-    // rather than doing a post domain-best all-against-all here, you could try
-    // doing the domain-best along the way of iterating over the queries.
-
-    // vector<Crispr> domain_best;
-    // for (ull i = 0; i < all_crisprs.size(); i++)
-    // {
-    //     Crispr crispr = all_crisprs[i];
-    // }
 
 
     time(start, "post-kernel crispr generation");
@@ -299,8 +234,6 @@ vector<Crispr> prospector_main(const string& genome)
     fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
     return all_crisprs;
 }
-
-
 
 
 
