@@ -276,8 +276,6 @@ void print_fragment(const Fragment& fragment)
 }
 
 
-
-
 // ull accumulative_triplet_frame_size(const TriFrame* triframe)
 // {
 //     ui total_size = 0;
@@ -287,92 +285,6 @@ void print_fragment(const Fragment& fragment)
 //     }
 //     return total_size;
 // }
-
-
-
-// // currently implemented for upstream only. assumption is that we need to check all 3/6 frames of each crispr FOR EACH cas_profile 
-// bool* compute_target_map(const vector<Flanks>& flanks, const vector<CasProfile>& cas_profiles)
-// {
-//     // ull total_size = 0;
-//     // for (ull crispr_i = 0; crispr_i < flanks.size(); crispr_i++)
-//     //     total_size += accumulative_triplet_frame_size(&flanks[crispr_i].up) * cas_profiles.size();
-
-//     // bool* target_map = (bool*) malloc(sizeof(bool) * total_size);
-//     // memset(target_map, 0, sizeof(bool) * total_size);
-//     // bool* target_map_ptr = target_map;
-
-//     for (ull crispr_i = 0; crispr_i < flanks.size(); crispr_i++)
-//     {
-
-//         auto crispr_translations = flanks[crispr_i].up.translations;
-//         for (ull frame = 0; frame < 3; frame++)
-//         {
-//             auto crispr_profile = crispr_translations[frame].pure_kmerized_encoded;
-//             for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
-//             {
-//                 auto cas_profile = cas_profiles[cas_i].encoded_kmers;
-//                 for (ull i = 0; i < crispr_profile.size(); i++)
-//                 {
-//                     for (ui elem : cas_profile)
-//                     {
-//                         if (elem == crispr_profile[i])
-//                         {
-//                             *target_map_ptr = true;
-//                             break;
-//                         }
-//                     }
-//                     target_map_ptr++;
-//                 }
-//             }
-//         }
-//     }
-//     return target_map;
-// }
-
-
-
-// iterates over (frame + frame + frame) size 
-// vector<Fragment> interpret_target_map(const TriFrame* triframe, const CasProfile* cas_profile, const Crispr* crispr, bool*& target_map)
-// {
-//     fmt::print("interpreting from {}\n", (void*) target_map);
-//     vector<Translation> translations = triframe->translations;
-
-//     vector<Fragment> fragments;
-//     for (ull frame = 0; frame < 3; frame++)
-//     {
-//         auto crispr_profile = translations[frame].pure_kmerized_encoded;
-
-//         vector<ull> index;    
-//         for (ull i = 0; i < crispr_profile.size(); i++)
-//         {
-//             if (*target_map)
-//             {
-//                 index.push_back(i);
-//             }
-//             target_map++;
-//         }
-        
-//         if (index.size() == 0)
-//             continue;
-
-//         vector<vector<ull>> clusters = cluster_index(index);    
-        
-//         if (!good_clusters(clusters))
-//             continue;
-
-//         Fragment fragment = {
-//             crispr,
-//             triframe,
-//             cas_profile,
-//             clusters,
-//             frame
-//         };
-//         fragments.push_back(fragment);
-//     }
-
-//     return fragments;
-// }
-
 
 vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>& flanks)
 {
@@ -445,58 +357,6 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
 
     start = time(start, "fragments from target map construction");
 
-
-//         for (ull i = 0; i < crispr_profile.size(); i++)
-//         {
-//             if (*target_map)
-//             {
-//                 index.push_back(i);
-//             }
-//             target_map++;
-//         }
-        
-//         if (index.size() == 0)
-//             continue;
-
-//         vector<vector<ull>> clusters = cluster_index(index);    
-        
-//         if (!good_clusters(clusters))
-//             continue;
-
-//         Fragment fragment = {
-//             crispr,
-//             triframe,
-//             cas_profile,
-//             clusters,
-//             frame
-//         };
-//         fragments.push_back(fragment);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // bool* target_map = compute_target_map(flanks, cas_profiles);
-    // vector<Fragment> all_fragments;
-    // for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
-    // {   
-    //     for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
-    //     {
-    //         vector<Fragment> fragments = interpret_target_map(&flanks[crispr_i].up, &cas_profiles[cas_i], &crisprs[crispr_i], target_map);
-    //         all_fragments.insert(all_fragments.end(), fragments.begin(), fragments.end());
-    //         // target_map += accumulative_triplet_frame_size(&flanks[crispr_i].up);
-    //     }
-    // }
 
 
     // start = time(start, "cas raw fragment detection");
