@@ -75,6 +75,16 @@ template <typename T> bool contains(const vector<T>& target, const T& query)
     return false;
 }
 
+template <typename T> bool contains(const T* target_begin, ull target_size, const T& query)
+{
+    for (ull i = 0; i < target_size; i++)
+	{
+		if (*(target_begin+i) == query)
+			return true;
+	}
+	return false;
+}
+
 template <typename T> T most_frequent(vector<T> elements)
 {
 	map<T, int> frequencies;
