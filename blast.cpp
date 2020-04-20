@@ -24,7 +24,7 @@ map <string, int> BLAST (set <string> _seqs, string target_db_path)
     auto start = time();
 
     vector<string> seqs;
-    size_t max = 0;
+    ull max = 0;
     for (string seq : _seqs)
     {
         seqs.push_back(seq);

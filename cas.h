@@ -20,13 +20,13 @@ struct Translation
     string pure;
     vector<string> pure_kmerized;
     vector<ui> pure_kmerized_encoded;
-    vector<size_t> pure_mapping;
+    vector<ull> pure_mapping;
 };
 
 struct TriFrame
 {
-    size_t genome_start;
-    size_t genome_end;
+    ull genome_start;
+    ull genome_end;
     vector<Translation> translations;
 };
 
@@ -49,8 +49,8 @@ struct Fragment
     const Crispr* reference_crispr;
     const TriFrame* reference_triframe;
     const CasProfile* reference_profile;
-    vector<vector<size_t>> clusters;
-    size_t frame;
+    vector<vector<ull>> clusters;
+    ull frame;
 };
 
 namespace CasUtil

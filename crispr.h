@@ -11,7 +11,7 @@ class Crispr
 
         // computed by constructor
         vector<unsigned int> genome_indices;
-        size_t size;
+        ull size;
         unsigned int k;
 
         // computed by update
@@ -28,12 +28,12 @@ class Crispr
         // computed by cache_upstream_aminos
         // vector<string> target_kmers;
 
-        Crispr(unsigned int, vector<unsigned int>, size_t);
+        Crispr(unsigned int, vector<unsigned int>, ull);
         void update(const string& genome);
         void print_generic(const string& genome, function<void(string)>& print_spacer);
         void print(const string& genome, map<string, int>);
         void print(const string& genome);
-        // void cache_upstream_aminos(string, size_t, unsigned int);
+        // void cache_upstream_aminos(string, ull, unsigned int);
 };
 
 
@@ -45,7 +45,7 @@ namespace CrisprUtil
     void print(string genome, vector<Crispr> crisprs);
     bool repeat_substring(Crispr b, unsigned int start, unsigned int end);
     bool repeat_subset(Crispr a, Crispr b);
-    // void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const size_t upstream_size);
+    // void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const ull upstream_size);
     vector<Crispr> get_domain_best(vector<Crispr> crisprs);
     vector<Crispr> spacer_score_filtered(vector<Crispr> crisprs, map<string, int> spacer_scores);
     void cache_crispr_information(const string& genome, vector<Crispr>& crisprs);

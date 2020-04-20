@@ -8,13 +8,13 @@ double get_conservation_consensus(vector<string> repeats)
 	{
 		assert (a.size() == b.size());
 		int matches = 0;
-		for (size_t i = 0; i < a.size(); i++)
+		for (ull i = 0; i < a.size(); i++)
 			matches += a[i] == b[i] ? 1 : 0;
 		return (double) matches / (double) a.length();
 	};
 
 	vector<double> similarties;
-	for (size_t i = 0; i < repeats.size(); i++)
+	for (ull i = 0; i < repeats.size(); i++)
 		similarties.push_back(same_length_similarity(consensus, repeats[i]));
 	
 	return mean(similarties);
@@ -71,9 +71,9 @@ double get_conservation_spacer(vector<string> spacers)
 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
 	double score_sum = 0;
 	int comparisons = 0;
-	for (size_t i = 0; i < spacers.size(); i++)
+	for (ull i = 0; i < spacers.size(); i++)
 	{
-		for (size_t j = 0; j < i; j++)
+		for (ull j = 0; j < i; j++)
 		{
 			string a = spacers[i];
 			string b = spacers[j];
@@ -100,14 +100,14 @@ double get_spacer_variance(vector<string> spacers)
 	double mean = 0;
 	double variance = 0;
 
-	for (size_t i = 0; i < spacers.size(); i++)
+	for (ull i = 0; i < spacers.size(); i++)
 	{
 		sum += (double) spacers[i].length();
 	}
 
 	mean = sum / (double) spacers.size();
 
-	for (size_t i = 0; i < spacers.size(); i++)
+	for (ull i = 0; i < spacers.size(); i++)
 	{
 		variance += pow((double) spacers[i].length()    - mean, 2);
 	}
@@ -121,7 +121,7 @@ double get_spacer_variance(vector<string> spacers)
 
 // Crispr
 
-Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, size_t size)
+Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, ull size)
 {
 	// printf("%d %zd\n", genome_indices[0], size);
 	this->k = k;
@@ -134,12 +134,12 @@ void Crispr::update(const string& genome)
 	this->repeats = vector<string>(size);
 	this->spacers = vector<string>(size-1);
 
-	for (size_t i = 0; i < size; i++)
+	for (ull i = 0; i < size; i++)
 	{
 		repeats[i] = genome.substr(genome_indices[i], k).c_str();
 	}
 
-	for (size_t i = 0; i < size - 1; i++)
+	for (ull i = 0; i < size - 1; i++)
 	{
 		unsigned int current_repeat_end = genome_indices[i] + k;
 		unsigned int next_repeat_begin = genome_indices[i+1];
@@ -169,7 +169,7 @@ void Crispr::print_generic(const string& genome, function<void(string)>& print_s
 	// repeats
 	printf("\trepeats (%zd)\n", repeats.size());
 
-	for (size_t i = 0; i < repeats.size(); i++)
+	for (ull i = 0; i < repeats.size(); i++)
 	{
 		string repeat = repeats[i];
 
@@ -253,7 +253,7 @@ void CrisprUtil::print(string genome, vector<Crispr> crisprs)
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
 bool CrisprUtil::repeat_substring(Crispr b, unsigned int start, unsigned int end)
 {
-	for (size_t i = 0; i < b.size; i++)
+	for (ull i = 0; i < b.size; i++)
 	{
 		unsigned int repeat_start = b.genome_indices[i];
 		unsigned int repeat_end = b.genome_indices[i] + b.k - 1;
@@ -275,7 +275,7 @@ bool CrisprUtil::repeat_subset(Crispr a, Crispr b)
 		return false;
 	}
 
-	for (size_t i = 0; i < a.size; i++)
+	for (ull i = 0; i < a.size; i++)
 	{
 		if (!repeat_substring(b, a.genome_indices[i], a.genome_indices[i] + a.k - 1))
 		{
@@ -317,12 +317,12 @@ vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
 
     // get the best of each domain
     vector<Crispr> crisprs_domain_best;
-    for (size_t i = 0; i < crisprs.size(); i++)
+    for (ull i = 0; i < crisprs.size(); i++)
     {        
         Crispr crispr = crisprs[i];
 
         bool best_already_exists = false;
-        for (size_t j = 0; j < crisprs_domain_best.size(); j++)
+        for (ull j = 0; j < crisprs_domain_best.size(); j++)
         {
             Crispr other = crisprs_domain_best[j];
             if (CrisprUtil::any_overlap(crispr, other))
@@ -364,7 +364,7 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
 {
     auto start = time();
     #pragma omp parallel for
-    for (size_t i = 0; i < crisprs.size(); i++)
+    for (ull i = 0; i < crisprs.size(); i++)
     {
         crisprs[i].update(genome);
 	}
@@ -392,7 +392,7 @@ void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, u
     // sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
 
     int how_many = filtered.size();
-    for (size_t i = filtered.size()-how_many; i < filtered.size(); i++)
+    for (ull i = filtered.size()-how_many; i < filtered.size(); i++)
         filtered[i].print(genome);
 
 	fmt::print("terminating after debug\n");

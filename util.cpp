@@ -69,10 +69,10 @@ string parse_fasta_single (string file_path)
 
 string reverse_complement (string seq)
 {
-    size_t len = seq.length();
+    ull len = seq.length();
     string complement = seq;
 
-    for (size_t i = 0; i < len; i++)
+    for (ull i = 0; i < len; i++)
     {
         complement[i] = complement_table.at(seq[i]);
     }
@@ -84,11 +84,11 @@ int mismatch_count (string repeat)
 {
 	int _count = 0;
 
-	size_t k = repeat.size();
+	ull k = repeat.size();
     unsigned int start_index = 0;
 	unsigned int end_index = start_index + repeat.size() - 1;
 
-	for (size_t i = 0; i < k/2; i++)
+	for (ull i = 0; i < k/2; i++)
 	{
 		char upstream = repeat[start_index + i];
 		char downstream = repeat[end_index - i];
@@ -100,7 +100,7 @@ int mismatch_count (string repeat)
 string seqs_to_fasta (vector <string> seqs)
 {
     ostringstream string_stream;
-    for (size_t i = 0; i < seqs.size(); i++)
+    for (ull i = 0; i < seqs.size(); i++)
     {
         string_stream << ">" << i << endl;
         string_stream << seqs[i] << endl;  
@@ -111,7 +111,7 @@ string seqs_to_fasta (vector <string> seqs)
 vector <string> kmerize (string seq, unsigned int k)
 {
 	vector<string> kmers;
-	for (size_t i = 0; i < seq.length() - k + 1; i++)
+	for (ull i = 0; i < seq.length() - k + 1; i++)
 		kmers.push_back(seq.substr(i, k));
 	return kmers;
 }

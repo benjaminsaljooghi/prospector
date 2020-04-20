@@ -130,7 +130,6 @@ vector<Crispr> prospector_main(const string& genome)
 
     auto start = time();
 
-
     map<ui, vector<ui>> proximal_targets;
     ui tolerance = 16 / MUTANT_TOLERANCE_RATIO;
 
@@ -150,8 +149,6 @@ vector<Crispr> prospector_main(const string& genome)
 
         // if any of these proximals are included in an existing proximal, then we cannot include
         bool include = true;
-        
-
 
         // remove any exact subsetting
 
@@ -278,7 +275,6 @@ int main()
 {
     Prospector::device_init();
 
-
     printf("running main...\n");
     auto start = time();
 
@@ -288,8 +284,8 @@ int main()
     map<string, string> genomes = Util::load_genomes(genome_dir);
     vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, K_FRAGMENT);
 
-    // stdrun(genomes["thermophilus"], cas_profiles);
-    stdrun(genomes["pyogenes"], cas_profiles);
+    stdrun(genomes["thermophilus"], cas_profiles);
+    // stdrun(genomes["pyogenes"], cas_profiles);
 
     time(start, "main");
 
