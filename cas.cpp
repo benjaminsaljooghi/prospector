@@ -292,9 +292,24 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
     auto start = time();  
 
 
+    ull target_map_size = 0;
+    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
+    {
+        for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
+        {
+            for (ull frame = 0; frame < 3; frame++)
+            {
+                auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
+                for (ui i = 0; i < crispr_profile.size(); i++)
+                {
+                    target_map_size++;
+                }
+            }
+        }
+    }
 
-    // bool* target_map = (bool*) malloc(sizeof(bool) * num);
-    vector<bool> target_map;
+    bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
+    ull target_map_index = 0;
     for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
     {
         auto cas_profile = cas_profiles[cas_i].encoded_kmers;
@@ -305,7 +320,7 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                 auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
                 for (ui i = 0; i < crispr_profile.size(); i++)
                 {
-                    target_map.push_back(contains(cas_profile, crispr_profile[i]));
+                    target_map[target_map_index++] = contains(cas_profile, crispr_profile[i]);
                 }
             }
         }
@@ -314,7 +329,7 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
     start = time(start, "target map construction");
 
     vector<Fragment> all_fragments;
-    ull target_map_index = 0;
+    target_map_index = 0;
     for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
     {
         for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
@@ -325,12 +340,10 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                 vector<ull> index;    
                 for (ull i = 0; i < crispr_profile.size(); i++)
                 {
-                    if (target_map[target_map_index])
+                    if (target_map[target_map_index++])
                     {
                         index.push_back(i);
                     }
-
-                    target_map_index++;
                 }
 
 
