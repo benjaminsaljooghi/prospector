@@ -294,37 +294,10 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
 
     ull target_map_size = cas_profiles.size() * crisprs.size() * 3 * 3334; // 3 = frames, and maximum size of a crispr is UPSTREAM_SIZE / 3 = 3333.33 (3334)
 
-    // warning: if we use a fixed buffer size here then each crispr will have trailing 0s at the end.
-    // have to make sure these trailing 0s are somehow ignored by cuda?
-    // actually, that's not true, they should be packed properly,
-    // cuda just does the all against all, and then on the CPU we interpret the results
-
-    // the only thing cuda has to align properly is knowing which cas profile is being compared
-    // against which crispr profile
-
-    // therefore, each cas_i has an associated crispr_profiles_start and crispr_profiles_size associated with it that
-    // needs to be compared against.
-
-    // essentially we have an index of comparisons, and each index can lookup an array to figure out which cas_i
-    // it's comparing against which crispr_profile.
-
-    // crispr_profile_i -> crispr_profile_begin
-    // crispr_profile_i -> crispr_profile_size
-    // cas_profile_i -> cas_profile_begin
-    // cas_profile_i -> cas_profile_size
-
-    // run_i -> cripsr_profile_i
-    // run_i -> cas_profile_i
-    // run_i -> target_map_begin
-    // run_i -> target_map_size;
-
-    // this is the strategy.
     ull num_runs = cas_profiles.size() * crisprs.size() * 3; // running each cas profile against each of the three triframes per crispr. Will need to be expanded to six frames later.
     
     vector<ui> _run_crispr_profile;
     vector<ui> _run_cas_profile;
-
-
 
     vector<ui> _crispr_profiles;
     vector<ui> _crispr_profile_starts;
@@ -360,40 +333,6 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
         cas_profile_start += cas_profile.size();
     }
 
-    // problem: maybe too much branching and thus warp divergence with enumerating over the cas profile sizes
-    // remember... has to be minimal branching, which means no nested for loops really,
-    // just one LARGE run for loop that gives you an index into all the necessary positions to write to
-    // which crispr profile you are referring to, which cas profile you are referring to, and which target map buffer 
-    // you are currently writing to. More granular than this, we could arrange it so that we refer to a particular
-    // crispr profile element, a particular cas profile element (or just its index if we need do the has thing), 
-    // and which index within the global target map buffer we write the boolean to.
-    // therefore it's more arithmetic than branching.
-    
-    
-    // problem: if we have 2 crisprs, we have 6 crispr profiles; if we have 10 cas genes, we then have 60 runs to perform. Not granular enough for a per thread basis
-    // the per thread basis should just be all the crispr elements that need to be checked
-
-
-    // cuda algo should be;
-
-    // for (crispr_el_i = 0 to total_crispr_els) 
-    //      for (cas_i = 0 to total_cas_profiles)
-    //             // hash table lookup
-    //
-    //
-
-    // IMPORTANT!!! ACTUALLY: NEXT THING TO TRY IS HASH TABLE ON CPU.
-    
-    // cas 1
-    //         crispr 1.1
-    //         crispr 1.2
-    //         crispr 1.3
-    //         crispr 2.1
-    //         crispr 2.2
-    //         crispr 2.3
-    // cas 2
-    //         crispr 1.1
-    
 
     bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
     ull target_map_index = 0;
