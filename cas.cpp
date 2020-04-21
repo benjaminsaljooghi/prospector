@@ -322,7 +322,10 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
     bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
 
     start = time(start, "target map preparation");
-    ull target_map_index = 0;
+
+    const ull per_crispr_profile = 3334;
+    const ull per_crispr = per_crispr_profile * 3; 
+    const ull per_cas = _crispr_count * per_crispr;
     for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
     {
         for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
@@ -333,16 +336,15 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                 ui size = _crispr_profile_sizes[crispr_i * 3 + frame];
                 for (ui i = 0; i < size; i++)
                 {
-                    target_map[target_map_index++] = contains(&_cas_profiles[0] + _cas_profile_starts[cas_i], _cas_profile_sizes[cas_i], _crispr_profiles[start + i]);
+                    ui index = (cas_i * per_cas) + (crispr_i * per_crispr) + (frame * per_crispr_profile) + i; 
+                    target_map[index] = contains(&_cas_profiles[0] + _cas_profile_starts[cas_i], _cas_profile_sizes[cas_i], _crispr_profiles[start + i]);
                 }
             }
         }
     }
     start = time(start, "target map construction");
 
-    
-    target_map_index = 0;
-    vector<Fragment> all_fragments;
+    vector<Fragment> fragments;
     for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
     {
         for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
@@ -353,7 +355,8 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                 vector<ull> index;
                 for (ull i = 0; i < size; i++)
                 {
-                    if (target_map[target_map_index++])
+                    ui ind = (cas_i * per_cas) + (crispr_i * per_crispr) + (frame * per_crispr_profile) + i; 
+                    if (target_map[ind])
                     {
                         index.push_back(i);
                     }
@@ -367,71 +370,25 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                 if (!good_clusters(clusters))
                     continue;
 
-                Fragment fragment = {
-                    &(crisprs[crispr_i]),
-                    &(flanks[crispr_i].up),
-                    &(cas_profiles[cas_i]),
-                    clusters,
-                    frame
-                };
-                all_fragments.push_back(fragment);
+                Fragment f = {&(crisprs[crispr_i]), &(flanks[crispr_i].up), &(cas_profiles[cas_i]), clusters, frame};
+                fragments.push_back(f);
             }
            
         }
     }
 
-    // target_map_index = 0;
-    // ull frame = 0;
-    // for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
-    // {
-    //     for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
-    //     {
-    //         for (ull frame = 0; frame < 3; frame++)
-    //         {
-    //             // auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
-    //             vector<ull> index;    
-    //             for (ull i = 0; i < _crispr_profile_sizes[]; i++)
-    //             {
-    //                 if (target_map[target_map_index++])
-    //                 {
-    //                     index.push_back(i);
-    //                 }
-    //             }
-
-    //             if (index.size() == 0)
-    //                 continue;
-
-    //             vector<vector<ull>> clusters = cluster_index(index);    
-                
-    //             if (!good_clusters(clusters))
-    //                 continue;
-
-    //             Fragment fragment = {
-    //                 &(crisprs[crispr_i]),
-    //                 &(flanks[crispr_i].up),
-    //                 &(cas_profiles[cas_i]),
-    //                 clusters,
-    //                 0
-    //                 // frame++ % 3
-    //             };
-    //             all_fragments.push_back(fragment);
-
-    //         }
-    //     }
-    // }
-
     start = time(start, "fragments from target map construction");
 
-    sort(all_fragments, [](const Fragment& a, const Fragment& b) {
+    sort(fragments, [](const Fragment& a, const Fragment& b) {
         return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
     });
 
     start = time(start, "cas sort fragments");
     vector<Fragment> fragments_filtered;
-    for (Fragment a : all_fragments)
+    for (Fragment a : fragments)
     {
         bool do_not_include_a = false;
-        for (Fragment b : all_fragments)
+        for (Fragment b : fragments)
         {
             if (fragment_contains(a, b))
             {
