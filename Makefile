@@ -19,9 +19,6 @@ NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp $(OPT)
 B = build
 
 
-
-
-
 .PHONY: build rebuild clean
 
 build: $(B)/main.out

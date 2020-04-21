@@ -275,90 +275,83 @@ void print_fragment(const Fragment& fragment)
             );
 }
 
-
-// ull accumulative_triplet_frame_size(const TriFrame* triframe)
-// {
-//     ui total_size = 0;
-//     for (ull frame = 0; frame < 3; frame++)
-//     {
-//         total_size += triframe->translations[frame].pure_kmerized_encoded.size();   
-//     }
-//     return total_size;
-// }
-
 vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>& flanks)
 {
     fmt::print("\tidentifying cas genes in {} crisprs...\n", crisprs.size());
     auto start = time();  
 
 
-    ull target_map_size = cas_profiles.size() * crisprs.size() * 3 * 3334; // 3 = frames, and maximum size of a crispr is UPSTREAM_SIZE / 3 = 3333.33 (3334)
 
-    ull num_runs = cas_profiles.size() * crisprs.size() * 3; // running each cas profile against each of the three triframes per crispr. Will need to be expanded to six frames later.
-    
-    vector<ui> _run_crispr_profile;
-    vector<ui> _run_cas_profile;
+    // ull num_runs = cas_profiles.size() * crisprs.size() * 3; // running each cas profile against each of the three triframes per crispr. Will need to be expanded to six frames later.
 
     vector<ui> _crispr_profiles;
     vector<ui> _crispr_profile_starts;
     vector<ui> _crispr_profile_sizes;
-    ui crispr_profile_start = 0;
-    ui _run_crispr_profile_i = 0;
-    for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
+    ui _crispr_profile_start = 0;
+    ui _crispr_profile_count = crisprs.size() * 3;
+    ui _crispr_count = crisprs.size();
+    for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
     {
         for (ull frame = 0; frame < 3; frame++)
         {
             auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
 
-            _crispr_profile_starts.push_back(crispr_profile_start);
+            _crispr_profile_starts.push_back(_crispr_profile_start);
             _crispr_profiles.insert(_crispr_profiles.end(), crispr_profile.begin(), crispr_profile.end());
             _crispr_profile_sizes.push_back(crispr_profile.size());
-            
-            crispr_profile_start += crispr_profile.size();
+            _crispr_profile_start += crispr_profile.size();
         }
     }
 
     vector<ui> _cas_profiles;
     vector<ui> _cas_profile_starts;
     vector<ui> _cas_profile_sizes;
-    ui cas_profile_start = 0;
-    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
+    ui _cas_profile_start = 0;
+    ui _cas_profile_count = cas_profiles.size();
+    for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
     {
         auto cas_profile = cas_profiles[cas_i].encoded_kmers;
 
-        _cas_profile_starts.push_back(cas_profile_start);
+        _cas_profile_starts.push_back(_cas_profile_start);
         _cas_profiles.insert(_cas_profiles.end(), cas_profile.begin(), cas_profile.end());
         _cas_profile_sizes.push_back(cas_profile.size());
-        
-        cas_profile_start += cas_profile.size();
+        _cas_profile_start += cas_profile.size();
     }
 
-
+    ull target_map_size = cas_profiles.size() * crisprs.size() * 3 * 3334; // 3 = frames, and maximum size of a crispr is UPSTREAM_SIZE / 3 = 3333.33 (3334)
     bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
+
+    start = time(start, "target map preparation");
     ull target_map_index = 0;
-    
-    for (ull j = 0; j < _cas_profile_starts.size(); j++)
+    for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
     {
-        for (ull i = 0; i < _crispr_profiles.size(); i++)
-        {
-            target_map[target_map_index++] = contains(&_cas_profiles[0] + _cas_profile_starts[j], _cas_profile_sizes[j], _crispr_profiles[i]);
-        }
-    }
-
-
-    start = time(start, "target map construction");
-
-    vector<Fragment> all_fragments;
-    target_map_index = 0;
-    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
-    {
-        for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
+        for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
         {
             for (ull frame = 0; frame < 3; frame++)
             {
-                auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
-                vector<ull> index;    
-                for (ull i = 0; i < crispr_profile.size(); i++)
+                ui start = _crispr_profile_starts[crispr_i * 3 + frame];
+                ui size = _crispr_profile_sizes[crispr_i * 3 + frame];
+                for (ui i = 0; i < size; i++)
+                {
+                    target_map[target_map_index++] = contains(&_cas_profiles[0] + _cas_profile_starts[cas_i], _cas_profile_sizes[cas_i], _crispr_profiles[start + i]);
+                }
+            }
+        }
+    }
+    start = time(start, "target map construction");
+
+    
+    target_map_index = 0;
+    vector<Fragment> all_fragments;
+    for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
+    {
+        for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
+        {
+            for (ull frame = 0; frame < 3; frame++)
+            {
+                ui size = _crispr_profile_sizes[crispr_i * 3 + frame];
+                vector<ull> index;
+                for (ull i = 0; i < size; i++)
                 {
                     if (target_map[target_map_index++])
                     {
@@ -382,16 +375,53 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                     frame
                 };
                 all_fragments.push_back(fragment);
-
             }
+           
         }
     }
 
+    // target_map_index = 0;
+    // ull frame = 0;
+    // for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
+    // {
+    //     for (ull crispr_i = 0; crispr_i < crisprs.size(); crispr_i++)
+    //     {
+    //         for (ull frame = 0; frame < 3; frame++)
+    //         {
+    //             // auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
+    //             vector<ull> index;    
+    //             for (ull i = 0; i < _crispr_profile_sizes[]; i++)
+    //             {
+    //                 if (target_map[target_map_index++])
+    //                 {
+    //                     index.push_back(i);
+    //                 }
+    //             }
+
+    //             if (index.size() == 0)
+    //                 continue;
+
+    //             vector<vector<ull>> clusters = cluster_index(index);    
+                
+    //             if (!good_clusters(clusters))
+    //                 continue;
+
+    //             Fragment fragment = {
+    //                 &(crisprs[crispr_i]),
+    //                 &(flanks[crispr_i].up),
+    //                 &(cas_profiles[cas_i]),
+    //                 clusters,
+    //                 0
+    //                 // frame++ % 3
+    //             };
+    //             all_fragments.push_back(fragment);
+
+    //         }
+    //     }
+    // }
+
     start = time(start, "fragments from target map construction");
 
-
-
-    // start = time(start, "cas raw fragment detection");
     sort(all_fragments, [](const Fragment& a, const Fragment& b) {
         return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
     });
