@@ -9,31 +9,7 @@ vector<ui> frames{
 };
 
 
-const ull encoding_size = 5;
 
-map<char, ui> amino_encoding {
-    {'F', 0},
-    {'L', 1},
-    {'I', 2},
-    {'M', 3},
-    {'V', 4},
-    {'S', 5},
-    {'P', 6},
-    {'T', 7},
-    {'A', 8},
-    {'Y', 9},
-    {'H', 10},
-    {'Q', 11},
-    {'N', 12},
-    {'K', 13},
-    {'D', 14},
-    {'E', 15},
-    {'C', 16},
-    {'W', 17},
-    {'R', 18},
-    {'S', 19},
-    {'G', 20},
-};
 
 const map <string, string> codon_table = {
     {"TTT", "F"},
@@ -104,6 +80,33 @@ const map <string, string> codon_table = {
 
 
 
+
+
+map<char, ui> amino_encoding {
+    {'F', 0},
+    {'L', 1},
+    {'I', 2},
+    {'M', 3},
+    {'V', 4},
+    {'S', 5},
+    {'P', 6},
+    {'T', 7},
+    {'A', 8},
+    {'Y', 9},
+    {'H', 10},
+    {'Q', 11},
+    {'N', 12},
+    {'K', 13},
+    {'D', 14},
+    {'E', 15},
+    {'C', 16},
+    {'W', 17},
+    {'R', 18},
+    {'S', 19},
+    {'G', 20},
+};
+
+const ull encoding_size = 5;
 
 ui str_to_int(string kmer)
 {
@@ -275,14 +278,12 @@ void print_fragment(const Fragment& fragment)
             );
 }
 
+
+
 vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>& flanks)
 {
     fmt::print("\tidentifying cas genes in {} crisprs...\n", crisprs.size());
     auto start = time();  
-
-
-
-    // ull num_runs = cas_profiles.size() * crisprs.size() * 3; // running each cas profile against each of the three triframes per crispr. Will need to be expanded to six frames later.
 
     vector<ui> _crispr_profiles;
     vector<ui> _crispr_profile_starts;
@@ -337,7 +338,28 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                 for (ui i = 0; i < size; i++)
                 {
                     ui index = (cas_i * per_cas) + (crispr_i * per_crispr) + (frame * per_crispr_profile) + i; 
-                    target_map[index] = contains(&_cas_profiles[0] + _cas_profile_starts[cas_i], _cas_profile_sizes[cas_i], _crispr_profiles[start + i]);
+                    ui query = _crispr_profiles[start+i];
+      
+                    ui* target_begin = &_cas_profiles[0] + _cas_profile_starts[cas_i];
+                    ui target_size = _cas_profile_sizes[cas_i];              
+
+                    // target_map[index] = false;
+                    // for (ull j = 0; j < target_size; j++)
+                    // {
+                    //     if (*(target_begin+j) == query)
+                    //     {
+                    //         target_map[index] = true;
+                    //         break;
+                    //     }
+                    // }
+
+                    const CasProfile& cas_profile = cas_profiles[cas_i];
+                    auto at_index = cas_profile.hash_table[query % cas_profile.N];
+                    target_map[index] = at_index == query;
+
+            
+      
+
                 }
             }
         }
@@ -425,6 +447,8 @@ void CasUtil::print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments
 
 vector<CasProfile> CasUtil::load(string dir, ui k)
 {   
+    auto start = time();
+
     vector<CasProfile> profiles;  
     for (const auto& entry : fs::directory_iterator(dir))
     {
@@ -436,6 +460,40 @@ vector<CasProfile> CasUtil::load(string dir, ui k)
 
         vector<string> kmers = kmerize(parse_fasta_single(path), k);
         vector<ui> encoded_kmers = kmers_encoded(kmers);
+        set<ui> encoded_kmer_set;
+
+        for (ui kmer : encoded_kmers)
+        {
+            encoded_kmer_set.insert(kmer);
+        }
+
+        ui N = 1;
+        for (;;N++)
+        {       
+            bool* bools = (bool*) malloc(sizeof(bool) * N);
+            memset(bools, 0, sizeof(bool) * N);
+   
+            bool succeed = true;
+            for (ui kmer : encoded_kmer_set)
+            {
+                if (bools[kmer % N])
+                {
+                    succeed = false;
+                    break;
+                }
+                bools[kmer % N] = true;
+            }
+            free(bools);
+            if (succeed)
+                break;    
+        }
+
+        ui* hash_table = (ui*) malloc(sizeof(ui) * N);
+        memset(hash_table, 0, sizeof(ui) * N);
+        for (ui kmer : encoded_kmer_set)
+        {
+            hash_table[kmer % N] = kmer;
+        }
 
         CasProfile cas_profile
         {
@@ -443,9 +501,13 @@ vector<CasProfile> CasUtil::load(string dir, ui k)
             type,
             kmers,
             encoded_kmers,
+            encoded_kmer_set,
+            hash_table,
+            N
         };
         profiles.push_back(cas_profile);
     }
+    start = time(start, "crispr profile load");
     return profiles;
 }
 

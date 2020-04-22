@@ -42,6 +42,9 @@ struct CasProfile
     string type;
     vector<string> kmers;
     vector<ui> encoded_kmers;
+    set<ui> encoded_kmer_set;
+    ui* hash_table;
+    ui N;
 };
 
 struct Fragment
