@@ -365,46 +365,39 @@ void print_fragment(const Fragment& fragment, const string& genome)
     ull raw_pos_start = fragment.reference_translation->pure_mapping[index_kmer_start];
     ull raw_pos_end = fragment.reference_translation->pure_mapping[index_kmer_end];
 
+    ull genome_start;
+    ull genome_end;
     if (fragment.reference_translation->pos)
     {
-        ull genome_start = fragment.reference_translation->genome_start + (raw_pos_start * 3); //+ fragment.frame;
-        ull genome_end = fragment.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + 3; // fragment.frame;
-
-        fmt::print("\t\t{} {} - {} {}...{}\n", 
-                        fragment.reference_profile->name,
-                        genome_start,
-                        genome_end,
-                        protein.substr(0, 4),
-                        protein.substr(protein.length()-4, 4)
-                );
-
-        string domain = genome.substr(genome_start, genome_end - genome_start);
-        fmt::print("\t\tdomain translation check: {}\n\n", translate_domain(domain));
+        genome_start = fragment.reference_translation->genome_start + (raw_pos_start * 3); 
+        genome_end = fragment.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + 3;
     }
     else
     {
-        ull genome_end = fragment.reference_translation->genome_end - (raw_pos_start * 3); //+ fragment.frame;
-        ull genome_start = fragment.reference_translation->genome_start - ((raw_pos_end + K_FRAGMENT) * 3) + 3; // fragment.frame;
-
-        fmt::print("\t\t{} {} - {} {}...{}\n", 
-                        fragment.reference_profile->name,
-                        genome_start,
-                        genome_end,
-                        protein.substr(0, 4),
-                        protein.substr(protein.length()-4, 4)
-                );
-
-
-        string domain = genome.substr(genome_start, genome_end - genome_start);
-
-        string rc = reverse_complement(domain);
-
-        fmt::print("\t\tneg_translation check: {}\n\n", translate_domain(rc));
+        genome_end = fragment.reference_translation->genome_end - (raw_pos_start * 3);
+        genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + K_FRAGMENT) * 3) + 3 );
     }
     
 
+    string pro_begin = protein.substr(0, 4);
+    string pro_end = protein.substr(protein.length()-4, 4);
 
+    string domain = genome.substr(genome_start, genome_end - genome_start);
+    domain = fragment.reference_translation->pos ? domain : reverse_complement(domain);
+    string trans = translate_domain(domain);
+    string trans_begin = trans.substr(0, 4);
+    string trans_end = trans.substr(trans.length()-4, 4);
 
+    fmt::print("\t\t{} {} {} - {} {}...{} {}...{}\n", 
+                    (pro_begin == trans_begin && pro_end == trans_end) ? "[ OK ]" : "[ BAD ]",
+                    fragment.reference_profile->name,
+                    genome_start,
+                    genome_end,
+                    pro_begin,
+                    pro_end,
+                    trans_begin,
+                    trans_end
+            );
 }
 
 void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome)
