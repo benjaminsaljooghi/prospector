@@ -168,8 +168,6 @@ vector<Crispr> prospector_main(const string& genome)
             }
         }
 
-
-
         if (include)
         {
             proximal_targets[query] = proximals;
@@ -225,9 +223,7 @@ vector<Crispr> prospector_main(const string& genome)
         }
     }
 
-
     time(start, "post-kernel crispr generation");
-
     fmt::print("\tprospector returned {} crisprs\n", all_crisprs.size());
     return all_crisprs;
 }
@@ -239,19 +235,12 @@ vector<Crispr> prospector_main(const string& genome)
 vector<Crispr> get_crisprs(const string& genome)
 {
     vector<Crispr> crisprs = prospector_main(genome);      
-
     CrisprUtil::cache_crispr_information(genome, crisprs);
-
     // CrisprUtil::debug(crisprs, genome, 1085431-1000, 1086854+1000);
-
     crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
-
     sort(crisprs, CrisprUtil::heuristic_greater);
-
     crisprs = CrisprUtil::get_domain_best(crisprs);
-
     sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
-
     return crisprs;
 }
 
@@ -261,12 +250,12 @@ void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
     auto start = time();
 
     vector<Crispr> crisprs = get_crisprs(genome);
-    vector<Flanks> flanks = CasUtil::get_flanks(genome, crisprs);
-    vector<Fragment> fragments = CasUtil::cas(genome, crisprs, cas_profiles, flanks);
+    vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
+    vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks);
 
     CrisprUtil::print(genome, crisprs);
-    CasUtil::print_fragments(crisprs, fragments);
-
+    CasUtil::print_fragments(crisprs, fragments, genome);
+    
     time(start, "stdrun");
     fmt::print("\n\n");
 }
@@ -286,7 +275,6 @@ int main()
 
     stdrun(genomes["thermophilus"], cas_profiles);
     // stdrun(genomes["pyogenes"], cas_profiles);
-
     time(start, "main");
 
     return 0;                                                                                                           

@@ -16,6 +16,10 @@ namespace fs = std::filesystem;
 
 struct Translation
 {
+    const Crispr* reference_crispr;
+    ui genome_start;
+    ui genome_end;
+    bool pos;
     string raw;
     string pure;
     vector<string> pure_kmerized;
@@ -23,18 +27,18 @@ struct Translation
     vector<ull> pure_mapping;
 };
 
-struct TriFrame
-{
-    ull genome_start;
-    ull genome_end;
-    vector<Translation> translations;
-};
+// struct TriFrame
+// {
+//     ull genome_start;
+//     ull genome_end;
+//     vector<Translation> translations;
+// };
 
-struct Flanks
-{
-    TriFrame up;
-    TriFrame down;
-};
+// struct Flanks
+// {
+//     TriFrame up;
+//     TriFrame down;
+// };
 
 struct CasProfile
 {
@@ -50,16 +54,15 @@ struct CasProfile
 struct Fragment
 {
     const Crispr* reference_crispr;
-    const TriFrame* reference_triframe;
+    const Translation* reference_translation;
     const CasProfile* reference_profile;
     vector<vector<ull>> clusters;
-    ull frame;
 };
 
 namespace CasUtil
 {
-    vector<Flanks> get_flanks(const string& genome, const vector<Crispr>&);    
-    vector<Fragment> cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>&);
-    void print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments);
+    vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
+    vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&);
+    void print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome);
     vector<CasProfile> load(string, ui);
 }

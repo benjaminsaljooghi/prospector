@@ -79,6 +79,20 @@ const map <string, string> codon_table = {
 };
 
 
+string translate_domain(const string& domain)
+{
+    ull codon_size = 3;
+    string raw = "";
+    for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
+    {
+        string codon = domain.substr(i, codon_size);
+        string amino_acid = codon_table.at(codon);
+        raw  += amino_acid;
+    }
+    return raw;
+}
+
+
 
 
 
@@ -130,62 +144,6 @@ vector<ui> kmers_encoded(vector<string> kmers)
 }
 
 
-
-TriFrame get_triframe(const string& genome, ull genome_start, ull genome_end, ui k, bool rc)
-{
-    TriFrame triframe;
-    triframe.genome_start = genome_start;
-    triframe.genome_end = genome_end;
-
-    string domain = genome.substr(genome_start, genome_end - genome_start);
-    domain = rc ? reverse_complement(domain) : domain; 
-
-    ull codon_size = 3;
-
-    auto frame_shift = [&](string& dna)
-    {
-        vector<string> amino_acid_seqs{"", "", ""};
-        for (ull frame = 0; frame < 3; frame++)
-		{
-			for (ull i = frame; i + codon_size < dna.size(); i += codon_size)
-			{
-				string codon = dna.substr(i, codon_size);
-				string amino_acid = codon_table.at(codon);
-				amino_acid_seqs[frame] += amino_acid;
-			}
-		}
-		return amino_acid_seqs;
-    };
-
-    vector<string> raws = frame_shift(domain);
-
-	
-    for (string raw : raws)
-	{
-        Translation translation;
-
-        translation.raw = raw;
-		translation.pure = "";
-
-		ull stop_count = 0;
-		ull index = 0;
-		for (char elem : raw)
-		{
-			if (elem == STOP_C)
-			{
-				stop_count++;
-				continue;
-			}
-			translation.pure += elem;
-			translation.pure_mapping.push_back(index + stop_count);
-			index++;
-		}
-        translation.pure_kmerized = kmerize(translation.pure, k);
-        translation.pure_kmerized_encoded = kmers_encoded(translation.pure_kmerized);
-        triframe.translations.push_back(translation);
-    }
-    return triframe;
-}
 
 
 
@@ -255,131 +213,106 @@ bool fragment_contains(const Fragment& a, const Fragment& b)
     return (!equivalent) && a_start >= b_start && a_end <= b_end;
 }
 
-void print_fragment(const Fragment& fragment)
+
+// struct CasSet
+// {
+//     vector<ui> profiles;
+//     vector<ui> starts;
+//     vector<ui> sizes;
+//     ui profile_count;
+// };
+
+// struct CrisprSet
+// {
+//     vector<ui> profiles;
+//     vector<ui> starts;
+//     vector<ui> sizes;
+//     ui profile_count;
+
+// };
+
+// CrisprSet crisprset_from_translations(const vector<Translation>& translations)
+// {
+//     CrisprSet crisprset;
+//     ui _crispr_profile_start = 0;
+//     for (ull translation_i = 0; translation_i < translations.size(); translation_i++)
+//     {
+//         auto profile = translations[translation_i].pure_kmerized_encoded;
+//         crisprset.starts.push_back(_crispr_profile_start);
+//         crisprset.profiles.insert(crisprset.profiles.end(), profile.begin(), profile.end());
+//         crisprset.sizes.push_back(profile.size());
+//         _crispr_profile_start += profile.size();
+//     }
+//     return crisprset;
+// }
+
+// CasSet casset_from_profiles(const vector<CasProfile>& cas_profiles)
+// {
+//     CasSet casset;
+//     ui _cas_profile_start = 0;
+//     casset.profile_count = cas_profiles.size();
+//     for (ull cas_i = 0; cas_i < casset.profile_count; cas_i++)
+//     {
+//         auto cas_profile = cas_profiles[cas_i].encoded_kmers;
+//         casset.starts.push_back(_cas_profile_start);
+//         casset.profiles.insert(casset.profiles.end(), cas_profile.begin(), cas_profile.end());
+//         casset.sizes.push_back(cas_profile.size());
+//         _cas_profile_start += cas_profile.size();
+//     }
+//     return casset;
+// }
+
+vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations)
 {
-    ull index_kmer_start = demarc_start_clusters(fragment.clusters);
-    ull index_kmer_end = demarc_end_clusters(fragment.clusters);
-    
-    string protein = fragment.reference_triframe->translations[fragment.frame].pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
-
-    ull raw_pos_start = fragment.reference_triframe->translations[fragment.frame].pure_mapping[index_kmer_start];
-    ull raw_pos_end = fragment.reference_triframe->translations[fragment.frame].pure_mapping[index_kmer_end];
-
-    ull genome_start = fragment.reference_triframe->genome_start + (raw_pos_start * 3) + fragment.frame;
-    ull genome_end = fragment.reference_triframe->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + fragment.frame + 3;
-
-    fmt::print("\t\t{} {} - {} {}...{}\n", 
-                    fragment.reference_profile->name,
-                    genome_start,
-                    genome_end,
-                    protein.substr(0, 4),
-                    protein.substr(protein.length()-4, 4)
-            );
-}
-
-
-
-vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crisprs, const vector<CasProfile>& cas_profiles, const vector<Flanks>& flanks)
-{
-    fmt::print("\tidentifying cas genes in {} crisprs...\n", crisprs.size());
+    fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
     auto start = time();  
 
-    vector<ui> _crispr_profiles;
-    vector<ui> _crispr_profile_starts;
-    vector<ui> _crispr_profile_sizes;
-    ui _crispr_profile_start = 0;
-    ui _crispr_profile_count = crisprs.size() * 3;
-    ui _crispr_count = crisprs.size();
-    for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
-    {
-        for (ull frame = 0; frame < 3; frame++)
-        {
-            auto crispr_profile = flanks[crispr_i].up.translations[frame].pure_kmerized_encoded;
-
-            _crispr_profile_starts.push_back(_crispr_profile_start);
-            _crispr_profiles.insert(_crispr_profiles.end(), crispr_profile.begin(), crispr_profile.end());
-            _crispr_profile_sizes.push_back(crispr_profile.size());
-            _crispr_profile_start += crispr_profile.size();
-        }
-    }
-
-    vector<ui> _cas_profiles;
-    vector<ui> _cas_profile_starts;
-    vector<ui> _cas_profile_sizes;
-    ui _cas_profile_start = 0;
-    ui _cas_profile_count = cas_profiles.size();
-    for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
-    {
-        auto cas_profile = cas_profiles[cas_i].encoded_kmers;
-
-        _cas_profile_starts.push_back(_cas_profile_start);
-        _cas_profiles.insert(_cas_profiles.end(), cas_profile.begin(), cas_profile.end());
-        _cas_profile_sizes.push_back(cas_profile.size());
-        _cas_profile_start += cas_profile.size();
-    }
-
-    ull target_map_size = cas_profiles.size() * crisprs.size() * 3 * 3334; // 3 = frames, and maximum size of a crispr is UPSTREAM_SIZE / 3 = 3333.33 (3334)
-    bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
+    // ull target_map_size = cas_profiles.size() * translations.size() * 3334; // maximum size of a translation is UPSTREAM_SIZE / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
+    // bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
+    vector<ui> target_map;
 
     start = time(start, "target map preparation");
 
-    const ull per_crispr_profile = 3334;
-    const ull per_crispr = per_crispr_profile * 3; 
-    const ull per_cas = _crispr_count * per_crispr;
-    for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
-    {
-        ui* target_begin = &_cas_profiles[0] + _cas_profile_starts[cas_i];
-        ui target_size = _cas_profile_sizes[cas_i];   
-        for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
+    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
+    {  
+        const CasProfile& cas_profile = cas_profiles[cas_i];
+        for (ull translation_i = 0; translation_i < translations.size(); translation_i++)
         {
-            for (ull frame = 0; frame < 3; frame++)
+            for (ui i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
             {
-                ui start = _crispr_profile_starts[crispr_i * 3 + frame];
-                ui size = _crispr_profile_sizes[crispr_i * 3 + frame];
-                for (ui i = 0; i < size; i++)
-                {
-                    ui index = (cas_i * per_cas) + (crispr_i * per_crispr) + (frame * per_crispr_profile) + i; 
-                    ui query = _crispr_profiles[start+i];
-      
-        
-                    const CasProfile& cas_profile = cas_profiles[cas_i];
-                    auto at_index = cas_profile.hash_table[query % cas_profile.N];
-                    target_map[index] = at_index == query;
-                }
+                ui query = translations[translation_i].pure_kmerized_encoded[i];
+                auto at_index = cas_profile.hash_table[query % cas_profile.N];
+                target_map.push_back(at_index == query);
             }
         }
     }
     start = time(start, "target map construction");
 
     vector<Fragment> fragments;
-    for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
+    ull target_map_index = 0;
+    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
     {
-        for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
+        for (ull translation_i = 0; translation_i < translations.size(); translation_i++)
         {
-            for (ull frame = 0; frame < 3; frame++)
+            vector<ull> index;
+            for (ull i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
             {
-                ui size = _crispr_profile_sizes[crispr_i * 3 + frame];
-                vector<ull> index;
-                for (ull i = 0; i < size; i++)
+                if (target_map[target_map_index++])
                 {
-                    ui ind = (cas_i * per_cas) + (crispr_i * per_crispr) + (frame * per_crispr_profile) + i; 
-                    if (target_map[ind])
-                    {
-                        index.push_back(i);
-                    }
+                    index.push_back(i);
                 }
-
-                if (index.size() == 0)
-                    continue;
-
-                vector<vector<ull>> clusters = cluster_index(index);    
-                
-                if (!good_clusters(clusters))
-                    continue;
-
-                Fragment f = {&(crisprs[crispr_i]), &(flanks[crispr_i].up), &(cas_profiles[cas_i]), clusters, frame};
-                fragments.push_back(f);
             }
+
+            if (index.size() == 0)
+                continue;
+
+            vector<vector<ull>> clusters = cluster_index(index);    
+            
+            if (!good_clusters(clusters))
+                continue;
+
+            Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], &cas_profiles[cas_i], clusters};
+            fragments.push_back(f);
            
         }
     }
@@ -414,7 +347,67 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
 }
 
 
-void CasUtil::print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments)
+void print_fragment(const Fragment& fragment, const string& genome)
+{
+    ull index_kmer_start = demarc_start_clusters(fragment.clusters);
+    ull index_kmer_end = demarc_end_clusters(fragment.clusters);
+    
+    // string protein = fragment.reference_triframe->translations[fragment.frame].pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
+    // ull raw_pos_start = fragment.reference_triframe->translations[fragment.frame].pure_mapping[index_kmer_start];
+    // ull raw_pos_end = fragment.reference_triframe->translations[fragment.frame].pure_mapping[index_kmer_end];
+
+    // ull genome_start = fragment.reference_triframe->genome_start + (raw_pos_start * 3) + fragment.frame;
+    // ull genome_end = fragment.reference_triframe->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + fragment.frame + 3;
+
+    string protein = fragment.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+
+    ull raw_pos_start = fragment.reference_translation->pure_mapping[index_kmer_start];
+    ull raw_pos_end = fragment.reference_translation->pure_mapping[index_kmer_end];
+
+    if (fragment.reference_translation->pos)
+    {
+        ull genome_start = fragment.reference_translation->genome_start + (raw_pos_start * 3); //+ fragment.frame;
+        ull genome_end = fragment.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + 3; // fragment.frame;
+
+        fmt::print("\t\t{} {} - {} {}...{}\n", 
+                        fragment.reference_profile->name,
+                        genome_start,
+                        genome_end,
+                        protein.substr(0, 4),
+                        protein.substr(protein.length()-4, 4)
+                );
+
+        string domain = genome.substr(genome_start, genome_end - genome_start);
+        fmt::print("\t\tdomain translation check: {}\n\n", translate_domain(domain));
+    }
+    else
+    {
+        ull genome_end = fragment.reference_translation->genome_end - (raw_pos_start * 3); //+ fragment.frame;
+        ull genome_start = fragment.reference_translation->genome_start - ((raw_pos_end + K_FRAGMENT) * 3) + 3; // fragment.frame;
+
+        fmt::print("\t\t{} {} - {} {}...{}\n", 
+                        fragment.reference_profile->name,
+                        genome_start,
+                        genome_end,
+                        protein.substr(0, 4),
+                        protein.substr(protein.length()-4, 4)
+                );
+
+
+        string domain = genome.substr(genome_start, genome_end - genome_start);
+
+        string rc = reverse_complement(domain);
+
+        fmt::print("\t\tneg_translation check: {}\n\n", translate_domain(rc));
+    }
+    
+
+
+
+}
+
+void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome)
 {
     for (const Crispr& crispr : crisprs)
     {
@@ -423,7 +416,7 @@ void CasUtil::print_fragments(vector<Crispr> crisprs, vector<Fragment> fragments
         {
             if (g.reference_crispr->start == crispr.start && g.reference_crispr->k == crispr.k)
             {
-                print_fragment(g);
+                print_fragment(g, genome);
             }
         }
     }
@@ -505,31 +498,87 @@ void debug_clusters(const vector<vector<ull>>& clusters)
 }
 
 
-vector<Flanks> CasUtil::get_flanks(const string& genome, const vector<Crispr>& crisprs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+vector<Translation> get_triframe(const string& genome, ull genome_start, ull genome_end, ui k, bool pos)
 {
-    auto get_flank = [&](const Crispr& c)
-    {
-        ull genome_start = c.start - UPSTREAM_SIZE;
-        genome_start = genome_start < c.start ? genome_start : 0;
+    string domain = genome.substr(genome_start, genome_end - genome_start);
+    domain = pos ? domain : reverse_complement(domain);
 
-        ull genome_end = c.end + UPSTREAM_SIZE;
-        genome_end = genome_end > c.end ? genome_end : genome.size()-1;
+    ull codon_size = 3;
 
-        TriFrame up = get_triframe(genome, genome_start, c.start, K_FRAGMENT, false);
-        TriFrame down = get_triframe(genome, c.end, genome_end, K_FRAGMENT, true);
+    vector<Translation> translations;
+    for (ull frame = 0; frame < 3; frame++)
+	{
+        Translation translation;
+        translation.pos = pos;
+        translation.genome_start = pos ? genome_start + frame : genome_start;
+        translation.genome_end = pos ? genome_end : genome_end - frame;
 
-        Flanks flanks {
-            up,
-            down,
-        };
+        translation.raw = translate_domain(domain.substr(frame));
 
-        return flanks;
-    };
+		translation.pure = "";
 
+		ull stop_count = 0;
+		ull index = 0;
+		for (char elem : translation.raw )
+		{
+			if (elem == STOP_C)
+			{
+				stop_count++;
+				continue;
+			}
+			translation.pure += elem;
+			translation.pure_mapping.push_back(index + stop_count);
+			index++;
+		}
+        translation.pure_kmerized = kmerize(translation.pure, k);
+        translation.pure_kmerized_encoded = kmers_encoded(translation.pure_kmerized);
+        translations.push_back(translation);
+    }
+    return translations;
+}
+
+
+vector<Translation> CasUtil::get_translations(const string& genome, const vector<Crispr>& crisprs)
+{
     auto start = time();
-    vector<Flanks> flanks;
+    vector<Translation> translations;
     for (const Crispr& c : crisprs)
-        flanks.push_back(get_flank(c));
-    time(start, "get flanks");
-    return flanks;
+    {
+        ull genome_start = c.start - UPSTREAM_SIZE; genome_start = genome_start < c.start ? genome_start : 0;
+        ull genome_end = c.end + UPSTREAM_SIZE; genome_end = genome_end > c.end ? genome_end : genome.size()-1;
+
+        vector<Translation> up = get_triframe(genome, genome_start, c.start, K_FRAGMENT, true);
+        vector<Translation> down = get_triframe(genome, c.end, genome_end, K_FRAGMENT, false);
+
+        for (Translation& t : up)
+        {
+            t.reference_crispr = &c;
+            translations.push_back(t);
+        }
+
+
+        for (Translation& t : down)
+        {
+            t.reference_crispr = &c;
+            translations.push_back(t);
+        }
+ 
+
+    }
+    time(start, "get translations");
+    return translations;
 }
