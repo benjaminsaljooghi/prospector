@@ -5,7 +5,8 @@
             "defines": [],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c11",
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "clang-x64",
+            "includePath": ["/usr/local/lib"]
         }
     ],
     "version": 4
