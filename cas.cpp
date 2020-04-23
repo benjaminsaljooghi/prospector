@@ -102,8 +102,7 @@ map<char, ui> amino_encoding {
     {'C', 16},
     {'W', 17},
     {'R', 18},
-    {'S', 19},
-    {'G', 20},
+    {'G', 19},
 };
 
 const ull encoding_size = 5;
@@ -329,6 +328,8 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
     const ull per_cas = _crispr_count * per_crispr;
     for (ull cas_i = 0; cas_i < _cas_profile_count; cas_i++)
     {
+        ui* target_begin = &_cas_profiles[0] + _cas_profile_starts[cas_i];
+        ui target_size = _cas_profile_sizes[cas_i];   
         for (ull crispr_i = 0; crispr_i < _crispr_count; crispr_i++)
         {
             for (ull frame = 0; frame < 3; frame++)
@@ -340,26 +341,10 @@ vector<Fragment> CasUtil::cas(const string& genome, const vector<Crispr>& crispr
                     ui index = (cas_i * per_cas) + (crispr_i * per_crispr) + (frame * per_crispr_profile) + i; 
                     ui query = _crispr_profiles[start+i];
       
-                    ui* target_begin = &_cas_profiles[0] + _cas_profile_starts[cas_i];
-                    ui target_size = _cas_profile_sizes[cas_i];              
-
-                    // target_map[index] = false;
-                    // for (ull j = 0; j < target_size; j++)
-                    // {
-                    //     if (*(target_begin+j) == query)
-                    //     {
-                    //         target_map[index] = true;
-                    //         break;
-                    //     }
-                    // }
-
+        
                     const CasProfile& cas_profile = cas_profiles[cas_i];
                     auto at_index = cas_profile.hash_table[query % cas_profile.N];
                     target_map[index] = at_index == query;
-
-            
-      
-
                 }
             }
         }
