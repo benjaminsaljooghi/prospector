@@ -44,6 +44,7 @@ struct CasProfile
 {
     string name;
     string type;
+    string raw;
     vector<string> kmers;
     vector<ui> encoded_kmers;
     set<ui> encoded_kmer_set;

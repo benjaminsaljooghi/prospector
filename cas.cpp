@@ -380,15 +380,19 @@ void print_fragment(const Fragment& fragment, const string& genome)
     
 
     string pro_begin = protein.substr(0, 4);
-    string pro_end = protein.substr(protein.length()-4, 4);
+    string pro_end = protein.substr(protein.length()-4);
 
     string domain = genome.substr(genome_start, genome_end - genome_start);
     domain = fragment.reference_translation->pos ? domain : reverse_complement(domain);
     string trans = translate_domain(domain);
     string trans_begin = trans.substr(0, 4);
-    string trans_end = trans.substr(trans.length()-4, 4);
+    string trans_end = trans.substr(trans.length()-4);
 
-    fmt::print("\t\t{} {} {} - {} {}...{} {}...{}\n", 
+    string reference_begin = fragment.reference_profile->raw.substr(0, 4);
+    string reference_end= fragment.reference_profile->raw.substr(fragment.reference_profile->raw.length()-4);
+
+    fmt::print("\t\t{} {} {} {} - {} {}...{} {}...{} {}...{}\n", 
+                    (reference_begin == trans_begin && reference_end == trans_end) ? "[ OK ]" : "[ BAD ]",
                     (pro_begin == trans_begin && pro_end == trans_end) ? "[ OK ]" : "[ BAD ]",
                     fragment.reference_profile->name,
                     genome_start,
@@ -396,7 +400,9 @@ void print_fragment(const Fragment& fragment, const string& genome)
                     pro_begin,
                     pro_end,
                     trans_begin,
-                    trans_end
+                    trans_end,
+                    reference_begin,
+                    reference_end
             );
 }
 
@@ -429,7 +435,8 @@ vector<CasProfile> CasUtil::load(string dir, ui k)
         string name = path.stem();
         auto type = name.substr(0, name.find("_"));
 
-        vector<string> kmers = kmerize(parse_fasta_single(path), k);
+        string raw = parse_fasta_single(path);
+        vector<string> kmers = kmerize(raw, k);
         vector<ui> encoded_kmers = kmers_encoded(kmers);
         set<ui> encoded_kmer_set;
 
@@ -470,6 +477,7 @@ vector<CasProfile> CasUtil::load(string dir, ui k)
         {
             name,
             type,
+            raw,
             kmers,
             encoded_kmers,
             encoded_kmer_set,
