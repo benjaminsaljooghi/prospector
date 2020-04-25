@@ -137,7 +137,7 @@ __global__ void compute_qmap_small(const ui* genome_encoding, const ui genome_en
         ui query_enc = genome_encoding[query];
         for (ui i = 0; i < Prospector::map_size; i++)
         {
-            ui t = genome_encoding[query + K_START + SPACER_SKIP + i];
+            ui t = genome_encoding[query + Prospector::k_start + Prospector::spacer_skip + i];
             qmap[(query * Prospector::map_size) + i] = difference_gpu(query_enc, t);
         }
     }
@@ -154,7 +154,7 @@ __global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, con
         const ui query_enc = encoding[query];
         for (ui t_i = 0; t_i < map_size; t_i++)
         {
-            const ui t_enc = encoding[query + K_START + SPACER_SKIP + t_i];
+            const ui t_enc = encoding[query + Prospector::k_start + Prospector::spacer_skip + t_i];
             qmap[(q_i*map_size) + t_i] = difference_gpu(query_enc, t_enc);
         }
     }
@@ -163,7 +163,7 @@ __global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, con
 
 uc* Prospector::get_qmap_small(ui* encoding_d, ui encoding_size)
 {
-    assert(K_START >= Prospector::size);
+    assert(Prospector::k_start >= Prospector::size);
     cudaError er; 
     auto start = time();
 

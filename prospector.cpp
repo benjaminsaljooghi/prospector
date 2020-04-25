@@ -79,13 +79,13 @@
 //     for (unsigned int query = 0; query < genome_encoding_size; query++)
 //     {
 //         vector<unsigned int> crispr; crispr.push_back(query);
-//         unsigned int bound = query + k + SPACER_SKIP;
-//         for (unsigned int target = bound; target - bound <= SPACER_MAX && target < genome_encoding_size; target++)
+//         unsigned int bound = query + k + Prospector::spacer_skip;
+//         for (unsigned int target = bound; target - bound <= Prospector::spacer_max && target < genome_encoding_size; target++)
 //         { 
 //             if (mutant(genome, genome_encoding, query, target, k, allowed_mutations))
 //             {
 //                 crispr.push_back(target);
-//                 bound = target + k + SPACER_SKIP;
+//                 bound = target + k + Prospector::spacer_skip;
 //                 target = bound;
 //             }
 //         }
@@ -103,7 +103,7 @@
 
 //     ull* genome_encoding = encoded_genome(genome);
 
-//     for (unsigned int k = K_START; k < K_END; k++)
+//     for (unsigned int k = Prospector::k_start; k < Prospector::k_end; k++)
 //     {
 //         vector<vector<unsigned int>> k_crisprs = substrate(genome, k, genome_encoding, genome.size() - k + 1);   
 //         crisprs.push_back(k_crisprs);
@@ -112,13 +112,13 @@
 
 //     start = time();
 //     vector<Crispr> _crisprs;
-//     for (unsigned int i = 0; i < K_COUNT; i++)
+//     for (unsigned int i = 0; i < Prospector::k_count; i++)
 //     {
 //         for (vector<unsigned int> c : crisprs[i])
 //         {
-//             if (c.size() >= MIN_REPEATS)
+//             if (c.size() >= Prospector::repeats_min)
 //             {
-//                 Crispr _c(K_START + i, c, c.size());
+//                 Crispr _c(Prospector::k_start + i, c, c.size());
 //                 _crisprs.push_back(_c);   
 //             }
 //         }

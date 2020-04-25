@@ -84,7 +84,7 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 //     // ui q = genome_encoding[query];
 //     // for (ui i = 0; i < 1000; i++)
 //     // {
-//     //     ui pos = query + K_START + SPACER_SKIP + i;
+//     //     ui pos = query + Prospector::k_start + Prospector::spacer_skip + i;
 //     //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
 
 //     //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
@@ -96,14 +96,14 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 // for ( auto const& [query, proximal] : proximal_targets)
 // {
 //     // vector<ui> proximals = proximal_targets[q_i];
-//     if (proximal.size() >= MIN_REPEATS)
+//     if (proximal.size() >= Prospector::repeats_min)
 //     {
 //         // ui query = queries[q_i];
 //         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
 //         for (ui target : proximal)
 //         {
 //             // ui qmap_index = q_i * map_size_big + t_i;
-//             // ui target = query + K_START + SPACER_SKIP + t_i;
+//             // ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
 //             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
 //         }
 //     }
@@ -142,7 +142,7 @@ vector<Crispr> prospector_main(const string& genome)
             ui qmap_index = q_i*map_size_big+t_i;
             if (qmap_big[qmap_index] <= tolerance)
             {
-                ui target = query + K_START + SPACER_SKIP + t_i;
+                ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
                 proximals.push_back(target);
             }
         }
@@ -183,7 +183,7 @@ vector<Crispr> prospector_main(const string& genome)
     for ( auto const& [query, proximal] : proximal_targets)
     {
         vector<Crispr> candidates;
-        for (ui k = K_END-1; k >= K_START; k--)
+        for (ui k = Prospector::k_end-1; k >= Prospector::k_start; k--)
         {
             ui allowed_mutations = k / Prospector::mutant_tolerance_ratio;
 
@@ -194,15 +194,15 @@ vector<Crispr> prospector_main(const string& genome)
             for (ui target : proximal)
             {
                 ui end = genome_indices[genome_indices.size()-1] + k;
-                if (target < end || target - end < SPACER_MIN) continue; // || guards against overflow
-                if (target - end > SPACER_MAX) break;
+                if (target < end || target - end < Prospector::spacer_min) continue; // || guards against overflow
+                if (target - end > Prospector::spacer_max) break;
 
                 if (mutant(genome.c_str(), encoding.encoding, k, allowed_mutations, query, target))
                     genome_indices.push_back(target);
 
             }
 
-            if (genome_indices.size() >= MIN_REPEATS)
+            if (genome_indices.size() >= Prospector::repeats_min)
             {
                 Crispr c(k, genome_indices, genome_indices.size());
                 candidates.push_back(c);
