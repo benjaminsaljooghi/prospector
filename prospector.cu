@@ -27,8 +27,6 @@
 #define DEBUG 1
 
 
-
-
 cudaError_t checkCuda(cudaError_t result)
 {
 #if DEBUG == 1

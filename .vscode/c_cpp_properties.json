@@ -6,7 +6,7 @@
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c11",
             "intelliSenseMode": "clang-x64",
-            "includePath": ["/usr/local/lib"]
+            "includePath": ["/usr/local/lib", "/usr/local/cuda-10.2/include"]
         }
     ],
     "version": 4
