@@ -1,11 +1,7 @@
 #include "util.h"
 
 
-
-
-
-
-map <string, string> parse_fasta (string file_path)
+map<string, string> Util::parse_fasta (string file_path)
 {
 	// printf("reading %s... ", file_path.c_str());
 	// auto start = time();
@@ -61,13 +57,13 @@ map <string, string> parse_fasta (string file_path)
 }
 
 
-string parse_fasta_single (string file_path)
+string Util::parse_fasta_single (string file_path)
 {
-	return parse_fasta(file_path).begin()->second;
+	return Util::parse_fasta(file_path).begin()->second;
 }
 
 
-string reverse_complement (string seq)
+string Util::reverse_complement (string seq)
 {
     ull len = seq.length();
     string complement = seq;
@@ -80,7 +76,7 @@ string reverse_complement (string seq)
 	reverse(complement.begin(), complement.end());
 	return complement;
 }
-int mismatch_count (string repeat)
+int Util::mismatch_count (string repeat)
 {
 	int _count = 0;
 
@@ -97,7 +93,7 @@ int mismatch_count (string repeat)
 	}
 	return _count;
 }
-string seqs_to_fasta (vector <string> seqs)
+string Util::seqs_to_fasta (vector <string> seqs)
 {
     ostringstream string_stream;
     for (ull i = 0; i < seqs.size(); i++)
@@ -108,7 +104,7 @@ string seqs_to_fasta (vector <string> seqs)
     return string_stream.str();
 }
 
-vector <string> kmerize (string seq, unsigned int k)
+vector <string> Util::kmerize (string seq, unsigned int k)
 {
 	vector<string> kmers;
 	for (ull i = 0; i < seq.length() - k + 1; i++)
