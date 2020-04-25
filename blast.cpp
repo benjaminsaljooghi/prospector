@@ -1,88 +1,88 @@
-#include "blast.h"
+// #include "blast.h"
 
-#include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
-#include <algo/blast/api/sseqloc.hpp>
-#include <algo/blast/api/local_blast.hpp>
-#include <algo/blast/api/uniform_search.hpp>
-#include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/objmgr_query_data.hpp>
-#include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/blast_nucl_options.hpp>
-#include <algo/blast/blastinput/blast_input.hpp>
-#include <algo/blast/blastinput/blast_fasta_input.hpp>
+// #include <ncbi_pch.hpp>
+// #include <corelib/ncbiapp.hpp>
+// #include <corelib/ncbienv.hpp>
+// #include <objmgr/object_manager.hpp>
+// #include <objects/seqalign/Seq_align_set.hpp>
+// #include <algo/blast/api/sseqloc.hpp>
+// #include <algo/blast/api/local_blast.hpp>
+// #include <algo/blast/api/uniform_search.hpp>
+// #include <algo/blast/api/blast_types.hpp>
+// #include <algo/blast/api/blast_aux.hpp>
+// #include <algo/blast/api/objmgr_query_data.hpp>
+// #include <algo/blast/api/blast_options_handle.hpp>
+// #include <algo/blast/api/blast_nucl_options.hpp>
+// #include <algo/blast/blastinput/blast_input.hpp>
+// #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(blast);
+// USING_NCBI_SCOPE;
+// USING_SCOPE(blast);
 
-map <string, int> BLAST (set <string> _seqs, string target_db_path)
-{
-    auto start = time();
+// map <string, int> BLAST (set <string> _seqs, string target_db_path)
+// {
+//     auto start = time();
 
-    vector<string> seqs;
-    ull max = 0;
-    for (string seq : _seqs)
-    {
-        seqs.push_back(seq);
-        if (seq.length() > max)
-        {
-            max = seq.length();
-        }
-    }
+//     vector<string> seqs;
+//     ull max = 0;
+//     for (string seq : _seqs)
+//     {
+//         seqs.push_back(seq);
+//         if (seq.length() > max)
+//         {
+//             max = seq.length();
+//         }
+//     }
 
-    printf("blasting %zd sequences of max length %zd... ", _seqs.size(), max);
+//     printf("blasting %zd sequences of max length %zd... ", _seqs.size(), max);
 
 
-    EProgram program = ProgramNameToEnum("blastn"); 
-    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
+//     EProgram program = ProgramNameToEnum("blastn"); 
+//     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(program));
     
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    if (!objmgr) {
-         throw std::runtime_error("Could not initialize object manager");
-    }
-    const bool is_protein = !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
-    SDataLoaderConfig dlconfig(is_protein);
-    CBlastInputSourceConfig iconfig(dlconfig);
-    CScope scope(*objmgr);
+//     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+//     if (!objmgr) {
+//          throw std::runtime_error("Could not initialize object manager");
+//     }
+//     const bool is_protein = !!Blast_QueryIsProtein(opts->GetOptions().GetProgramType());
+//     SDataLoaderConfig dlconfig(is_protein);
+//     CBlastInputSourceConfig iconfig(dlconfig);
+//     CScope scope(*objmgr);
 
 
-    // string target_db_path("crispr-data/bacteriophages.fasta");
+//     // string target_db_path("crispr-data/bacteriophages.fasta");
 
     
-    const CSearchDatabase target_db(target_db_path, CSearchDatabase::eBlastDbIsNucleotide);
+//     const CSearchDatabase target_db(target_db_path, CSearchDatabase::eBlastDbIsNucleotide);
 
-    string fasta = seqs_to_fasta(seqs);
-    CBlastFastaInputSource fasta_input(fasta, iconfig);
-    CBlastInput blast_input(&fasta_input);
-    TSeqLocVector query_loc = blast_input.GetAllSeqLocs(scope);
-    CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
-    CLocalBlast blaster(query_factory, opts, target_db);
+//     string fasta = seqs_to_fasta(seqs);
+//     CBlastFastaInputSource fasta_input(fasta, iconfig);
+//     CBlastInput blast_input(&fasta_input);
+//     TSeqLocVector query_loc = blast_input.GetAllSeqLocs(scope);
+//     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_loc));
+//     CLocalBlast blaster(query_factory, opts, target_db);
 
-    CSearchResultSet results = *blaster.Run();
+//     CSearchResultSet results = *blaster.Run();
 
 
-    map<string, int> seq_max_scores;
-    for (unsigned int i = 0; i < results.GetNumResults(); i++)
-    {
-        CConstRef<CSeq_align_set> sas = results[i].GetSeqAlign();
-        int max_score = 0;
-        for (auto alignment : sas->Get())
-        {
-            int score;
-            ncbi::objects::CSeq_align::EScoreType score_type = ncbi::objects::CSeq_align::EScoreType::eScore_IdentityCount;
-            alignment->GetNamedScore(score_type, score);
-            if (score > max_score)
-            {
-                max_score = score;
-            }
-        }
-        seq_max_scores[seqs[i]] = max_score;
-    }
+//     map<string, int> seq_max_scores;
+//     for (unsigned int i = 0; i < results.GetNumResults(); i++)
+//     {
+//         CConstRef<CSeq_align_set> sas = results[i].GetSeqAlign();
+//         int max_score = 0;
+//         for (auto alignment : sas->Get())
+//         {
+//             int score;
+//             ncbi::objects::CSeq_align::EScoreType score_type = ncbi::objects::CSeq_align::EScoreType::eScore_IdentityCount;
+//             alignment->GetNamedScore(score_type, score);
+//             if (score > max_score)
+//             {
+//                 max_score = score;
+//             }
+//         }
+//         seq_max_scores[seqs[i]] = max_score;
+//     }
 
-    time(start);
-    return seq_max_scores;
-}
+//     time(start);
+//     return seq_max_scores;
+// }

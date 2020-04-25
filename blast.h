@@ -1,7 +1,7 @@
-#pragma once
+// #pragma once
 
-#include "stdafx.h"
-#include "util.h"
+// #include "stdafx.h"
+// #include "util.h"
 
 
-map<string, int> BLAST(set<string>, string);
+// map<string, int> BLAST(set<string>, string);

@@ -5,26 +5,17 @@
 # LIB = $(LIB_ARGS) $(LIB_NCBI) $(LIB_CUDA) -L/usr/local/lib -lfmt
 # LIB = $(LIB_ARGS) $(LIB_NCBI) -L/usr/local/lib -lfmt
 # BLAST_ARGS = -Wno-format-y2k  -pthread -fPIC -D_DEBUG -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE   -D_MT -D_REENTRANT -D_THREAD_SAFE
-
-
 # $(B)/blast.o: blast.* $(B)/util.o $(B)/crispr.o
 	# $(CPP) -c $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(B)/blast.o
-
 
 OPT = -O3
 CPP = clang++ $(OPT) --std=gnu++2a -g -Wall -fopenmp
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp $(OPT) 
-
-
 B = build
 
-
 .PHONY: build rebuild clean
-
 build: $(B)/main.out
-
 rebuild: clean build
-
 clean:
 	rm -fv $(B)/*.o $(B)/*.out
 
@@ -42,16 +33,10 @@ $(B)/dlinked.o: $(B)/prospector.o
 $(B)/prospector.o: prospector.*
 	$(NVCC) -dc prospector.cu -o $(B)/prospector.o
 
-
-
-# LINK
-
 PROSP = $(B)/prospector.o $(B)/dlinked.o
-LIB_CUDA = -L/usr/local/cuda/lib64 -lcudart
-LIB_CPP = -L/usr/local/lib -lfmt
-LIB_ALL = $(LIB_CPP) $(LIB_CUDA)
+LIB = -L/usr/local/cuda/lib64 -lcudart -L/usr/local/lib -lfmt
 
 $(B)/main.out: main.* $(PROSP) $(B)/crispr.o $(B)/util.o $(B)/cas.o
 	$(CPP) -c main.cpp -o $(B)/main.o
-	$(CPP) $(B)/*.o $(LIB_ALL) -o $(B)/main.out -fuse-ld=lld
+	$(CPP) $(B)/*.o $(LIB) -o $(B)/main.out -fuse-ld=lld
 
