@@ -1,7 +1,5 @@
 #pragma once
 #include "stdafx.h"
-#define DEBUG 0
-
 
 namespace Util
 {

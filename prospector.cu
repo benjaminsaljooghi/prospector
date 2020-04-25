@@ -1,6 +1,5 @@
 #include "prospector.h"
 
-
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -25,10 +24,7 @@
 #endif
 
 
-
-#define DEBUG 1
-
-
+#define DEBUG 0
 cudaError_t checkCuda(cudaError_t result)
 {
 #if DEBUG == 1
@@ -65,6 +61,7 @@ __device__ ui scheme(const char c)
         case 'T':
             return 3;
     }
+    assert(0);
 }
 
 __global__ void compute_encoding(const char* genome, ui* genome_encoding, ui genome_size, ui genome_encoding_size)
@@ -161,7 +158,7 @@ __global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, con
 }
 
 
-uc* Prospector::get_qmap_small(ui* encoding_d, ui encoding_size)
+uc* Prospector::get_qmap_small(const ui* encoding_d, const ui encoding_size)
 {
     assert(Prospector::k_start >= Prospector::size);
     cudaError er; 

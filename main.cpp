@@ -115,11 +115,11 @@ vector<Crispr> prospector_main(const string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
 
-    uc* qmap = Prospector::get_qmap_small(encoding.d_encoding, encoding.size);
+    uc* qmap = Prospector::get_qmap_small(encoding.encoding_d, encoding.size);
 
     vector<ui> queries = get_candidate_queries(qmap, encoding.size);
     
-    uc* qmap_big = Prospector::get_qmap_big(encoding.d_encoding, encoding.size, &queries[0], queries.size());
+    uc* qmap_big = Prospector::get_qmap_big(encoding.encoding_d, encoding.size, &queries[0], queries.size());
 
     // vector<vector<ui>> proximal_targets;
 
@@ -266,7 +266,7 @@ int main()
     string cas_dir = "crispr-data/cas";
     string target_db_path = "crispr-data/phage/bacteriophages.fasta";
     map<string, string> genomes = Util::load_genomes(genome_dir);
-    vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, K_FRAGMENT);
+    vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, CasUtil::k_fragment);
 
     stdrun(genomes["thermophilus"], cas_profiles);
     // stdrun(genomes["pyogenes"], cas_profiles);

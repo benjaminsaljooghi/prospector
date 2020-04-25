@@ -1,8 +1,6 @@
 #include "cas.h"
 
-#define STOP "Z"
-#define STOP_C 'Z'
-#define ENCODING_SIZE 5
+
 
 const map <string, string> codon_table = {
     {"TTT", "F"},
@@ -39,8 +37,8 @@ const map <string, string> codon_table = {
     {"GCG", "A"},
     {"TAT", "Y"},
     {"TAC", "Y"},
-    {"TAA", STOP},
-    {"TAG", STOP},
+    {"TAA", CasUtil::stop},
+    {"TAG", CasUtil::stop},
     {"CAT", "H"},
     {"CAC", "H"},
     {"CAA", "Q"},
@@ -55,7 +53,7 @@ const map <string, string> codon_table = {
     {"GAG", "E"},
     {"TGT", "C"},
     {"TGC", "C"},
-    {"TGA", STOP},
+    {"TGA", CasUtil::stop},
     {"TGG", "W"},
     {"CGT", "R"},
     {"CGC", "R"},
@@ -109,11 +107,11 @@ string translate_domain(const string& domain)
 
 ui str_to_int(string kmer)
 {
-    assert(kmer.size() == ENCODING_SIZE);
+    assert(kmer.size() == CasUtil::encoding_size);
     ui my_int = 0;
-    for (ui i = 0; i < ENCODING_SIZE; i++)
+    for (ui i = 0; i < CasUtil::encoding_size; i++)
     {
-        my_int += amino_encoding[kmer[i]] << ENCODING_SIZE * i;
+        my_int += amino_encoding[kmer[i]] << CasUtil::encoding_size * i;
     }
     return my_int;
 }
@@ -244,7 +242,7 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
     auto start = time();  
 
-    // ull target_map_size = cas_profiles.size() * translations.size() * 3334; // maximum size of a translation is UPSTREAM_SIZE / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
+    // ull target_map_size = cas_profiles.size() * translations.size() * 3334; // maximum size of a translation is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
     // bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
     vector<ui> target_map;
 
@@ -329,15 +327,15 @@ void print_fragment(const Fragment& fragment, const string& genome)
     ull index_kmer_start = demarc_start_clusters(fragment.clusters);
     ull index_kmer_end = demarc_end_clusters(fragment.clusters);
     
-    // string protein = fragment.reference_triframe->translations[fragment.frame].pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+    // string protein = fragment.reference_triframe->translations[fragment.frame].pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + CasUtil::k_fragment);
 
     // ull raw_pos_start = fragment.reference_triframe->translations[fragment.frame].pure_mapping[index_kmer_start];
     // ull raw_pos_end = fragment.reference_triframe->translations[fragment.frame].pure_mapping[index_kmer_end];
 
     // ull genome_start = fragment.reference_triframe->genome_start + (raw_pos_start * 3) + fragment.frame;
-    // ull genome_end = fragment.reference_triframe->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + fragment.frame + 3;
+    // ull genome_end = fragment.reference_triframe->genome_start + ((raw_pos_end + CasUtil::k_fragment) * 3) + fragment.frame + 3;
 
-    string protein = fragment.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + K_FRAGMENT);
+    string protein = fragment.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + CasUtil::k_fragment);
 
     ull raw_pos_start = fragment.reference_translation->pure_mapping[index_kmer_start];
     ull raw_pos_end = fragment.reference_translation->pure_mapping[index_kmer_end];
@@ -347,12 +345,12 @@ void print_fragment(const Fragment& fragment, const string& genome)
     if (fragment.reference_translation->pos)
     {
         genome_start = fragment.reference_translation->genome_start + (raw_pos_start * 3); 
-        genome_end = fragment.reference_translation->genome_start + ((raw_pos_end + K_FRAGMENT) * 3) + 3;
+        genome_end = fragment.reference_translation->genome_start + ((raw_pos_end + CasUtil::k_fragment) * 3) + 3;
     }
     else
     {
         genome_end = fragment.reference_translation->genome_end - (raw_pos_start * 3);
-        genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + K_FRAGMENT) * 3) + 3 );
+        genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + CasUtil::k_fragment) * 3) + 3 );
     }
     
 
@@ -497,7 +495,7 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
 		ull index = 0;
 		for (char elem : translation.raw )
 		{
-			if (elem == STOP_C)
+			if (elem == CasUtil::stop_c)
 			{
 				stop_count++;
 				continue;
@@ -520,11 +518,11 @@ vector<Translation> CasUtil::get_translations(const string& genome, const vector
     vector<Translation> translations;
     for (const Crispr& c : crisprs)
     {
-        ull genome_start = c.start - UPSTREAM_SIZE; genome_start = genome_start < c.start ? genome_start : 0;
-        ull genome_end = c.end + UPSTREAM_SIZE; genome_end = genome_end > c.end ? genome_end : genome.size()-1;
+        ull genome_start = c.start - CasUtil::upstream_size; genome_start = genome_start < c.start ? genome_start : 0;
+        ull genome_end = c.end + CasUtil::upstream_size; genome_end = genome_end > c.end ? genome_end : genome.size()-1;
 
-        vector<Translation> up = get_triframe(genome, genome_start, c.start, K_FRAGMENT, true);
-        vector<Translation> down = get_triframe(genome, c.end, genome_end, K_FRAGMENT, false);
+        vector<Translation> up = get_triframe(genome, genome_start, c.start, CasUtil::k_fragment, true);
+        vector<Translation> down = get_triframe(genome, c.end, genome_end, CasUtil::k_fragment, false);
 
         for (Translation& t : up)
         {
