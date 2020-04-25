@@ -24,6 +24,8 @@
 #define KERNEL_ARGS4(grid, block, sh_mem, stream)
 #endif
 
+
+
 #define DEBUG 1
 
 
@@ -73,9 +75,9 @@ __global__ void compute_encoding(const char* genome, ui* genome_encoding, ui gen
     for (ui i = thread_id; i < genome_encoding_size; i += stride)
     {
         ui e = 0;
-        for (int j = 0; j < SIZE; j++)
+        for (int j = 0; j < Prospector::size; j++)
         {
-            e |= scheme(genome[i + j]) << (j * BITS);
+            e |= scheme(genome[i + j]) << (j * Prospector::bits);
         }
         genome_encoding[i] = e;
     }
@@ -93,7 +95,7 @@ Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui geno
     er = cudaMemcpy(d_genome, genome, bytes_genome, cudaMemcpyHostToDevice); checkCuda(er);
 
     ui* encoding_d;
-    ui encoding_size = genome_size - SIZE + 1;
+    ui encoding_size = genome_size - Prospector::size + 1;
     ui bytes_encoding = sizeof(ui) * encoding_size; 
     er = cudaMalloc(&encoding_d, bytes_encoding); checkCuda(er);
 
@@ -133,10 +135,10 @@ __global__ void compute_qmap_small(const ui* genome_encoding, const ui genome_en
     for (ui query = thread_id; query < genome_encoding_size - 200; query += stride) // TODO: replace 200 with MAP_SIZE or parameter map_size
     {
         ui query_enc = genome_encoding[query];
-        for (ui i = 0; i < MAP_SIZE; i++)
+        for (ui i = 0; i < Prospector::map_size; i++)
         {
             ui t = genome_encoding[query + K_START + SPACER_SKIP + i];
-            qmap[(query*MAP_SIZE) + i] = difference_gpu(query_enc, t);
+            qmap[(query * Prospector::map_size) + i] = difference_gpu(query_enc, t);
         }
     }
 }
@@ -152,8 +154,7 @@ __global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, con
         const ui query_enc = encoding[query];
         for (ui t_i = 0; t_i < map_size; t_i++)
         {
-            // const ui t_enc = encoding[query + t_i]; // TODO: replace query + t_i with standard offset: query + K_START + SPACER_SKIP + i
-            const ui t_enc = encoding[query + K_START + SPACER_SKIP + t_i]; // TODO: replace query + t_i with standard offset: query + K_START + SPACER_SKIP + i
+            const ui t_enc = encoding[query + K_START + SPACER_SKIP + t_i];
             qmap[(q_i*map_size) + t_i] = difference_gpu(query_enc, t_enc);
         }
     }
@@ -162,11 +163,11 @@ __global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, con
 
 uc* Prospector::get_qmap_small(ui* encoding_d, ui encoding_size)
 {
-    assert(K_START >= SIZE);
+    assert(K_START >= Prospector::size);
     cudaError er; 
     auto start = time();
 
-    ui bytes_qmap = sizeof(uc) * encoding_size * MAP_SIZE;
+    ui bytes_qmap = sizeof(uc) * encoding_size * Prospector::map_size;
     
     uc* qmap;
     uc* qmap_d;
