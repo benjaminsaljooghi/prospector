@@ -480,9 +480,7 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
 {
     string domain = genome.substr(genome_start, genome_end - genome_start);
     domain = pos ? domain : Util::reverse_complement(domain);
-
-    ull codon_size = 3;
-
+    
     vector<Translation> translations;
     for (ull frame = 0; frame < 3; frame++)
 	{

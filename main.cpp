@@ -29,9 +29,9 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
     vector<ui> queries;
     for (ui query = 0; query < genome_encoding_size - 200; query++)
     {
-        for (ui i = 0; i < Prospector::map_size; i++)
+        for (ui i = 0; i < Prospector::map_size_small; i++)
         {
-            if (qmap[(query * Prospector::map_size) + i] <= (Prospector::size / Prospector::mutant_tolerance_ratio))
+            if (qmap[(query * Prospector::map_size_small) + i] <= (Prospector::size / Prospector::mutant_tolerance_ratio))
             {
                 queries.push_back(query);
                 break;
@@ -102,7 +102,7 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 //         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
 //         for (ui target : proximal)
 //         {
-//             // ui qmap_index = q_i * map_size_big + t_i;
+//             // ui qmap_index = q_i * Prospector::map_size_big + t_i;
 //             // ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
 //             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
 //         }
@@ -113,18 +113,13 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 
 vector<Crispr> prospector_main(const string& genome)
 {
-
-    ui map_size_small = 64;
-    ui map_size_big = 3000;
-
-
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
 
     uc* qmap = Prospector::get_qmap_small(encoding.d_encoding, encoding.size);
 
     vector<ui> queries = get_candidate_queries(qmap, encoding.size);
     
-    uc* qmap_big = Prospector::get_qmap_big(encoding.d_encoding, encoding.size, &queries[0], queries.size(), map_size_big);
+    uc* qmap_big = Prospector::get_qmap_big(encoding.d_encoding, encoding.size, &queries[0], queries.size());
 
     // vector<vector<ui>> proximal_targets;
 
@@ -137,9 +132,9 @@ vector<Crispr> prospector_main(const string& genome)
     {
         ui query = queries[q_i];
         vector<ui> proximals;
-        for (ui t_i = 0; t_i < map_size_big; t_i++)
+        for (ui t_i = 0; t_i < Prospector::map_size_big; t_i++)
         {
-            ui qmap_index = q_i*map_size_big+t_i;
+            ui qmap_index = q_i*Prospector::map_size_big+t_i;
             if (qmap_big[qmap_index] <= tolerance)
             {
                 ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;

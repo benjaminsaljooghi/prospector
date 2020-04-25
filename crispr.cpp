@@ -393,7 +393,9 @@ void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, u
 
     int how_many = filtered.size();
     for (ull i = filtered.size()-how_many; i < filtered.size(); i++)
+	{
         filtered[i].print(genome);
+	}
 
 	fmt::print("terminating after debug\n");
 	exit(0);
