@@ -74,7 +74,7 @@ string reverse_complement (string seq)
 
     for (ull i = 0; i < len; i++)
     {
-        complement[i] = complement_table.at(seq[i]);
+        complement[i] = Util::complement_table.at(seq[i]);
     }
 
 	reverse(complement.begin(), complement.end());
@@ -93,7 +93,7 @@ int mismatch_count (string repeat)
 		char upstream = repeat[start_index + i];
 		char downstream = repeat[end_index - i];
 
-		_count += upstream == complement_table.at(downstream) ? 0 : 1;
+		_count += upstream == Util::complement_table.at(downstream) ? 0 : 1;
 	}
 	return _count;
 }

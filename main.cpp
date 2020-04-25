@@ -156,7 +156,7 @@ vector<Crispr> prospector_main(const string& genome)
         {
             for (ui p : proximals)
             {
-                if (contains(proximal, p))
+                if (Util::contains(proximal, p))
                 {
                     include = false;
                     break;
@@ -211,7 +211,7 @@ vector<Crispr> prospector_main(const string& genome)
    
         if (candidates.size() > 0)
         {
-            sort(candidates, [](const Crispr& a, const Crispr& b) {  return a.size > b.size; } );
+            Util::sort(candidates, [](const Crispr& a, const Crispr& b) {  return a.size > b.size; } );
             ui best_size = candidates[0].size;
             for (const Crispr& crispr : candidates)
             {
@@ -237,10 +237,10 @@ vector<Crispr> get_crisprs(const string& genome)
     vector<Crispr> crisprs = prospector_main(genome);      
     CrisprUtil::cache_crispr_information(genome, crisprs);
     // CrisprUtil::debug(crisprs, genome, 1085431-1000, 1086854+1000);
-    crisprs = filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
-    sort(crisprs, CrisprUtil::heuristic_greater);
+    crisprs = Util::filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
+    Util::sort(crisprs, CrisprUtil::heuristic_greater);
     crisprs = CrisprUtil::get_domain_best(crisprs);
-    sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
+    Util::sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
     return crisprs;
 }
 

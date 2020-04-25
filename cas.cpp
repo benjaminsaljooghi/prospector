@@ -1,15 +1,8 @@
 #include "cas.h"
 
-
-
-vector<ui> frames{
-    0,
-    1,
-    2
-};
-
-
-
+#define STOP "Z"
+#define STOP_C 'Z'
+#define ENCODING_SIZE 5
 
 const map <string, string> codon_table = {
     {"TTT", "F"},
@@ -78,24 +71,6 @@ const map <string, string> codon_table = {
     {"GGG", "G"}
 };
 
-
-string translate_domain(const string& domain)
-{
-    ull codon_size = 3;
-    string raw = "";
-    for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
-    {
-        string codon = domain.substr(i, codon_size);
-        string amino_acid = codon_table.at(codon);
-        raw  += amino_acid;
-    }
-    return raw;
-}
-
-
-
-
-
 map<char, ui> amino_encoding {
     {'F', 0},
     {'L', 1},
@@ -119,19 +94,29 @@ map<char, ui> amino_encoding {
     {'G', 19},
 };
 
-const ull encoding_size = 5;
+string translate_domain(const string& domain)
+{
+    ull codon_size = 3;
+    string raw = "";
+    for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
+    {
+        string codon = domain.substr(i, codon_size);
+        string amino_acid = codon_table.at(codon);
+        raw += amino_acid;
+    }
+    return raw;
+}
 
 ui str_to_int(string kmer)
 {
-    assert(kmer.size() == encoding_size);
+    assert(kmer.size() == ENCODING_SIZE);
     ui my_int = 0;
-    for (ui i = 0; i < encoding_size; i++)
+    for (ui i = 0; i < ENCODING_SIZE; i++)
     {
-        my_int += amino_encoding[kmer[i]] << encoding_size * i;
+        my_int += amino_encoding[kmer[i]] << ENCODING_SIZE * i;
     }
     return my_int;
 }
-
 
 vector<ui> kmers_encoded(vector<string> kmers)
 {
@@ -142,11 +127,6 @@ vector<ui> kmers_encoded(vector<string> kmers)
     }
     return encoded;
 }
-
-
-
-
-
 
 vector<vector<ull>> cluster_index(const vector<ull>& indices)
 {
@@ -178,9 +158,6 @@ bool good_clusters(const vector<vector<ull>>& clusters)
     }
     return good_clusters;
 }
-
-
-
 
 ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 {
@@ -319,7 +296,7 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
 
     start = time(start, "fragments from target map construction");
 
-    sort(fragments, [](const Fragment& a, const Fragment& b) {
+    Util::sort(fragments, [](const Fragment& a, const Fragment& b) {
         return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
     });
 
@@ -383,7 +360,7 @@ void print_fragment(const Fragment& fragment, const string& genome)
     string pro_end = protein.substr(protein.length()-4);
 
     string domain = genome.substr(genome_start, genome_end - genome_start);
-    domain = fragment.reference_translation->pos ? domain : reverse_complement(domain);
+    domain = fragment.reference_translation->pos ? domain : Util::reverse_complement(domain);
     string trans = translate_domain(domain);
     string trans_begin = trans.substr(0, 4);
     string trans_end = trans.substr(trans.length()-4);
@@ -435,8 +412,8 @@ vector<CasProfile> CasUtil::load(string dir, ui k)
         string name = path.stem();
         auto type = name.substr(0, name.find("_"));
 
-        string raw = parse_fasta_single(path);
-        vector<string> kmers = kmerize(raw, k);
+        string raw = Util::parse_fasta_single(path);
+        vector<string> kmers = Util::kmerize(raw, k);
         vector<ui> encoded_kmers = kmers_encoded(kmers);
         set<ui> encoded_kmer_set;
 
@@ -499,24 +476,10 @@ void debug_clusters(const vector<vector<ull>>& clusters)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 vector<Translation> get_triframe(const string& genome, ull genome_start, ull genome_end, ui k, bool pos)
 {
     string domain = genome.substr(genome_start, genome_end - genome_start);
-    domain = pos ? domain : reverse_complement(domain);
+    domain = pos ? domain : Util::reverse_complement(domain);
 
     ull codon_size = 3;
 
@@ -545,7 +508,7 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
 			translation.pure_mapping.push_back(index + stop_count);
 			index++;
 		}
-        translation.pure_kmerized = kmerize(translation.pure, k);
+        translation.pure_kmerized = Util::kmerize(translation.pure, k);
         translation.pure_kmerized_encoded = kmers_encoded(translation.pure_kmerized);
         translations.push_back(translation);
     }

@@ -2,7 +2,7 @@
 
 double get_conservation_consensus(vector<string> repeats)
 {
-	string consensus = most_frequent(repeats);
+	string consensus = Util::most_frequent(repeats);
 
 	auto same_length_similarity = [] (string a, string b)
 	{
@@ -17,7 +17,7 @@ double get_conservation_consensus(vector<string> repeats)
 	for (ull i = 0; i < repeats.size(); i++)
 		similarties.push_back(same_length_similarity(consensus, repeats[i]));
 	
-	return mean(similarties);
+	return Util::mean(similarties);
 }
 
 
@@ -173,7 +173,7 @@ void Crispr::print_generic(const string& genome, function<void(string)>& print_s
 	{
 		string repeat = repeats[i];
 
-		int mismatches = mismatch_count(repeat);
+		int mismatches = Util::mismatch_count(repeat);
 		int matches = repeat.length() / 2 - mismatches;
 		double score = (double) matches / (double) (repeat.length() / 2);
 
@@ -351,7 +351,7 @@ vector<Crispr> CrisprUtil::spacer_score_filtered(vector<Crispr> crisprs, map<str
         for (string spacer : crispr.spacers)
             scores.push_back((double) spacer_scores[spacer] / (double) spacer.size());
 
-        if (mean(scores) < 0.5)
+        if (Util::mean(scores) < 0.5)
             continue;
 
         crisprs_filtered.push_back(crispr);
@@ -387,7 +387,7 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
 void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, ui end)
 {
 
-    vector<Crispr> filtered = filter(crisprs, [&](Crispr c) { return c.start > start && c.end < end; } );
+    vector<Crispr> filtered = Util::filter(crisprs, [&](Crispr c) { return c.start > start && c.end < end; } );
 
     // sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
 
