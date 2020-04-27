@@ -12,6 +12,14 @@ namespace Util
 		{'n', 'n'},
 	};
 
+	template <typename T> void print_vector(vector<T> a)
+	{
+		for (ui i = 0; i < a.size(); i++)
+		{
+			fmt::print("{}:{}\n", i, a[i]);
+		}
+	}
+
 	// a is a subset of b
 	template <typename T> bool subset (vector <T> a, vector <T> b)
 	{
