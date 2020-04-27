@@ -5,13 +5,9 @@
 #include "fmt/format.h"
 namespace fs = std::filesystem;
 
-
 //proj
 #include "util.h"
 #include "crispr.h"
-
-
-
 
 struct Translation
 {
@@ -26,23 +22,9 @@ struct Translation
     vector<ull> pure_mapping;
 };
 
-// struct TriFrame
-// {
-//     ull genome_start;
-//     ull genome_end;
-//     vector<Translation> translations;
-// };
-
-// struct Flanks
-// {
-//     TriFrame up;
-//     TriFrame down;
-// };
-
 struct CasProfile
 {
     string name;
-    string type;
     string raw;
     vector<string> kmers;
     vector<ui> encoded_kmers;
@@ -63,12 +45,19 @@ namespace CasUtil
 {
     static const string stop = "Z";
     static const char stop_c = 'Z';
-    static const ui encoding_size = 5;
     static const ui upstream_size = 10000;
-    static const ui k_fragment = 5;
+    static const ui k = 4; // k * encoding size cannot exceed word size.
 
     vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
-    vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&);
+    vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
     void print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome);
-    vector<CasProfile> load(string, ui);
+
+    ui get_n(CasProfile& profile);
+    ui gen_n(CasProfile& profile);
+
+
+    void load_cache(string);
+    void write_cache(string, vector<CasProfile>);
+    vector<CasProfile> load(string, function<ui(CasProfile&)> get_n);
+
 }

@@ -45,7 +45,6 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
 }
 
 
-
 bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui& allowed_mutations, const ui& i, const ui& j)
 {
     ui diff = 0;
@@ -167,8 +166,6 @@ vector<Crispr> prospector_main(const string& genome)
         {
             proximal_targets[query] = proximals;
         }
-
-
     }
 
 
@@ -224,9 +221,6 @@ vector<Crispr> prospector_main(const string& genome)
 }
 
 
-
-
-
 vector<Crispr> get_crisprs(const string& genome)
 {
     vector<Crispr> crisprs = prospector_main(genome);      
@@ -246,13 +240,28 @@ void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
 
     vector<Crispr> crisprs = get_crisprs(genome);
     vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
-    vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks);
+    vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
 
     CrisprUtil::print(genome, crisprs);
     CasUtil::print_fragments(crisprs, fragments, genome);
-    
+
     time(start, "stdrun");
     fmt::print("\n\n");
+}
+
+void write(string cas_file, string cache_file)
+{
+    vector<CasProfile> cas_profiles = CasUtil::load(cas_file, CasUtil::gen_n);
+    CasUtil::write_cache(cache_file, cas_profiles);
+    fmt::print("cache written, exiting...\n");
+    exit(0);
+}
+
+vector<CasProfile> read(string cas_file, string cache_file)
+{
+    CasUtil::load_cache("crispr-data/cas/cache.fasta");
+    vector<CasProfile> cas_profiles = CasUtil::load(cas_file, CasUtil::get_n);
+    return cas_profiles;
 }
 
 int main()
@@ -263,10 +272,13 @@ int main()
     auto start = time();
 
     string genome_dir = "crispr-data/genome";
-    string cas_dir = "crispr-data/cas";
-    string target_db_path = "crispr-data/phage/bacteriophages.fasta";
+    string cas_file = "crispr-data/cas/cas.fasta";
+    string cache_file = "crispr-data/cas/cache.fasta";
+
     map<string, string> genomes = Util::load_genomes(genome_dir);
-    vector<CasProfile> cas_profiles = CasUtil::load(cas_dir, CasUtil::k_fragment);
+
+    // write(cas_file, cache_file);GPU
+    vector<CasProfile> cas_profiles = read(cas_file, cache_file);
 
     stdrun(genomes["thermophilus"], cas_profiles);
     // stdrun(genomes["pyogenes"], cas_profiles);
