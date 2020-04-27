@@ -1,6 +1,4 @@
 #include "cas.h"
-#include "ssw_cpp.h"
-
 
 size_t uiLevenshteinDistance(const std::string &s1, const std::string &s2)
 {
@@ -181,12 +179,13 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
 }
 
 
+const ui cluster_metric_min = 5;
 
 bool good_clusters(const vector<vector<ull>>& clusters)
 {
     for (vector<ull> cluster : clusters)
     {   
-        if (cluster.size() > 10)
+        if (cluster.size() > cluster_metric_min)
         {
             return true;
         }
@@ -197,7 +196,7 @@ bool good_clusters(const vector<vector<ull>>& clusters)
 ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 {
     for (const vector<ull>& cluster : clusters)
-        if (cluster.size() > 10)
+        if (cluster.size() > cluster_metric_min)
             return cluster[0];
     assert(false); return -1;
 }
@@ -205,7 +204,7 @@ ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 ull demarc_final_clusters(const vector<vector<ull>>& clusters)
 {
     for (ull i = clusters.size()-1; i >= 0; i--)
-        if (clusters[i].size() > 10)
+        if (clusters[i].size() > cluster_metric_min)
             return clusters[i][clusters[i].size()-1];
     assert(false); return -1;
 }
@@ -391,6 +390,8 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
 
     }
 
+    start = time(start, "cas equivalency prune");
+
     return equivalency_filtered;
     // return fragments_filtered;
 }
@@ -490,7 +491,6 @@ vector<CasProfile> prelim_load(string uniprot)
     vector<CasProfile> profiles;
     for (ui i = 0; i < names.size(); i++)
     {
-        fmt::print("Crispr cas...\n");
         string name = names[i];
         string raw = raws[i];
         vector<string> kmers = Util::kmerize(raw, CasUtil::k);
