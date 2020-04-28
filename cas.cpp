@@ -333,73 +333,78 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     }
     start = time(start, "fragments from target map construction");
 
+
+
+
     for (Fragment& a : fragments)
         compute_demarc(a);
     start = time(start, "compute fragment demarcs");
 
-    vector<Fragment> containment_filtered;
-    for (ui i = 0; i < fragments.size(); i++)
-    {
-        auto a = fragments[i];
-        bool include_a = true;
-        for (ui j = 0; j < fragments.size(); j++)
-        {
-            if (i == j)
-                continue;
 
-            auto b = fragments[j];
-            if (fragment_contains(a, b))
-            {
-                include_a = false;
-                break;
-            }
-        }
-
-        if (include_a)
-            containment_filtered.push_back(a);
-    }
-    start = time(start, "cas fragment prune");
-
-    for (Fragment& a : containment_filtered)
-        compute_details(a, genome);
-
-    start = time(start, "compute fragment details");
-
-    vector<Fragment> equivalency_filtered;
-    for (ui i = 0; i < containment_filtered.size(); i++)
-    {
-        auto a = containment_filtered[i];
-        bool include_a = true;
-        for (ui j = 0; j < containment_filtered.size(); j++)
-        {
-            auto b = containment_filtered[j];
-            if (i == j) 
-                continue;
-            if (fragment_equivalent(a, b))
-            {
-                fmt::print("{}:{}\n", a.details->quality, b.details->quality);
-                if (a.details->quality < b.details->quality)
-                {
-                    include_a = false; break;
-                }
-            }
-        }
-
-        if (include_a)
-            equivalency_filtered.push_back(a);
-
-    }
-
-    start = time(start, "cas equivalency prune");
-
-
-    Util::sort(equivalency_filtered, [](const Fragment& a, const Fragment& b) {
+    Util::sort(fragments, [](const Fragment& a, const Fragment& b) {
         return a.demarc->clust_begin < b.demarc->clust_begin;
     });
     start = time(start, "cas sort fragments");
 
+    // vector<Fragment> containment_filtered;
+    // for (ui i = 0; i < fragments.size(); i++)
+    // {
+    //     auto a = fragments[i];
+    //     bool include_a = true;
+    //     for (ui j = 0; j < fragments.size(); j++)
+    //     {
+    //         if (i == j)
+    //             continue;
 
-    return equivalency_filtered;
+    //         auto b = fragments[j];
+    //         if (fragment_contains(a, b))
+    //         {
+    //             include_a = false;
+    //             break;
+    //         }
+    //     }
+
+    //     if (include_a)
+    //         containment_filtered.push_back(a);
+    // }
+    // start = time(start, "cas fragment prune");
+
+    for (Fragment& a : fragments)
+        compute_details(a, genome);
+    start = time(start, "compute fragment details");
+
+
+
+    // vector<Fragment> equivalency_filtered;
+    // for (ui i = 0; i < containment_filtered.size(); i++)
+    // {
+    //     auto a = containment_filtered[i];
+    //     bool include_a = true;
+    //     for (ui j = 0; j < containment_filtered.size(); j++)
+    //     {
+    //         auto b = containment_filtered[j];
+    //         if (i == j) 
+    //             continue;
+    //         if (fragment_equivalent(a, b))
+    //         {
+    //             if (a.details->quality < b.details->quality)
+    //             {
+    //                 include_a = false; break;
+    //             }
+    //         }
+    //     }
+
+    //     if (include_a)
+    //         equivalency_filtered.push_back(a);
+
+    // }
+    // start = time(start, "cas equivalency prune");
+
+
+    // Are there multiple fragments aligned to the same name?
+
+
+    return fragments;
 }
 
 
@@ -408,23 +413,47 @@ void print_fragment(const Fragment& fragment, const string& genome)
     fmt::print("\t\t{}\n", fragment.reference_profile->name);
     fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
     fmt::print("\t\t\t{}\n", fragment.details->quality);
-    fmt::print("\t\t\t{}\n", fragment.details->translation);
-    fmt::print("\t\t\t{}\n", fragment.reference_profile->raw);
+    fmt::print("\t\t\tt:{}\n", fragment.details->translation);
+    fmt::print("\t\t\tr:{}\n", fragment.reference_profile->raw);
 }
 
 void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome)
 {
-    for (const Crispr& crispr : crisprs)
+
+    map<string, vector<Fragment>> crispr_buckets;
+    for (const Crispr& c : crisprs)
     {
-        fmt::print("\tcrispr {} {}\n", crispr.start, crispr.k);
-        for (const Fragment& g : fragments )
+        string crispr_string = fmt::format("{}:{}\n", c.start, c.k);
+
+        for (const Fragment& f : fragments)
         {
-            if (g.reference_crispr->start == crispr.start && g.reference_crispr->k == crispr.k)
+            if (f.reference_crispr->start == c.start && f.reference_crispr->k == c.k)
             {
-                print_fragment(g, genome);
+                crispr_buckets[crispr_string].push_back(f);
             }
         }
     }
+
+    for (auto pairing : crispr_buckets)
+    {
+        fmt::print("\t{}\n", pairing.first);
+
+        map<string, vector<Fragment>> frag_map;
+        for (const Fragment& a : pairing.second)
+        {
+            frag_map[a.reference_profile->name].push_back(a);
+        }
+
+        for (const pair<string, vector<Fragment>>& pairing : frag_map)
+        {
+            fmt::print("UNIQUE: {}\n", pairing.first);
+            for (const Fragment& a : pairing.second)
+            {
+                print_fragment(a, genome);
+            }
+        }
+    }
+
 }
 
 void CasUtil::write_cache(string file, vector<CasProfile> profiles)

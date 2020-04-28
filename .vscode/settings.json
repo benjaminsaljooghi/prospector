@@ -92,6 +92,7 @@
         "__tuple": "cpp",
         "__memory": "cpp",
         "ios": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "csignal": "cpp"
     }
 }
