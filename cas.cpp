@@ -209,47 +209,28 @@ ull demarc_final_clusters(const vector<vector<ull>>& clusters)
     assert(false); return -1;
 }
 
-bool fragment_equivalent(const Fragment& a, const Fragment& b)
+
+
+void compute_demarc(Fragment& frag)
 {
-    ull a_start = demarc_start_clusters(a.clusters);
-    ull a_final = demarc_final_clusters(a.clusters);
-    ull b_start = demarc_start_clusters(b.clusters);
-    ull b_final = demarc_final_clusters(b.clusters);
-    
-    bool equivalent = a_start == b_start && a_final == b_final;
-    return equivalent;
+    FragDemarc* demarc = new FragDemarc();
+    demarc->clust_begin = demarc_start_clusters(frag.clusters);
+    demarc->clust_final = demarc_final_clusters(frag.clusters);
+    frag.demarc = demarc;
 }
 
-// a is contained within b
-bool fragment_contains(const Fragment& a, const Fragment& b)
-{
-    ull a_start = demarc_start_clusters(a.clusters);
-    ull a_final = demarc_final_clusters(a.clusters);
-    ull b_start = demarc_start_clusters(b.clusters);
-    ull b_final = demarc_final_clusters(b.clusters);
-
-    return (!fragment_equivalent(a, b)) && a_start >= b_start && a_final <= b_final;
-}
-
-struct FragDetails
-{
-    ull genome_start;
-    ull genome_final;
-    string translation;  
-    size_t quality;
-};
-
-
-
-FragDetails fragment_details(const Fragment& fragment, const string& genome)
+void compute_details(Fragment& fragment, const string& genome)
 {    
-    ull index_kmer_start = demarc_start_clusters(fragment.clusters);
-    ull index_kmer_end = demarc_final_clusters(fragment.clusters);
+    // ull index_kmer_start = demarc_start_clusters(fragment.clusters);
+    // ull index_kmer_end = demarc_final_clusters(fragment.clusters);
+    ull index_kmer_start = fragment.demarc->clust_begin;
+    ull index_kmer_final = fragment.demarc->clust_final;
+
 
     // string protein = fragment.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + CasUtil::k);
 
     ull raw_pos_start = fragment.reference_translation->pure_mapping[index_kmer_start];
-    ull raw_pos_end = fragment.reference_translation->pure_mapping[index_kmer_end];
+    ull raw_pos_end = fragment.reference_translation->pure_mapping[index_kmer_final];
 
     ull genome_start;
     ull genome_final;
@@ -271,14 +252,29 @@ FragDetails fragment_details(const Fragment& fragment, const string& genome)
 
     size_t distance = uiLevenshteinDistance(translation, profile);
 
-    return FragDetails {
-        genome_start,
-        genome_final,
-        translation,
-        distance
-    };
-
+    FragDetails* details = new FragDetails();
+    
+    details->genome_start = genome_start;
+    details->genome_final = genome_final;
+    details->translation = translation;
+    details->quality = distance;
+    
+    fragment.details = details;
 }
+
+
+
+bool fragment_equivalent(const Fragment& a, const Fragment& b)
+{
+    return a.demarc->clust_begin == b.demarc->clust_begin && a.demarc->clust_final == b.demarc->clust_final;
+}
+
+bool fragment_contains(const Fragment& a, const Fragment& b)
+{
+    return a.demarc->clust_begin > b.demarc->clust_begin && a.demarc->clust_final < b.demarc->clust_final;
+}
+
+
 
 
 vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations, const string& genome)
@@ -335,78 +331,84 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
            
         }
     }
-
     start = time(start, "fragments from target map construction");
 
-    Util::sort(fragments, [](const Fragment& a, const Fragment& b) {
-        return demarc_start_clusters(a.clusters) < demarc_start_clusters(b.clusters);
-    });
+    for (Fragment& a : fragments)
+        compute_demarc(a);
+    start = time(start, "compute fragment demarcs");
 
-    start = time(start, "cas sort fragments");
     vector<Fragment> containment_filtered;
-    for (Fragment a : fragments)
+    for (ui i = 0; i < fragments.size(); i++)
     {
+        auto a = fragments[i];
         bool include_a = true;
-        for (Fragment b : fragments)
+        for (ui j = 0; j < fragments.size(); j++)
         {
+            if (i == j)
+                continue;
+
+            auto b = fragments[j];
             if (fragment_contains(a, b))
             {
-                include_a = false; break;
+                include_a = false;
+                break;
             }
         }
 
         if (include_a)
-        {
             containment_filtered.push_back(a);
-        }
     }
     start = time(start, "cas fragment prune");
+
+    for (Fragment& a : containment_filtered)
+        compute_details(a, genome);
+
+    start = time(start, "compute fragment details");
 
     vector<Fragment> equivalency_filtered;
     for (ui i = 0; i < containment_filtered.size(); i++)
     {
         auto a = containment_filtered[i];
-        auto a_details = fragment_details(a, genome);
         bool include_a = true;
         for (ui j = 0; j < containment_filtered.size(); j++)
         {
             auto b = containment_filtered[j];
-            auto b_details = fragment_details(b, genome);
-            if (i == j) continue;
+            if (i == j) 
+                continue;
             if (fragment_equivalent(a, b))
             {
-                if (a_details.quality < b_details.quality)
+                fmt::print("{}:{}\n", a.details->quality, b.details->quality);
+                if (a.details->quality < b.details->quality)
                 {
                     include_a = false; break;
                 }
-                // include_a = false; break;
             }
         }
 
         if (include_a)
-        {
             equivalency_filtered.push_back(a);
-        }
 
     }
 
     start = time(start, "cas equivalency prune");
 
+
+    Util::sort(equivalency_filtered, [](const Fragment& a, const Fragment& b) {
+        return a.demarc->clust_begin < b.demarc->clust_begin;
+    });
+    start = time(start, "cas sort fragments");
+
+
     return equivalency_filtered;
-    // return fragments_filtered;
 }
-
-
 
 
 void print_fragment(const Fragment& fragment, const string& genome)
 {
-    auto details = fragment_details(fragment, genome);
-
     fmt::print("\t\t{}\n", fragment.reference_profile->name);
-    fmt::print("\t\t\t{}...{}\n", details.genome_start, details.genome_final);
-    fmt::print("\t\t\t{}\n", details.quality);
-    fmt::print("\t\t\t{}\n", details.translation);
+    fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
+    fmt::print("\t\t\t{}\n", fragment.details->quality);
+    fmt::print("\t\t\t{}\n", fragment.details->translation);
     fmt::print("\t\t\t{}\n", fragment.reference_profile->raw);
 }
 
@@ -424,7 +426,6 @@ void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragme
         }
     }
 }
-
 
 void CasUtil::write_cache(string file, vector<CasProfile> profiles)
 {

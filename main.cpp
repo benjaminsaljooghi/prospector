@@ -277,7 +277,7 @@ int main()
 
     map<string, string> genomes = Util::load_genomes(genome_dir);
 
-    // write(cas_file, cache_file);GPU
+    // write(cas_file, cache_file);
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
 
     stdrun(genomes["thermophilus"], cas_profiles);

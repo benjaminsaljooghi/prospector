@@ -33,13 +33,33 @@ struct CasProfile
     ui N;
 };
 
+
+struct FragDetails
+{
+    ull genome_start;
+    ull genome_final;
+    string translation;  
+    size_t quality;
+};
+
+struct FragDemarc
+{
+    ull clust_begin;
+    ull clust_final;
+};
+
 struct Fragment
 {
     const Crispr* reference_crispr;
     const Translation* reference_translation;
     const CasProfile* reference_profile;
     vector<vector<ull>> clusters;
+
+    FragDetails* details;
+    FragDemarc* demarc;
 };
+
+
 
 namespace CasUtil
 {

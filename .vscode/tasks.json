@@ -6,7 +6,7 @@
         {
             "label": "build main",
             "type": "shell",
-            "command": "make",
+            "command": "make build",
             "options": {
                 "cwd": "${workspaceRoot}"
             }
