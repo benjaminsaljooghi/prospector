@@ -1,0 +1,524 @@
+g++-9 -O0 --std=gnu++2a -g -Wall -fopenmp -c cas.cpp -o build/cas.o
+g++-9 -O0 --std=gnu++2a -g -Wall -fopenmp -c main.cpp -o build/main.o
+g++-9 -O0 --std=gnu++2a -g -Wall -fopenmp build/*.o -L/usr/local/cuda/lib64 -lcudart -L/usr/local/lib -lfmt -o build/main.out -fuse-ld=lld
+build/main.out
+122ms device init
+running main...
+gn failure on tr|A0A066QJH6|A0A066QJH6_ECOLX CRISPR adaptation ssRNA endonuclease OS=Escherichia coli OX=562 GN=ygbF PE=4 SV=1
+gn failure on tr|A0A081PQC7|A0A081PQC7_STRMT CRISPR-associated family protein OS=Streptococcus mitis OX=28037 GN=D8865_08555 PE=4 SV=1
+gn failure on tr|A0A081PQC8|A0A081PQC8_STRMT CRISPR-associated family protein OS=Streptococcus mitis OX=28037 GN=SK1126_0804 PE=4 SV=1
+gn failure on tr|A0A081Q0Q8|A0A081Q0Q8_STRMT CRISPR-associated cas1 domain protein OS=Streptococcus mitis OX=28037 GN=SK667_1410 PE=4 SV=1
+gn failure on tr|A0A081Q2B2|A0A081Q2B2_STRMT CRISPR-associated family protein OS=Streptococcus mitis OX=28037 GN=SK667_0864 PE=4 SV=1
+gn failure on tr|A0A081Q2B4|A0A081Q2B4_STRMT CRISPR-associated family protein OS=Streptococcus mitis OX=28037 GN=SK667_0866 PE=4 SV=1
+gn failure on tr|A0A081Q2B5|A0A081Q2B5_STRMT CRISPR-associated family protein OS=Streptococcus mitis OX=28037 GN=SK667_0867 PE=4 SV=1
+gn failure on tr|A0A081Q739|A0A081Q739_STRMT CRISPR-associated family protein OS=Streptococcus mitis OX=28037 GN=SK629_0167 PE=4 SV=1
+gn failure on tr|A0A081R2M4|A0A081R2M4_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=cas6e PE=4 SV=1
+gn failure on tr|A0A081R2M6|A0A081R2M6_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=cas7 PE=4 SV=1
+gn failure on tr|A0A081R2M7|A0A081R2M7_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=casB PE=4 SV=1
+gn failure on tr|A0A081R2M8|A0A081R2M8_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=casA PE=4 SV=1
+gn failure on tr|A0A090AZI1|A0A090AZI1_STRMG Putative CRISPR-associated protein OS=Streptococcus mutans OX=1309 PE=4 SV=1
+gn failure on tr|A0A0A0DET8|A0A0A0DET8_9STRE CRISPR-associated endoribonuclease OS=Streptococcus sinensis OX=176090 GN=SSIN_1641 PE=3 SV=1
+gn failure on tr|A0A0A6UUW5|A0A0A6UUW5_STRUB CRISPR-associated protein OS=Streptococcus uberis OX=1349 GN=NC01_02920 PE=4 SV=1
+gn failure on tr|A0A0C1K5R1|A0A0C1K5R1_STRCV CRISPR-associated protein Csd1 OS=Streptococcus constellatus OX=76860 GN=RN79_00985 PE=4 SV=1
+gn failure on tr|A0A0C1KH52|A0A0C1KH52_STRCV CRISPR-associated protein OS=Streptococcus constellatus OX=76860 GN=RN79_00990 PE=4 SV=1
+gn failure on tr|A0A0E1E0Y0|A0A0E1E0Y0_STRSZ CRISPR-associated protein Csd1 OS=Streptococcus equi subsp. zooepidemicus CY OX=1403449 GN=Q426_06530 PE=4 SV=1
+gn failure on tr|A0A0E1E1Y9|A0A0E1E1Y9_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus CY OX=1403449 GN=Q426_06525 PE=4 SV=1
+gn failure on tr|A0A0E2RCF3|A0A0E2RCF3_STRTR CRISPR-associated protein Cmr4 OS=Streptococcus thermophilus TH1477 OX=1436725 GN=Y022_05135 PE=4 SV=1
+gn failure on tr|A0A0E2US03|A0A0E2US03_9STRE CRISPR-associated protein OS=Streptococcus parauberis OX=1348 GN=ADO06_00604 PE=4 SV=1
+gn failure on tr|A0A0E3WF06|A0A0E3WF06_9STRE CRISPR-associated protein OS=Streptococcus varani OX=1608583 GN=BN1356_00999 PE=4 SV=1
+gn failure on tr|A0A0F2CTF0|A0A0F2CTF0_STRCR CRISPR-associated endoribonuclease OS=Streptococcus cristatus OX=45634 GN=TW70_00160 PE=3 SV=1
+gn failure on tr|A0A0H0RBB4|A0A0H0RBB4_ECOLX CRISPR-associated protein OS=Escherichia coli OX=562 GN=cas6e PE=4 SV=1
+gn failure on tr|A0A0H0RBI6|A0A0H0RBI6_ECOLX CRISPR-associated protein OS=Escherichia coli OX=562 GN=casA PE=4 SV=1
+gn failure on tr|A0A0H0RDH0|A0A0H0RDH0_ECOLX CRISPR-associated protein Cse2 OS=Escherichia coli OX=562 GN=casB PE=4 SV=1
+gn failure on tr|A0A0Z8KMX1|A0A0Z8KMX1_STRSU Putative cytoplasmic protein OS=Streptococcus suis OX=1307 GN=cas7c PE=4 SV=1
+gn failure on tr|A0A0Z8KMX5|A0A0Z8KMX5_STRSU CRISPR-associated protein OS=Streptococcus suis OX=1307 GN=ERS132437_01391 PE=4 SV=1
+gn failure on tr|A0A0Z8KN49|A0A0Z8KN49_STRSU CRISPR-associated helicase OS=Streptococcus suis OX=1307 GN=ERS132437_01392 PE=4 SV=1
+gn failure on tr|A0A0Z8LM36|A0A0Z8LM36_STRSU CRISPR-associated protein OS=Streptococcus suis OX=1307 GN=ERS132442_01740 PE=4 SV=1
+gn failure on tr|A0A0Z8LM38|A0A0Z8LM38_STRSU CRISPR-associated helicase OS=Streptococcus suis OX=1307 GN=EI993_00615 PE=4 SV=1
+gn failure on tr|A0A0Z8QUT7|A0A0Z8QUT7_STRSU CRISPR-associated protein csn2 OS=Streptococcus suis OX=1307 GN=ERS132392_00725 PE=4 SV=1
+gn failure on tr|A0A0Z8UFX5|A0A0Z8UFX5_STRSU CRISPR-associated protein csn2 OS=Streptococcus suis OX=1307 GN=ERS132374_00958 PE=4 SV=1
+gn failure on tr|A0A0Z8VIK1|A0A0Z8VIK1_STRSU CRISPR-associated protein csn2 OS=Streptococcus suis OX=1307 GN=ERS132536_00793 PE=4 SV=1
+gn failure on tr|A0A123T720|A0A123T720_STRSU CRISPR-associated protein csn2 OS=Streptococcus suis OX=1307 GN=ERS132417_00921 PE=4 SV=1
+gn failure on tr|A0A123TX12|A0A123TX12_STRSU CRISPR-associated protein OS=Streptococcus suis OX=1307 GN=ERS132437_01390 PE=4 SV=1
+gn failure on tr|A0A139MC70|A0A139MC70_STROR CRISPR-associated RAMP Cmr6 OS=Streptococcus oralis OX=1303 GN=SORDD05_00291 PE=4 SV=1
+gn failure on tr|A0A139MCE3|A0A139MCE3_STROR CRISPR-associated RAMP Cmr4 OS=Streptococcus oralis OX=1303 GN=SORDD05_00289 PE=4 SV=1
+gn failure on tr|A0A139MCJ1|A0A139MCJ1_STROR CRISPR-associated RAMP Cmr3 OS=Streptococcus oralis OX=1303 GN=SORDD05_00288 PE=4 SV=1
+gn failure on tr|A0A139MCL2|A0A139MCL2_STROR CRISPR-associated endoribonuclease OS=Streptococcus oralis OX=1303 GN=SORDD05_00285 PE=3 SV=1
+gn failure on tr|A0A139MCM5|A0A139MCM5_STROR CRISPR-associated RAMP Cmr2 OS=Streptococcus oralis OX=1303 GN=SORDD05_00287 PE=4 SV=1
+gn failure on tr|A0A139MRC4|A0A139MRC4_9STRE CRISPR-associated endoribonuclease OS=Streptococcus sp. DD04 OX=1776578 GN=STRDD04_00624 PE=3 SV=1
+gn failure on tr|A0A139NDD7|A0A139NDD7_STRGN CRISPR-associated protein, SAG0894 family OS=Streptococcus gordonii OX=1302 GN=SGODD07_00311 PE=4 SV=1
+gn failure on tr|A0A139NR42|A0A139NR42_9STRE CRISPR-associated protein, Csd1 family OS=Streptococcus sp. DD11 OX=1777879 GN=STRDD11_02415 PE=4 SV=1
+gn failure on tr|A0A139NRC4|A0A139NRC4_9STRE CRISPR-associated protein, TM1801 family OS=Streptococcus sp. DD13 OX=1777881 GN=STRDD13_00798 PE=4 SV=1
+gn failure on tr|A0A139NRF7|A0A139NRF7_9STRE CRISPR-associated protein, TM1801 family OS=Streptococcus sp. DD11 OX=1777879 GN=STRDD11_02414 PE=4 SV=1
+gn failure on tr|A0A139NRP5|A0A139NRP5_9STRE CRISPR-associated protein, Csd1 family OS=Streptococcus sp. DD13 OX=1777881 GN=STRDD13_00799 PE=4 SV=1
+gn failure on tr|A0A1B8VN62|A0A1B8VN62_STREQ CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=KNZ06_02150 PE=4 SV=1
+gn failure on tr|A0A1L7LIW0|A0A1L7LIW0_9STRE CRISPR-associated protein OS=Streptococcus troglodytae OX=1111760 GN=csn1 PE=4 SV=1
+gn failure on tr|A0A1S5WE26|A0A1S5WE26_STRGY CRISPR-associated protein OS=Streptococcus gallolyticus subsp. gallolyticus DSM 16831 OX=1258574 GN=BTR42_08045 PE=4 SV=1
+gn failure on tr|A0A1V0H3I9|A0A1V0H3I9_STRGN CRISPR-associated protein OS=Streptococcus gordonii OX=1302 GN=A6J85_08240 PE=4 SV=1
+gn failure on tr|A0A1X1IUB9|A0A1X1IUB9_STROR CRISPR-associated endoribonuclease OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=B7707_07250 PE=3 SV=1
+gn failure on tr|A0A1X1IUD9|A0A1X1IUD9_STROR CRISPR-associated protein Cmr4 OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=B7707_07230 PE=4 SV=1
+gn failure on tr|A0A1X1J1S7|A0A1X1J1S7_STROR CRISPR-associated protein Cmr4 OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=B7708_02815 PE=4 SV=1
+gn failure on tr|A0A1X1J1W1|A0A1X1J1W1_STROR CRISPR-associated endoribonuclease OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=B7708_02835 PE=3 SV=1
+gn failure on tr|A0A239STW7|A0A239STW7_9STRE CRISPR-associated protein OS=Streptococcus merionis OX=400065 GN=SAMEA4412692_01256 PE=4 SV=1
+gn failure on tr|A0A239SUF8|A0A239SUF8_9STRE CRISPR-associated protein OS=Streptococcus merionis OX=400065 GN=SAMEA4412692_01257 PE=4 SV=1
+gn failure on tr|A0A239SVW4|A0A239SVW4_9STRE CRISPR-associated helicase OS=Streptococcus merionis OX=400065 GN=SAMEA4412692_01258 PE=4 SV=1
+gn failure on tr|A0A2D4DQU5|A0A2D4DQU5_STRCB CRISPR-associated family protein OS=Streptococcus canis OX=1329 GN=csd2 PE=4 SV=1
+gn failure on tr|A0A2U2MH06|A0A2U2MH06_STRTR CRISPR-system related protein OS=Streptococcus thermophilus OX=1308 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A2X2R720|A0A2X2R720_STRDY CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae OX=1334 GN=NCTC8547_00033 PE=4 SV=1
+gn failure on tr|A0A2X2R755|A0A2X2R755_STRDY CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae OX=1334 GN=NCTC8547_00035 PE=4 SV=1
+gn failure on tr|A0A2X2REQ0|A0A2X2REQ0_STRDY CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae OX=1334 GN=NCTC8547_00034 PE=4 SV=1
+gn failure on tr|A0A2X2TH05|A0A2X2TH05_STRDY CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae OX=1334 GN=NCTC8547_00036 PE=4 SV=1
+gn failure on tr|A0A2X2YRM9|A0A2X2YRM9_STRDY CRISPR-associated family protein OS=Streptococcus dysgalactiae OX=1334 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A2X2YSJ5|A0A2X2YSJ5_STRDY CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae OX=1334 GN=NCTC8547_01263 PE=4 SV=1
+gn failure on tr|A0A2X2Z2M6|A0A2X2Z2M6_STRDY CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae OX=1334 GN=NCTC8547_01264 PE=4 SV=1
+gn failure on tr|A0A2X3SXH8|A0A2X3SXH8_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=NCTC12090_00559 PE=4 SV=1
+gn failure on tr|A0A2X3T0Z9|A0A2X3T0Z9_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=NCTC12090_00560 PE=4 SV=1
+gn failure on tr|A0A2X3T8M1|A0A2X3T8M1_STRSZ CRISPR-associated helicase OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=NCTC12090_00557 PE=4 SV=1
+gn failure on tr|A0A2X3T9W3|A0A2X3T9W3_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=NCTC12090_00558 PE=4 SV=1
+gn failure on tr|A0A2X3VML4|A0A2X3VML4_9STRE CRISPR-associated protein, SAG0897 family OS=Streptococcus lutetiensis OX=150055 GN=NCTC8738_01455 PE=4 SV=1
+gn failure on tr|A0A2X3XZ31|A0A2X3XZ31_STRSA CRISPR-associated RAMP superfamily protein OS=Streptococcus sanguinis OX=1305 GN=NCTC11086_01171 PE=4 SV=1
+gn failure on tr|A0A2X4HLM2|A0A2X4HLM2_STRUB Sag0897 family CRISPR-associated protein OS=Streptococcus uberis OX=1349 GN=NCTC4674_01206 PE=4 SV=1
+gn failure on tr|A0A2Z5TWU5|A0A2Z5TWU5_9STRE CRISPR-associated endonuclease OS=Streptococcus ruminantium OX=1917441 GN=cas2 PE=4 SV=1
+gn failure on tr|A0A2Z5U444|A0A2Z5U444_9STRE Type II CRISPR-associated endonuclease OS=Streptococcus ruminantium OX=1917441 GN=cas1 PE=4 SV=1
+gn failure on tr|A0A380JDD8|A0A380JDD8_STRDO CRISPR-associated protein csn2 OS=Streptococcus downei MFe28 OX=764290 GN=NCTC11391_01031 PE=4 SV=1
+gn failure on tr|A0A380JHF1|A0A380JHF1_STRCV Putative CRISPR-associated protein cas3 OS=Streptococcus constellatus OX=76860 GN=cas3_1 PE=4 SV=1
+gn failure on tr|A0A380JHJ8|A0A380JHJ8_STRCV CRISPR-associated protein cas5 OS=Streptococcus constellatus OX=76860 GN=cas5 PE=4 SV=1
+gn failure on tr|A0A380JHL9|A0A380JHL9_STRCV CRISPR-associated protein csd1 OS=Streptococcus constellatus OX=76860 GN=csd1 PE=4 SV=1
+gn failure on tr|A0A380JHX7|A0A380JHX7_STRCV Csd2 family CRISPR-associated protein OS=Streptococcus constellatus OX=76860 GN=csd2 PE=4 SV=1
+gn failure on tr|A0A380JJH4|A0A380JJH4_STRCV Putative CRISPR-associated protein cas3 OS=Streptococcus constellatus OX=76860 GN=cas3_2 PE=4 SV=1
+gn failure on tr|A0A380JML3|A0A380JML3_STRCV CRISPR-associated protein, SAG0897 family OS=Streptococcus constellatus OX=76860 GN=NCTC11325_01293 PE=4 SV=1
+gn failure on tr|A0A380JUV7|A0A380JUV7_STRDY CRISPR-associated family protein OS=Streptococcus dysgalactiae subsp. dysgalactiae OX=99822 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A380JXN6|A0A380JXN6_STRDY CRISPR-associated protein OS=Streptococcus dysgalactiae subsp. dysgalactiae OX=99822 GN=csn1_2 PE=4 SV=1
+gn failure on tr|A0A380KA13|A0A380KA13_STREQ CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC11564_00248 PE=4 SV=1
+gn failure on tr|A0A380KA16|A0A380KA16_STREQ CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC11564_00247 PE=4 SV=1
+gn failure on tr|A0A380KD09|A0A380KD09_STREQ CRISPR-associated family protein OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A380M694|A0A380M694_9STRE CRISPR-associated protein, SAG0897 family OS=Streptococcus viridans OX=78535 GN=NCTC1080_01337 PE=4 SV=1
+gn failure on tr|A0A380MAI7|A0A380MAI7_STRUB CRISPR-associated protein OS=Streptococcus uberis OX=1349 GN=NCTC4672_00006 PE=4 SV=1
+gn failure on tr|A0A380MHI7|A0A380MHI7_STRUB CRISPR-associated protein OS=Streptococcus uberis OX=1349 GN=NCTC4672_01899 PE=4 SV=1
+gn failure on tr|A0A380MJ76|A0A380MJ76_STRUB CRISPR-associated protein OS=Streptococcus uberis OX=1349 GN=NCTC4672_01900 PE=4 SV=1
+gn failure on tr|A0A380MLH2|A0A380MLH2_STRUB CRISPR-associated helicase OS=Streptococcus uberis OX=1349 GN=NCTC4672_01901 PE=4 SV=1
+gn failure on tr|A0A3N3GYE7|A0A3N3GYE7_ENTFL CRISPR associated protein OS=Enterococcus faecalis OX=1351 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A3R9GLB4|A0A3R9GLB4_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8887_09810 PE=4 SV=1
+gn failure on tr|A0A3R9GYR1|A0A3R9GYR1_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8882_05540 PE=4 SV=1
+gn failure on tr|A0A3R9H7X7|A0A3R9H7X7_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8889_06890 PE=4 SV=1
+gn failure on tr|A0A3R9HFU0|A0A3R9HFU0_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8872_02485 PE=4 SV=1
+gn failure on tr|A0A3R9HYJ1|A0A3R9HYJ1_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8883_07050 PE=4 SV=1
+gn failure on tr|A0A3R9I5J4|A0A3R9I5J4_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=D8860_06750 PE=4 SV=1
+gn failure on tr|A0A3R9ICW4|A0A3R9ICW4_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8875_08925 PE=4 SV=1
+gn failure on tr|A0A3R9IV74|A0A3R9IV74_STROR CRISPR-associated endoribonuclease Cse3 OS=Streptococcus oralis OX=1303 GN=cse3 PE=4 SV=1
+gn failure on tr|A0A3R9IW34|A0A3R9IW34_STRMT CRISPR-associated endoribonuclease Cse3 OS=Streptococcus mitis OX=28037 GN=cse3 PE=4 SV=1
+gn failure on tr|A0A3R9IWA6|A0A3R9IWA6_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8879_10915 PE=4 SV=1
+gn failure on tr|A0A3R9IYS0|A0A3R9IYS0_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8865_08560 PE=4 SV=1
+gn failure on tr|A0A3R9J1R8|A0A3R9J1R8_STRMT CRISPR-associated endoribonuclease OS=Streptococcus mitis OX=28037 GN=D8839_08780 PE=3 SV=1
+gn failure on tr|A0A3R9J2Y9|A0A3R9J2Y9_STROR CRISPR-associated endoribonuclease Cse3 OS=Streptococcus oralis OX=1303 GN=cse3 PE=4 SV=1
+gn failure on tr|A0A3R9J5K9|A0A3R9J5K9_STROR CRISPR-associated protein Cse2 (CRISPR_cse2) OS=Streptococcus oralis OX=1303 GN=D8862_06025 PE=4 SV=1
+gn failure on tr|A0A3R9J855|A0A3R9J855_STROR CRISPR-associated protein Cse2 (CRISPR_cse2) OS=Streptococcus oralis OX=1303 GN=D8859_05175 PE=4 SV=1
+gn failure on tr|A0A3R9JFT7|A0A3R9JFT7_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8856_01315 PE=4 SV=1
+gn failure on tr|A0A3R9JGH8|A0A3R9JGH8_STRIT CRISPR-associated protein OS=Streptococcus intermedius OX=1338 GN=D8829_02045 PE=4 SV=1
+gn failure on tr|A0A3R9JHF0|A0A3R9JHF0_STROR CRISPR-associated endoribonuclease Cse3 OS=Streptococcus oralis OX=1303 GN=cse3 PE=4 SV=1
+gn failure on tr|A0A3R9JPH7|A0A3R9JPH7_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8849_05715 PE=4 SV=1
+gn failure on tr|A0A3R9JQ39|A0A3R9JQ39_9STRE CRISPR-associated protein OS=Streptococcus sp. BCA20 OX=2282136 GN=D8895_10375 PE=4 SV=1
+gn failure on tr|A0A3R9K169|A0A3R9K169_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8851_01380 PE=4 SV=1
+gn failure on tr|A0A3R9K492|A0A3R9K492_STROR CRISPR-associated protein OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=D8805_02110 PE=4 SV=1
+gn failure on tr|A0A3R9K5E8|A0A3R9K5E8_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8851_01375 PE=4 SV=1
+gn failure on tr|A0A3R9KBI4|A0A3R9KBI4_STROR CRISPR-associated endoribonuclease OS=Streptococcus oralis OX=1303 GN=D8803_05460 PE=3 SV=1
+gn failure on tr|A0A3R9KDI3|A0A3R9KDI3_STRCR CRISPR-associated endoribonuclease OS=Streptococcus cristatus OX=45634 GN=D8797_09355 PE=3 SV=1
+gn failure on tr|A0A3R9KEH2|A0A3R9KEH2_STRMT CRISPR-associated endoribonuclease OS=Streptococcus mitis OX=28037 GN=D8838_02670 PE=3 SV=1
+gn failure on tr|A0A3R9KEX7|A0A3R9KEX7_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=D8801_01650 PE=4 SV=1
+gn failure on tr|A0A3R9KRL2|A0A3R9KRL2_STRIT CRISPR-associated protein OS=Streptococcus intermedius OX=1338 GN=D8831_00890 PE=4 SV=1
+gn failure on tr|A0A3R9KUI2|A0A3R9KUI2_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8792_06925 PE=4 SV=1
+gn failure on tr|A0A3R9LDW7|A0A3R9LDW7_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8794_04570 PE=4 SV=1
+gn failure on tr|A0A3R9MIF7|A0A3R9MIF7_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8798_00270 PE=4 SV=1
+gn failure on tr|A0A3R9MPW0|A0A3R9MPW0_9STRE CRISPR-associated protein OS=Streptococcus sp. A12 OX=1759399 GN=D8783_03970 PE=4 SV=1
+gn failure on tr|A0A3R9P403|A0A3R9P403_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8870_10685 PE=4 SV=1
+gn failure on tr|A0A3R9SFA4|A0A3R9SFA4_STROR CRISPR-associated protein OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=D8805_01515 PE=4 SV=1
+gn failure on tr|A0A3S4I5W5|A0A3S4I5W5_STREI CRISPR-associated protein, SAG0897 family OS=Streptococcus equinus OX=1335 GN=NCTC11436_01588 PE=4 SV=1
+gn failure on tr|A0A3S4P0Y7|A0A3S4P0Y7_9STRE CRISPR-associated protein, SAG0897 family OS=Streptococcus milleri OX=33040 GN=NCTC11169_01243 PE=4 SV=1
+gn failure on tr|A0A3S4QL53|A0A3S4QL53_STRAP CRISPR-associated protein, SAG0897 family OS=Streptococcus anginosus OX=1328 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A3S5E8S3|A0A3S5E8S3_STREQ CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC6181_01343 PE=4 SV=1
+gn failure on tr|A0A427ZII1|A0A427ZII1_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8885_05215 PE=4 SV=1
+gn failure on tr|A0A427ZIJ4|A0A427ZIJ4_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8885_05265 PE=4 SV=1
+gn failure on tr|A0A427ZTQ0|A0A427ZTQ0_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8882_05490 PE=4 SV=1
+gn failure on tr|A0A427ZWG4|A0A427ZWG4_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8886_03465 PE=4 SV=1
+gn failure on tr|A0A428ADB2|A0A428ADB2_STRSA CRISPR-associated protein OS=Streptococcus sanguinis OX=1305 GN=D8875_10560 PE=4 SV=1
+gn failure on tr|A0A428ANC9|A0A428ANC9_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8872_02540 PE=4 SV=1
+gn failure on tr|A0A428B5C6|A0A428B5C6_STRPA CRISPR-associated protein OS=Streptococcus parasanguinis OX=1318 GN=D8866_01825 PE=4 SV=1
+gn failure on tr|A0A428BX08|A0A428BX08_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=D8860_06745 PE=4 SV=1
+gn failure on tr|A0A428CM42|A0A428CM42_STRMT CRISPR-associated endoribonuclease OS=Streptococcus mitis OX=28037 GN=D8856_01325 PE=3 SV=1
+gn failure on tr|A0A428D3S0|A0A428D3S0_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8849_05710 PE=4 SV=1
+gn failure on tr|A0A428D996|A0A428D996_STRMT CRISPR-associated protein Cse2 (CRISPR_cse2) OS=Streptococcus mitis OX=28037 GN=D8849_03470 PE=4 SV=1
+gn failure on tr|A0A428E6E4|A0A428E6E4_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8838_02660 PE=4 SV=1
+gn failure on tr|A0A428EB32|A0A428EB32_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8839_06425 PE=4 SV=1
+gn failure on tr|A0A428F2T9|A0A428F2T9_STRGN CRISPR-associated protein OS=Streptococcus gordonii OX=1302 GN=D8821_06445 PE=4 SV=1
+gn failure on tr|A0A428FH09|A0A428FH09_STRGN CRISPR-associated protein OS=Streptococcus gordonii OX=1302 GN=D8817_02245 PE=4 SV=1
+gn failure on tr|A0A428FQQ4|A0A428FQQ4_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=D8803_05470 PE=4 SV=1
+gn failure on tr|A0A428G6X3|A0A428G6X3_STROR CRISPR-associated endoribonuclease OS=Streptococcus oralis subsp. dentisani OX=1458253 GN=D8805_01505 PE=3 SV=1
+gn failure on tr|A0A428G990|A0A428G990_STROR CRISPR-associated endoribonuclease OS=Streptococcus oralis OX=1303 GN=D8801_01640 PE=3 SV=1
+gn failure on tr|A0A428GBB0|A0A428GBB0_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8797_05910 PE=4 SV=1
+gn failure on tr|A0A428GC00|A0A428GC00_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8797_05640 PE=4 SV=1
+gn failure on tr|A0A428GJ79|A0A428GJ79_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8798_00320 PE=4 SV=1
+gn failure on tr|A0A428GNJ2|A0A428GNJ2_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8791_04375 PE=4 SV=1
+gn failure on tr|A0A428HGX0|A0A428HGX0_STRCR CRISPR-associated protein OS=Streptococcus cristatus OX=45634 GN=D8790_06635 PE=4 SV=1
+gn failure on tr|A0A428HSC1|A0A428HSC1_9STRE CRISPR-associated protein OS=Streptococcus australis OX=113107 GN=D8785_00725 PE=4 SV=1
+gn failure on tr|A0A428I3Y2|A0A428I3Y2_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8787_03875 PE=4 SV=1
+gn failure on tr|A0A428I446|A0A428I446_STRMT CRISPR-associated protein OS=Streptococcus mitis OX=28037 GN=D8787_03880 PE=4 SV=1
+gn failure on tr|A0A428II12|A0A428II12_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=D8844_04995 PE=4 SV=1
+gn failure on tr|A0A428IIN6|A0A428IIN6_STROR CRISPR-associated protein OS=Streptococcus oralis OX=1303 GN=D8844_05000 PE=4 SV=1
+gn failure on tr|A0A448DGT3|A0A448DGT3_STREQ CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC6181_01344 PE=4 SV=1
+gn failure on tr|A0A448DJM0|A0A448DJM0_STREQ CRISPR-associated family protein OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4U1L9B8|A0A4U1L9B8_STRMT CRISPR-associated protein Cmr4 OS=Streptococcus mitis OX=28037 GN=FBF73_01950 PE=4 SV=1
+gn failure on tr|A0A4U1LB42|A0A4U1LB42_STRMT CRISPR-associated endoribonuclease OS=Streptococcus mitis OX=28037 GN=cas6 PE=3 SV=1
+gn failure on tr|A0A4U7G7F6|A0A4U7G7F6_STRPY Putative cytoplasmic protein OS=Streptococcus pyogenes OX=1314 GN=cas7c PE=4 SV=1
+gn failure on tr|A0A4U7GAF9|A0A4U7GAF9_STRPY CRISPR-associated protein cas5 OS=Streptococcus pyogenes OX=1314 GN=cas5c PE=4 SV=1
+gn failure on tr|A0A4U9BYH2|A0A4U9BYH2_STRPY CRISPR-associated protein, Csd1 family OS=Streptococcus pyogenes OX=1314 GN=SAMEA3919113_01268 PE=4 SV=1
+gn failure on tr|A0A4U9Y130|A0A4U9Y130_STRPO CRISPR-associated protein cas5 OS=Streptococcus porcinus OX=1340 GN=NCTC10710_00402 PE=4 SV=1
+gn failure on tr|A0A4U9YNQ4|A0A4U9YNQ4_STRPO CRISPR-associated protein, SAG0894 family OS=Streptococcus porcinus OX=1340 GN=NCTC5385_01371 PE=4 SV=1
+gn failure on tr|A0A4U9YQL3|A0A4U9YQL3_STRPO CRISPR-associated protein, SAG0897 family OS=Streptococcus porcinus OX=1340 GN=NCTC5385_01362 PE=4 SV=1
+gn failure on tr|A0A4U9Z4X0|A0A4U9Z4X0_STREQ CRISPR-associated family protein OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4V0BN28|A0A4V0BN28_9STRE CRISPR-associated Cse2 family protein OS=Streptococcus australis OX=113107 GN=NCTC5338_00421 PE=4 SV=1
+gn failure on tr|A0A4V0C3J0|A0A4V0C3J0_STRCB CRISPR-associated protein cas5 OS=Streptococcus canis OX=1329 GN=NCTC6198_01622 PE=4 SV=1
+gn failure on tr|A0A4V0E733|A0A4V0E733_STRDY CRISPR-associated family protein OS=Streptococcus dysgalactiae OX=1334 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4V0E7S1|A0A4V0E7S1_STREQ CRISPR-associated family protein OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4V0ET20|A0A4V0ET20_STRSU CRISPR-associated protein csd2 OS=Streptococcus suis OX=1307 GN=csd2 PE=4 SV=1
+gn failure on tr|A0A4V0ET77|A0A4V0ET77_STRSU CRISPR-associated helicase OS=Streptococcus suis OX=1307 GN=NCTC10446_00142 PE=4 SV=1
+gn failure on tr|A0A4V0EU31|A0A4V0EU31_STRSU CRISPR-associated protein OS=Streptococcus suis OX=1307 GN=NCTC10446_00144 PE=4 SV=1
+gn failure on tr|A0A4V0F5U2|A0A4V0F5U2_STRDY CRISPR-associated family protein OS=Streptococcus dysgalactiae OX=1334 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4V0F5U8|A0A4V0F5U8_STRDY CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae OX=1334 GN=cas5c PE=4 SV=1
+gn failure on tr|A0A4V0F644|A0A4V0F644_STRDY CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae OX=1334 GN=NCTC10238_01122 PE=4 SV=1
+gn failure on tr|A0A4V0FCS7|A0A4V0FCS7_STREQ CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC11555_01236 PE=4 SV=1
+gn failure on tr|A0A4V0FF07|A0A4V0FF07_STREQ CRISPR-associated family protein OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4V0FL44|A0A4V0FL44_STREQ CRISPR-associated protein, Csd1 family OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC11557_00273 PE=4 SV=1
+gn failure on tr|A0A4V6L133|A0A4V6L133_STRPO CRISPR-associated protein, Csd1 family OS=Streptococcus porcinus OX=1340 GN=NCTC10710_00403 PE=4 SV=1
+gn failure on tr|A0A4V6LID6|A0A4V6LID6_STRDY CRISPR-associated family protein OS=Streptococcus dysgalactiae OX=1334 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A4V6LQB3|A0A4V6LQB3_STRSU CRISPR-associated protein OS=Streptococcus suis OX=1307 GN=NCTC10446_00143 PE=4 SV=1
+gn failure on tr|A0A4V6LT13|A0A4V6LT13_STREQ CRISPR-associated protein cas5 OS=Streptococcus dysgalactiae subsp. equisimilis OX=119602 GN=NCTC11555_01235 PE=4 SV=1
+gn failure on tr|A0A509DGK7|A0A509DGK7_9STRE CRISPR-associated protein cas5 OS=Streptococcus sp. NCTC 11567 OX=2583584 GN=NCTC11567_01514 PE=4 SV=1
+gn failure on tr|A0A509DHN5|A0A509DHN5_9STRE CRISPR-associated protein, Csd1 family OS=Streptococcus sp. NCTC 11567 OX=2583584 GN=NCTC11567_01513 PE=4 SV=1
+gn failure on tr|A0A5S4TJ23|A0A5S4TJ23_STRPY ATP-dependent RNA helicase OS=Streptococcus pyogenes OX=1314 GN=E0F67_06175 PE=4 SV=1
+gn failure on tr|A0A5S4TK72|A0A5S4TK72_STRPY Uncharacterized protein OS=Streptococcus pyogenes OX=1314 GN=E0F67_06180 PE=4 SV=1
+gn failure on tr|A0A656SQQ8|A0A656SQQ8_STRSZ CRISPR-associated protein, Csd2 family OS=Streptococcus equi subsp. zooepidemicus SzAM60 OX=1381091 GN=csd2 PE=4 SV=1
+gn failure on tr|A0A656SR29|A0A656SR29_STRSZ CRISPR-associated protein, Csd1 family OS=Streptococcus equi subsp. zooepidemicus SzAM60 OX=1381091 GN=csd1 PE=4 SV=1
+gn failure on tr|A0A656SRN7|A0A656SRN7_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus SzAM60 OX=1381091 GN=AT48_01855 PE=4 SV=1
+gn failure on tr|A0A663BQC9|A0A663BQC9_STRPY CRISPR-associated family protein OS=Streptococcus pyogenes OX=1314 GN=csn2 PE=4 SV=1
+gn failure on tr|A0A663BTK3|A0A663BTK3_STRPY CRISPR-associated family protein OS=Streptococcus pyogenes OX=1314 GN=csn2 PE=4 SV=1
+gn failure on tr|B4U1Q5|B4U1Q5_STREM CRISPR-associated protein, Csd1 family OS=Streptococcus equi subsp. zooepidemicus (strain MGCS10565) OX=552526 GN=csd1 PE=4 SV=1
+gn failure on tr|B4U1Q6|B4U1Q6_STREM CRISPR-associated protein, Csd2 family OS=Streptococcus equi subsp. zooepidemicus (strain MGCS10565) OX=552526 GN=csd2 PE=4 SV=1
+gn failure on tr|C0MDE3|C0MDE3_STRS7 CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus (strain H70) OX=553483 GN=SZO_14400 PE=4 SV=1
+gn failure on tr|C0MDE4|C0MDE4_STRS7 CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus (strain H70) OX=553483 GN=SZO_14410 PE=4 SV=1
+gn failure on tr|C0MDE5|C0MDE5_STRS7 CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus (strain H70) OX=553483 GN=SZO_14420 PE=4 SV=1
+gn failure on tr|C0MDE6|C0MDE6_STRS7 CRISPR-associated helicase OS=Streptococcus equi subsp. zooepidemicus (strain H70) OX=553483 GN=SZO_14430 PE=4 SV=1
+gn failure on tr|F0I297|F0I297_STRSA CRISPR-associated protein cas1 OS=Streptococcus sanguinis SK72 OX=888809 GN=cas1 PE=4 SV=1
+gn failure on tr|F0I701|F0I701_STRSA Sag0897 family CRISPR-associated protein OS=Streptococcus sanguinis SK115 OX=888810 GN=HMPREF9382_0584 PE=4 SV=1
+gn failure on tr|F2C4I8|F2C4I8_STRSA Sag0897 family CRISPR-associated protein OS=Streptococcus sanguinis SK330 OX=888813 GN=HMPREF9386_0561 PE=4 SV=1
+gn failure on tr|F2C4P5|F2C4P5_STRSA CRISPR-associated protein cas1 OS=Streptococcus sanguinis SK330 OX=888813 GN=cas1-2 PE=4 SV=1
+gn failure on tr|F3USJ0|F3USJ0_STRSA CRISPR-associated protein Csd2 OS=Streptococcus sanguinis SK355 OX=888816 GN=csd2 PE=4 SV=1
+gn failure on tr|F3UXG9|F3UXG9_STRSA Sag0897 family CRISPR-associated protein OS=Streptococcus sanguinis SK49 OX=888808 GN=HMPREF9380_1207 PE=4 SV=1
+gn failure on tr|F5WVJ1|F5WVJ1_STRG1 CRISPR-associated protein OS=Streptococcus gallolyticus (strain ATCC 43143 / F-1867) OX=981539 GN=csn2 PE=4 SV=1
+gn failure on tr|F8DGH9|F8DGH9_STREP CRISPR-associated protein, Csd1 family OS=Streptococcus parasanguinis (strain ATCC 15912 / DSM 6778 / CIP 104372 / LMG 14537) OX=760570 GN=csd1 PE=4 SV=1
+gn failure on tr|F8LTP7|F8LTP7_STRTR CRISPR-associated protein cas1 OS=Streptococcus thermophilus JIM 8232 OX=1051074 GN=cas1-3 PE=4 SV=1
+gn failure on tr|F8LXE8|F8LXE8_STRTR CRISPR-associated helicase cas3 OS=Streptococcus thermophilus JIM 8232 OX=1051074 GN=cas3 PE=4 SV=1
+gn failure on tr|F9LXT2|F9LXT2_STRMT CRISPR-associated endoribonuclease OS=Streptococcus mitis bv. 2 str. SK95 OX=1000588 GN=cas6 PE=3 SV=1
+gn failure on tr|F9LXT4|F9LXT4_STRMT CRISPR-associated protein, Cmr2 family OS=Streptococcus mitis bv. 2 str. SK95 OX=1000588 GN=HMPREF9965_1186 PE=4 SV=1
+gn failure on tr|F9LXT6|F9LXT6_STRMT CRISPR-associated RAMP protein, Cmr4 family OS=Streptococcus mitis bv. 2 str. SK95 OX=1000588 GN=cmr4 PE=4 SV=1
+gn failure on tr|F9LXT8|F9LXT8_STRMT CRISPR-associated RAMP protein, Cmr6 family OS=Streptococcus mitis bv. 2 str. SK95 OX=1000588 GN=cmr6 PE=4 SV=1
+gn failure on tr|G5K134|G5K134_9STRE CRISPR-associated protein Cse1 OS=Streptococcus ictaluri 707-05 OX=764299 GN=STRIC_0310 PE=4 SV=1
+gn failure on tr|G6CA36|G6CA36_9STRE CRISPR-associated endoribonuclease OS=Streptococcus sp. oral taxon 058 str. F0407 OX=861455 GN=HMPREF9184_01169 PE=3 SV=1
+gn failure on tr|G6CA38|G6CA38_9STRE CRISPR-associated protein, Cmr2 family OS=Streptococcus sp. oral taxon 058 str. F0407 OX=861455 GN=HMPREF9184_01171 PE=4 SV=1
+gn failure on tr|G6CA40|G6CA40_9STRE CRISPR-associated RAMP protein, Cmr4 family OS=Streptococcus sp. oral taxon 058 str. F0407 OX=861455 GN=HMPREF9184_01173 PE=4 SV=1
+gn failure on tr|G6CA42|G6CA42_9STRE CRISPR-associated RAMP protein, Cmr6 family OS=Streptococcus sp. oral taxon 058 str. F0407 OX=861455 GN=HMPREF9184_01175 PE=4 SV=1
+gn failure on tr|G8B1V1|G8B1V1_STRAG CRISPR-associated protein, Csd2 family OS=Streptococcus agalactiae OX=1311 GN=cas7 PE=4 SV=1
+gn failure on tr|I0QFR6|I0QFR6_STROR CRISPR-associated protein Cse1 OS=Streptococcus oralis SK10 OX=1095739 GN=HMPREF1113_1766 PE=4 SV=1
+gn failure on tr|J3AJW6|J3AJW6_STRRT CRISPR-associated protein csn2 OS=Streptococcus ratti FA-1 = DSM 20564 OX=699248 GN=D822_08370 PE=4 SV=1
+gn failure on tr|S5QY21|S5QY21_9STRE CRISPR-associated protein, SAG0897 family OS=Streptococcus lutetiensis 033 OX=1076934 GN=KE3_1334 PE=4 SV=1
+gn failure on tr|S5TH91|S5TH91_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=cas5 PE=4 SV=1
+gn failure on tr|S5TQU1|S5TQU1_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=csd1 PE=4 SV=1
+gn failure on tr|S5U7A4|S5U7A4_STRSZ CRISPR-associated helicase OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=cas3 PE=4 SV=1
+gn failure on tr|S5U853|S5U853_STRSZ CRISPR-associated protein OS=Streptococcus equi subsp. zooepidemicus OX=40041 GN=csd2 PE=4 SV=1
+gn failure on tr|S6B6Z3|S6B6Z3_STRP1 CRISPR-associated protein Csd1 OS=Streptococcus pyogenes M1 476 OX=1207470 GN=M1GAS476_1942 PE=4 SV=1
+gn failure on tr|T0TNQ1|T0TNQ1_9STRE CRISPR-associated protein OS=Streptococcus sp. HSISS2 OX=1316411 GN=HSISS2_1522 PE=4 SV=1
+gn failure on tr|T0TVC8|T0TVC8_9STRE CRISPR-associated protein OS=Streptococcus sp. HSISS2 OX=1316411 GN=HSISS2_1523 PE=4 SV=1
+gn failure on tr|T0TWA9|T0TWA9_9STRE CRISPR-associated protein, CT1975 family OS=Streptococcus sp. HSISS2 OX=1316411 GN=HSISS2_1524 PE=4 SV=1
+gn failure on tr|V8BFK0|V8BFK0_STRPA CRISPR-associated endoribonuclease cas2 OS=Streptococcus parasanguinis CC87K OX=1073372 GN=HMPREF1195_00211 PE=4 SV=1
+gn failure on tr|V8IAM3|V8IAM3_STRMT CRISPR-associated protein Cmr4 OS=Streptococcus mitis 21/39 OX=1415765 GN=U757_01675 PE=4 SV=1
+gn failure on tr|V8LUW3|V8LUW3_STRTR CRISPR-associated protein Cmr4 OS=Streptococcus thermophilus TH1435 OX=1415776 GN=U730_04610 PE=4 SV=1
+3053ms crispr profile load
+4ms genome encoding total
+0ms qmap small malloc
+25ms qmap small mallochost
+143ms qmap small kernel
+10ms qmap small memcpy
+187ms post qmap small candidate query genertion
+0ms qmap big queries malloc
+0ms qmap big queries memcpy
+0ms qmap big malloc
+1ms qmap big mallochost
+9ms qmap big kernel
+0ms qmap big memcpy
+1197ms post-kernel crispr generation
+	prospector returned 2330 crisprs
+183ms cache crisprs
+22ms filter
+27ms domain best
+115ms get translations
+	identifying cas genes in 18 translations...
+0ms target map preparation
+6184ms target map construction
+691ms fragments from target map construction
+0ms compute fragment demarcs
+1ms cas sort fragments
+286ms compute fragment details
+printing 3 crisprs
+1085433 - 1086854 36
+
+	0.983617h 1.000000r 0.013107s 0.000000v
+
+	repeats (22)
+		9/18 1085433 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085468 0 0.500000
+		9/18 1085499 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085534 30 0.500000
+		9/18 1085565 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085600 30 0.500000
+		9/18 1085631 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085666 30 0.500000
+		9/18 1085697 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085732 30 0.500000
+		9/18 1085763 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085798 30 0.500000
+		9/18 1085829 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085864 30 0.500000
+		9/18 1085895 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085930 30 0.500000
+		9/18 1085961 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1085996 30 0.500000
+		9/18 1086027 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086062 30 0.500000
+		9/18 1086093 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086128 30 0.500000
+		9/18 1086159 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086194 30 0.500000
+		9/18 1086225 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086260 30 0.500000
+		9/18 1086291 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086326 30 0.500000
+		9/18 1086357 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086392 30 0.500000
+		9/18 1086423 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086458 30 0.500000
+		9/18 1086489 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086524 30 0.500000
+		9/18 1086555 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086590 30 0.500000
+		9/18 1086621 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086656 30 0.500000
+		9/18 1086687 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086722 30 0.500000
+		9/18 1086753 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086788 30 0.500000
+		9/18 1086819 GTTTTAGAGCTGTGTTGTTTCGAATGGTTCCAAAAC 1086854 30 0.500000
+
+	spacers (21)
+		-1/30 TTTCATTGAAAACTACAAGGATATTAATCT
+		-1/30 CATCATGTCGCTTGTGAAAGTTGTTTTTAA
+		-1/30 GAATGCATCCCATGTTTTAGCTCTAGCTTT
+		-1/30 AAAACCAAGTCGAGGCTGGTGGCTTGGTAA
+		-1/30 GTTCGTCTTTAAGAGCTTGAAAGGCTGCTA
+		-1/30 CTATTTGCAGACAAAGAATTCAGTAAATCA
+		-1/30 CGATGGAAATGATGGATTGCCTGGCAAAGA
+		-1/30 AATATGTTCAAGGTGCTAGAACCGAAAACA
+		-1/30 AGACGTCCATTTTGCTATCTAGTTCAGGTA
+		-1/30 AACGGTTAAATGGCATCTAACATTTAACTC
+		-1/30 ATTAGATGCTATTATCACCGATGTTAAAAT
+		-1/30 AGTTAAAGCTGATGCAGGTGTATTGACTGG
+		-1/30 ACCAGTCCACAATATATTAATTGAATTTGA
+		-1/30 AACGGTTAATTTCGATATTCCAAAGAGTTA
+		-1/30 TCTGCCGCCCCGGGAAACCCAAGTGGTCAG
+		-1/30 CAAACCATAACACTGACGACAATTCCAAGA
+		-1/30 TAGAGGTAATGACGGACTACCAGGTAAGGA
+		-1/30 AGTTGTGACTTCGCTTTCGCTTGGCATCCG
+		-1/30 TTTCCAATGCCGTGATGGTTTTCGTCAGGA
+		-1/30 CAAGGTATACGGCATCCCTGATAACGTAGT
+		-1/30 TCTTAAAAATTGAATATTAACGAAGTACAT
+
+1577775 - 1578027 30
+
+	0.789310h 0.991667r 0.107496s 0.016997v
+
+	repeats (4)
+		4/15 1577775 GTCCCCTCTCGAGGTAATTAGGTTTATATC 1577804 0 0.266667
+		4/15 1577850 GTCCCTTCTCGAGGTAATTAGGTTTATATC 1577879 45 0.266667
+		4/15 1577926 GTCCCCTCTCGAGGTAATTAGGTTTATATC 1577955 46 0.266667
+		4/15 1577998 GTCCCCTCTCGAGGTAATTAGGTTTATATC 1578027 42 0.266667
+
+	spacers (3)
+		-1/45 CATCATAGGCGGAACTGGTAGGATGTACACAGCAAGTGGGTTTCC
+		-1/46 TTAATTGAATTATGAAATACAAGGTAATAACATATTTTGAGTTTCC
+		-1/42 TTTCTAGGAATGGGTAATTATAGCGAGCTAGAAAGCGTTTCC
+
+1824943 - 1827551 36
+
+	0.983714h 0.998611r 0.006860s 0.001581v
+
+	repeats (40)
+		5/18 1824943 ACTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1824978 0 0.277778
+		7/18 1825009 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825044 30 0.388889
+		7/18 1825075 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825110 30 0.388889
+		7/18 1825141 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825176 30 0.388889
+		7/18 1825207 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825242 30 0.388889
+		7/18 1825273 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825308 30 0.388889
+		7/18 1825339 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825374 30 0.388889
+		7/18 1825405 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825440 30 0.388889
+		7/18 1825471 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825506 30 0.388889
+		7/18 1825537 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825572 30 0.388889
+		7/18 1825603 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825638 30 0.388889
+		7/18 1825669 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825704 30 0.388889
+		7/18 1825735 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825770 30 0.388889
+		7/18 1825801 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825836 30 0.388889
+		7/18 1825867 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825902 30 0.388889
+		7/18 1825933 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1825968 30 0.388889
+		7/18 1825999 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826034 30 0.388889
+		7/18 1826065 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826100 30 0.388889
+		7/18 1826131 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826166 30 0.388889
+		7/18 1826197 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826232 30 0.388889
+		7/18 1826263 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826298 30 0.388889
+		7/18 1826329 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826364 30 0.388889
+		7/18 1826395 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826430 30 0.388889
+		7/18 1826461 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826496 30 0.388889
+		7/18 1826527 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826562 30 0.388889
+		7/18 1826593 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826628 30 0.388889
+		7/18 1826659 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826694 30 0.388889
+		7/18 1826725 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826760 30 0.388889
+		7/18 1826791 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826826 30 0.388889
+		7/18 1826857 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826892 30 0.388889
+		7/18 1826923 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1826958 30 0.388889
+		7/18 1826988 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827023 29 0.388889
+		7/18 1827054 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827089 30 0.388889
+		7/18 1827120 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827155 30 0.388889
+		7/18 1827186 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827221 30 0.388889
+		7/18 1827252 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827287 30 0.388889
+		7/18 1827318 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827353 30 0.388889
+		7/18 1827384 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827419 30 0.388889
+		7/18 1827450 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827485 30 0.388889
+		7/18 1827516 GTTGTACAGTTACTTAAATCTTGAGAGTACAAAAAC 1827551 30 0.388889
+
+	spacers (39)
+		-1/30 CATCAGCCAAACCTTTACCGATCATTGCCC
+		-1/30 AGTAGGCATGTTCCAATCACGACCCGTACG
+		-1/30 CGTTTACATATTCTTGCAATGAATCGTATT
+		-1/30 CCGAAAGTTTTAACTGCTTCTTTAGCGATT
+		-1/30 GAAGGTGCTAAAAATGTTGCGATTTTGAAC
+		-1/30 TATATTTTTTTATCCACTCAGCCACAAACT
+		-1/30 CGGTATACAACAATGAAAGAACACAAGGAT
+		-1/30 GGTTTTCACTTCCTGAACCCCTAAGAGATT
+		-1/30 CATGTCAAAAATGCTGCTACATTCCTTGAT
+		-1/30 TGCTTCTTCAAAATCTGAATTTAAAATTGA
+		-1/30 CAATATGTATTTTTTTGCGCCAGCCTTTTT
+		-1/30 TGATAGAAAAATAGGTGATGCTACACATAC
+		-1/30 CGATAATTTGACACTTGTCAACGGTGCACG
+		-1/30 TCATAAAGCCTCACTTTTCTTTGCTATTCA
+		-1/30 GAAGACAGGACTTGGAACTACTAACGAACA
+		-1/30 AGCTTCACCGTCGTCAATATGGACCTTCTT
+		-1/30 AGTACCTGCTTTCTTATTGGGAGTTGGAAC
+		-1/30 CTGTTTCCTTTTTAAGTTCAATCTTGTTAA
+		-1/30 TATGGCTGTTTGGAACACTGCAAAAGGAAT
+		-1/30 CAAGTTGAGAAACATAGAAAACGTGGTAAG
+		-1/30 TATATAAAACGTCATCTTTGTTTAAATCAT
+		-1/30 AAGAGCATGAACAGAAAATGATGGATGAAT
+		-1/30 TATGCCATATCATTTACTTCCTTTCTTTCT
+		-1/30 AAGGATTGTGAAGCTACCTTCAGCTTGCTC
+		-1/30 CGCTCGAATCCGTTGGAATGTCGAAACTAA
+		-1/30 GTAGAAACCTACTGTACTAACTACGAACTA
+		-1/30 AAAAGCATTTGGTCCAGTCAGCTTAATATA
+		-1/30 CGGCCAAGGTATGGCTGTCGGTATTGACAA
+		-1/30 CTTAGACCATCGATAATCTTGTGGGTTTTG
+		-1/30 TATGAATCACACCTTGAGAAATATACATTA
+		-1/29 CTTTGAGTAGTGTTTCTCACGAGTTACAT
+		-1/30 AGCTCGTCTCAATTTTACATAATAAGTAGA
+		-1/30 GAATTTATCGACACCGTCCCTCATAGCATC
+		-1/30 ACTCACAATAACCACCACCTTGGCGTAATG
+		-1/30 ATAGATGAAAGTTCTTTTTTGTGATCTTTC
+		-1/30 GAAACAATCGAGCCAGTATATACGCCGGGA
+		-1/30 TTGAAGTACCAGAGGCTGACCATGATGTTT
+		-1/30 AGTACCATCTCGGTTTAATTCTGTACGGAA
+		-1/30 ACAGAATACAGTGATGTTGATTCCCTCAAA
+
+	1085433:36
+
+Gene: sp|G3ECR1|CAS9_STRTR CRISPR-associated endonuclease Cas9 OS=Streptococcus thermophilus OX=1308 GN=cas9 PE=1 SV=2:4226
+		sp|G3ECR1|CAS9_STRTR CRISPR-associated endonuclease Cas9 OS=Streptococcus thermophilus OX=1308 GN=cas9 PE=1 SV=2
+			1079027...1081319
+			2292
+			t:MLFNKCIIISINLDFSNKEKCMTKPYSIGLDIGTNSVGWAVITDNYKVPSKKMKVLGNTSKKYIKKNLLGVLLFDSGITAEGRRLKRTARRRYTRRRNRILYLQEIFSTEMATLDDAFFQRLDDSFLVPDDKRDSKYPIFGNLVEEKAYHDEFPTIYHLRKYLADSTKKADLRLVYLALAHMIKYRGHFLIEGEFNSKNNDIQKNFQDFLDTYNAIFESDLSLENSKQLEEIVKDKISKLEKKDRILKLFPGEKNSGIFSEFLKLIVGNQADFRKCFNLDEKASLHFSKESYDEDLETLLGYIGDDYSDVFLKAKKLYDAILLSGFLTVTDNETEAPLSSAMIKRYNEHKEDLALLKEYIRNISLKTYNEVFKDDTKNGYAGYIDGKTNQEDFYVYLKNLLAEFEGADYFLEKIDREDFLRKQRTFDNGSIPYQIHLQEMRAILDKQAKFYPFLAKNKERIEKILTFRIPYYVGPLARGNSDFAWSIRKRNEKITPWNFEDVIDKESSAEAFINRMTSFDLYLPEEKVLPKHSLLYETFNVYNELTKVRFIAESMRDYQFLDSKQKKDIVRLYFKDKRKVTDKDIIEYLHAIYGYDGIELKGIEKQFNSSLSTYHDLLNIINDKEFLDDSSNEAIIEEIIHTLTIFEDREMIKQRLSKFENIFDKSVLKKLSRRHYTGWGKLSAKLINGIRDEKSGNTILDYLIDDGISNRNFMQLIHDDALSFKKKIQKAQIIGDEDKGNIKEVVKSLPGSPAIKKGILQSI
+			r:MLFNKCIIISINLDFSNKEKCMTKPYSIGLDIGTNSVGWAVITDNYKVPSKKMKVLGNTSKKYIKKNLLGVLLFDSGITAEGRRLKRTARRRYTRRRNRILYLQEIFSTEMATLDDAFFQRLDDSFLVPDDKRDSKYPIFGNLVEEKVYHDEFPTIYHLRKYLADSTKKADLRLVYLALAHMIKYRGHFLIEGEFNSKNNDIQKNFQDFLDTYNAIFESDLSLENSKQLEEIVKDKISKLEKKDRILKLFPGEKNSGIFSEFLKLIVGNQADFRKCFNLDEKASLHFSKESYDEDLETLLGYIGDDYSDVFLKAKKLYDAILLSGFLTVTDNETEAPLSSAMIKRYNEHKEDLALLKEYIRNISLKTYNEVFKDDTKNGYAGYIDGKTNQEDFYVYLKNLLAEFEGADYFLEKIDREDFLRKQRTFDNGSIPYQIHLQEMRAILDKQAKFYPFLAKNKERIEKILTFRIPYYVGPLARGNSDFAWSIRKRNEKITPWNFEDVIDKESSAEAFINRMTSFDLYLPEEKVLPKHSLLYETFNVYNELTKVRFIAESMRDYQFLDSKQKKDIVRLYFKDKRKVTDKDIIEYLHAIYGYDGIELKGIEKQFNSSLSTYHDLLNIINDKEFLDDSSNEAIIEEIIHTLTIFEDREMIKQRLSKFENIFDKSVLKKLSRRHYTGWGKLSAKLINGIRDEKSGNTILDYLIDDGISNRNFMQLIHDDALSFKKKIQKAQIIGDEDKGNIKEVVKSLPGSPAIKKGILQSIKIVDELVKVMGGRKPESIVVEMARENQYTNQGKSNSQQRLKRLEKSLKELGSKILKENIPAKLSKIDNNALQNDRLYLYYLQNGKDMYTGDDLDIDRLSNYDIDHIIPQAFLKDNSIDNKVLVSSASNRGKSDDFPSLEVVKKRKTFWYQLLKSKLISQRKFDNLTKAERGGLLPEDKAGFIQRQLVETRQITKHVARLLDEKFNNKKDENNRAVRTVKIITLKSTLVSQFRKDFELYKVREINDFHHAHDAYLNAVIASALLKKYPKLEPEFVYGDYPKYNSFRERKSATEKVYFYSNIMNIFKKSISLADGRVIERPLIEVNEETGESVWNKESDLATVRRVLSYPQVNVVKKVEEQNHGLDRGKPKGLFNANLSSKPKPNSNENLVGAKEYLDPKKYGGYAGISNSFAVLVKGTIEKGAKKKITNVLEFQGISILDRINYRKDKLNFLLEKGYKDIELIIELPKYSLFELSDGSRRMLASILSTNNKRGEIHKGNQIFLSQKFVKLLYHAKRISNTINENHRKYVENHKKEFEELFYYILEFNENYVGAKKNGKLLNSAFQSWQNHSIDELCSSFIGPTGSERKGLFELTSRGSAADFEFLGVKIPRYRDYTPSSLLKDATLIHQSVTGLYETRIDLAKLGEG
+		sp|G3ECR1|CAS9_STRTR CRISPR-associated endonuclease Cas9 OS=Streptococcus thermophilus OX=1308 GN=cas9 PE=1 SV=2
+			1081318...1083253
+			1935
+			t:VDELVKVMGGRKPESIVVEMARENQYTNQGKSNSQQRLKRLEKSLKELGSKILKENIPAKLSKIDNNALQNDRLYLYYLQNGKDMYTGDDLDIDRLSNYDIDHIIPQAFLKDNSIDNKVLVSSASNRGKSDDFPSLEVVKKRKTFWYQLLKSKLISQRKFDNLTKAERGGLLPEDKAGFIQRQLVETRQITKHVARLLDEKFNNKKDENNRAVRTVKIITLKSTLVSQFRKDFELYKVREINDFHHAHDAYLNAVIASALLKKYPKLEPEFVYGDYPKYNSFRERKSATEKVYFYSNIMNIFKKSISLADGRVIERPLIEVNEETGESVWNKESDLATVRRVLSYPQVNVVKKVEEQNHGLDRGKPKGLFNANLSSKPKPNSNENLVGAKEYLDPKKYGGYAGISNSFAVLVKGTIEKGAKKKITNVLEFQGISILDRINYRKDKLNFLLEKGYKDIELIIELPKYSLFELSDGSRRMLASILSTNNKRGEIHKGNQIFLSQKFVKLLYHAKRISNTINENHRKYVENHKKEFEELFYYILEFNENYVGAKKNGKLLNSAFQSWQNHSIDELCSSFIGPTGSERKGLFELTSRGSAADFEFLGVKIQRYRDYTPSSLLKDATLIHQSVTGLYETRIDLAKLGEG
+			r:MLFNKCIIISINLDFSNKEKCMTKPYSIGLDIGTNSVGWAVITDNYKVPSKKMKVLGNTSKKYIKKNLLGVLLFDSGITAEGRRLKRTARRRYTRRRNRILYLQEIFSTEMATLDDAFFQRLDDSFLVPDDKRDSKYPIFGNLVEEKVYHDEFPTIYHLRKYLADSTKKADLRLVYLALAHMIKYRGHFLIEGEFNSKNNDIQKNFQDFLDTYNAIFESDLSLENSKQLEEIVKDKISKLEKKDRILKLFPGEKNSGIFSEFLKLIVGNQADFRKCFNLDEKASLHFSKESYDEDLETLLGYIGDDYSDVFLKAKKLYDAILLSGFLTVTDNETEAPLSSAMIKRYNEHKEDLALLKEYIRNISLKTYNEVFKDDTKNGYAGYIDGKTNQEDFYVYLKNLLAEFEGADYFLEKIDREDFLRKQRTFDNGSIPYQIHLQEMRAILDKQAKFYPFLAKNKERIEKILTFRIPYYVGPLARGNSDFAWSIRKRNEKITPWNFEDVIDKESSAEAFINRMTSFDLYLPEEKVLPKHSLLYETFNVYNELTKVRFIAESMRDYQFLDSKQKKDIVRLYFKDKRKVTDKDIIEYLHAIYGYDGIELKGIEKQFNSSLSTYHDLLNIINDKEFLDDSSNEAIIEEIIHTLTIFEDREMIKQRLSKFENIFDKSVLKKLSRRHYTGWGKLSAKLINGIRDEKSGNTILDYLIDDGISNRNFMQLIHDDALSFKKKIQKAQIIGDEDKGNIKEVVKSLPGSPAIKKGILQSIKIVDELVKVMGGRKPESIVVEMARENQYTNQGKSNSQQRLKRLEKSLKELGSKILKENIPAKLSKIDNNALQNDRLYLYYLQNGKDMYTGDDLDIDRLSNYDIDHIIPQAFLKDNSIDNKVLVSSASNRGKSDDFPSLEVVKKRKTFWYQLLKSKLISQRKFDNLTKAERGGLLPEDKAGFIQRQLVETRQITKHVARLLDEKFNNKKDENNRAVRTVKIITLKSTLVSQFRKDFELYKVREINDFHHAHDAYLNAVIASALLKKYPKLEPEFVYGDYPKYNSFRERKSATEKVYFYSNIMNIFKKSISLADGRVIERPLIEVNEETGESVWNKESDLATVRRVLSYPQVNVVKKVEEQNHGLDRGKPKGLFNANLSSKPKPNSNENLVGAKEYLDPKKYGGYAGISNSFAVLVKGTIEKGAKKKITNVLEFQGISILDRINYRKDKLNFLLEKGYKDIELIIELPKYSLFELSDGSRRMLASILSTNNKRGEIHKGNQIFLSQKFVKLLYHAKRISNTINENHRKYVENHKKEFEELFYYILEFNENYVGAKKNGKLLNSAFQSWQNHSIDELCSSFIGPTGSERKGLFELTSRGSAADFEFLGVKIPRYRDYTPSSLLKDATLIHQSVTGLYETRIDLAKLGEG
+Gene: tr|A0A656FYX7|A0A656FYX7_STRA8 CRISPR-associated protein, Csn1 family OS=Streptococcus agalactiae (strain ATCC 13813 / DSM 2134 / JCM 5671 / NCIMB 701348 / NCTC 8181) OX=888745 GN=csn1 PE=4 SV=1:4139
+		tr|A0A656FYX7|A0A656FYX7_STRA8 CRISPR-associated protein, Csn1 family OS=Streptococcus agalactiae (strain ATCC 13813 / DSM 2134 / JCM 5671 / NCIMB 701348 / NCTC 8181) OX=888745 GN=csn1 PE=4 SV=1
+			1079096...1081316
+			2220
+			t:KPYSIGLDIGTNSVGWAVITDNYKVPSKKMKVLGNTSKKYIKKNLLGVLLFDSGITAEGRRLKRTARRRYTRRRNRILYLQEIFSTEMATLDDAFFQRLDDSFLVPDDKRDSKYPIFGNLVEEKAYHDEFPTIYHLRKYLADSTKKADLRLVYLALAHMIKYRGHFLIEGEFNSKNNDIQKNFQDFLDTYNAIFESDLSLENSKQLEEIVKDKISKLEKKDRILKLFPGEKNSGIFSEFLKLIVGNQADFRKCFNLDEKASLHFSKESYDEDLETLLGYIGDDYSDVFLKAKKLYDAILLSGFLTVTDNETEAPLSSAMIKRYNEHKEDLALLKEYIRNISLKTYNEVFKDDTKNGYAGYIDGKTNQEDFYVYLKNLLAEFEGADYFLEKIDREDFLRKQRTFDNGSIPYQIHLQEMRAILDKQAKFYPFLAKNKERIEKILTFRIPYYVGPLARGNSDFAWSIRKRNEKITPWNFEDVIDKESSAEAFINRMTSFDLYLPEEKVLPKHSLLYETFNVYNELTKVRFIAESMRDYQFLDSKQKKDIVRLYFKDKRKVTDKDIIEYLHAIYGYDGIELKGIEKQFNSSLSTYHDLLNIINDKEFLDDSSNEAIIEEIIHTLTIFEDREMIKQRLSKFENIFDKSVLKKLSRRHYTGWGKLSAKLINGIRDEKSGNTILDYLIDDGISNRNFMQLIHDDALSFKKKIQKAQIIGDEDKGNIKEVVKSLPGSPAIKKGILQS
+			r:MNKPYSIGLDIGTNSVGWSIITDDYKVPAKKMRVLGNTDKEYIKKNLIGALLFDGGNTAADRRLKRTARRRYTRRRNRILYLQEIFAEEMSKVDDSFFHRLEDSFLVEEDKRGSKYPIFATMQEEKYYHEKFPTIYHLRKELADKKEKADLRLIYLALAHIIKFRGHFLIEDDRFDVRNTDIQKQYQAFLEIFDTTFENNDLLSQNVDVEAILTDKISKSAKKDRILARYPNQKSTGIFAEFLKLIVGNQADFKKHFNLEDKTPLQFAKDSYDEDLENLLGQIGDEFADLFSAAKKLYDSVLLSGILTVIDLSTKAPLSASMIQRYDEHHEDLKHLKQFVKASLPENYREVFADSSKDGYAGYIEGKTSQEAFYKYLLKLLTKQEGSEYLLEKIKNEDFLRKQRTFDNGSIPHQVHLTELRAIIRRQSEYYPFLKENLDRIEKILTFRIPYYVGPLAREKSDFAWMTRKTDDSIRPWNFEDLVDKEKSAEAFIHRMTNNDLYLPEEKVLPKHSLIYEKFTVYNELTKVRFLAEGFKDFQFLNRKQKETIFNSLFKEKRKVTEKDIISFLNKVDGYEGIAIKGIEKQFNASLSTYHDLKKILGKDFLDNTDNELILEDIIQTLTLFEDREMIKKRLDIYKDFFTESQLKKLYRRHYTGWGRLSAKLINGIRNKENQKTILDYLIDDGSANRNFMQLIKDAGLSFKPIIDKARTGSHSDNLKEVVGELAGSPAIKKGILQSLKIVDELVKVMGYEPEQIVVEMARENQTTAKGLSRSRQRLTTLRESLGNLKSNILEEKKPKYVKDQVENHHLSDDRLFLYYLQNGKDMYTDDELDIDNLSQYDIDHIIPQAFIKDDSIDNRVLVSSAKNRGKSDDVPSIEIVKARKMFWKNLLDAKLMSQRKYDNLTKAERGGLTSDDKARFIQRQLVETRQITKHVARILDERFNNELDSKGRRIRKVKIVTLKSNLVSNFRKEFGFYKIREVNNYHHAHDAYLNAVVAKAILTKYPQLEPEFVYGLYRRKKLSKIVREDKEEKYSEATRKMFFYSNLMNMFKRVVRLADGSIVVRPVIETGRYMGKTAWDKKKHFATVRKVLSYPQNNIVKKTEIQTGGFSKESILAHGNSDKLIPRKTKDIYLDPKKYGGFDSPIVAYSVLVVADIKKGKAQKLKTVTELLGITIMERSRFEKNTSAFLESKGYLNIRDDKLMILPKYSLFELENGRRRLLASAGELQKGNELALPTQFMKFLYLASRYNESKGKPEEIEKKQEFVNQHVSYFDDILQLINDFSNRVILADANLEKINKLYQDNKENIPVDELANNIINLFTFTSLGAPAAFKFFDKIVDRKRYTSTKEVLNSTLIHQSITGLYETRIDLGKLGEG
+		tr|A0A656FYX7|A0A656FYX7_STRA8 CRISPR-associated protein, Csn1 family OS=Streptococcus agalactiae (strain ATCC 13813 / DSM 2134 / JCM 5671 / NCIMB 701348 / NCTC 8181) OX=888745 GN=csn1 PE=4 SV=1
+			1081363...1083235
+			1872
+			t:IVVEMARENQYTNQGKSNSQQRLKRLEKSLKELGSKILKENIPAKLSKIDNNALQNDRLYLYYLQNGKDMYTGDDLDIDRLSNYDIDHIIPQAFLKDNSIDNKVLVSSASNRGKSDDFPSLEVVKKRKTFWYQLLKSKLISQRKFDNLTKAERGGLLPEDKAGFIQRQLVETRQITKHVARLLDEKFNNKKDENNRAVRTVKIITLKSTLVSQFRKDFELYKVREINDFHHAHDAYLNAVIASALLKKYPKLEPEFVYGDYPKYNSFRERKSATEKVYFYSNIMNIFKKSISLADGRVIERPLIEVNEETGESVWNKESDLATVRRVLSYPQVNVVKKVEEQNHGLDRGKPKGLFNANLSSKPKPNSNENLVGAKEYLDPKKYGGYAGISNSFAVLVKGTIEKGAKKKITNVLEFQGISILDRINYRKDKLNFLLEKGYKDIELIIELPKYSLFELSDGSRRMLASILSTNNKRGEIHKGNQIFLSQKFVKLLYHAKRISNTINENHRKYVENHKKEFEELFYYILEFNENYVGAKKNGKLLNSAFQSWQNHSIDELCSSFIGPTGSERKGLFELTSRGSAADFEFLGVKIQRYRDYTPSSLLKDATLIHQSVTGLYETRIDL
+			r:MNKPYSIGLDIGTNSVGWSIITDDYKVPAKKMRVLGNTDKEYIKKNLIGALLFDGGNTAADRRLKRTARRRYTRRRNRILYLQEIFAEEMSKVDDSFFHRLEDSFLVEEDKRGSKYPIFATMQEEKYYHEKFPTIYHLRKELADKKEKADLRLIYLALAHIIKFRGHFLIEDDRFDVRNTDIQKQYQAFLEIFDTTFENNDLLSQNVDVEAILTDKISKSAKKDRILARYPNQKSTGIFAEFLKLIVGNQADFKKHFNLEDKTPLQFAKDSYDEDLENLLGQIGDEFADLFSAAKKLYDSVLLSGILTVIDLSTKAPLSASMIQRYDEHHEDLKHLKQFVKASLPENYREVFADSSKDGYAGYIEGKTSQEAFYKYLLKLLTKQEGSEYLLEKIKNEDFLRKQRTFDNGSIPHQVHLTELRAIIRRQSEYYPFLKENLDRIEKILTFRIPYYVGPLAREKSDFAWMTRKTDDSIRPWNFEDLVDKEKSAEAFIHRMTNNDLYLPEEKVLPKHSLIYEKFTVYNELTKVRFLAEGFKDFQFLNRKQKETIFNSLFKEKRKVTEKDIISFLNKVDGYEGIAIKGIEKQFNASLSTYHDLKKILGKDFLDNTDNELILEDIIQTLTLFEDREMIKKRLDIYKDFFTESQLKKLYRRHYTGWGRLSAKLINGIRNKENQKTILDYLIDDGSANRNFMQLIKDAGLSFKPIIDKARTGSHSDNLKEVVGELAGSPAIKKGILQSLKIVDELVKVMGYEPEQIVVEMARENQTTAKGLSRSRQRLTTLRESLGNLKSNILEEKKPKYVKDQVENHHLSDDRLFLYYLQNGKDMYTDDELDIDNLSQYDIDHIIPQAFIKDDSIDNRVLVSSAKNRGKSDDVPSIEIVKARKMFWKNLLDAKLMSQRKYDNLTKAERGGLTSDDKARFIQRQLVETRQITKHVARILDERFNNELDSKGRRIRKVKIVTLKSNLVSNFRKEFGFYKIREVNNYHHAHDAYLNAVVAKAILTKYPQLEPEFVYGLYRRKKLSKIVREDKEEKYSEATRKMFFYSNLMNMFKRVVRLADGSIVVRPVIETGRYMGKTAWDKKKHFATVRKVLSYPQNNIVKKTEIQTGGFSKESILAHGNSDKLIPRKTKDIYLDPKKYGGFDSPIVAYSVLVVADIKKGKAQKLKTVTELLGITIMERSRFEKNTSAFLESKGYLNIRDDKLMILPKYSLFELENGRRRLLASAGELQKGNELALPTQFMKFLYLASRYNESKGKPEEIEKKQEFVNQHVSYFDDILQLINDFSNRVILADANLEKINKLYQDNKENIPVDELANNIINLFTFTSLGAPAAFKFFDKIVDRKRYTSTKEVLNSTLIHQSITGLYETRIDLGKLGEG
+Gene: sp|G3ECR2|CAS1_STRTR CRISPR-associated endonuclease Cas1 OS=Streptococcus thermophilus OX=1308 GN=cas1 PE=1 SV=1:870
+		sp|G3ECR2|CAS1_STRTR CRISPR-associated endonuclease Cas1 OS=Streptococcus thermophilus OX=1308 GN=cas1 PE=1 SV=1
+			1083252...1084122
+			870
+			t:MAGWRTVVVNIHSKLSYKNNHLIFRNSYKTEMIHLSEIDILLLETTDIVLTTMLVKRLVDENILVIFCDDKRLPTAFLTPYYARHDSSLQIARQIAWKENVKCEVWTAIIAQKILNQSYYLGECSFFEKSQSIMELYHGLERFDPSNREGHSARIYFNTLFGNDFTRESDNDINAALDYGYTLLLSMFAREVVVCGCMTQIGLKHANQFNQFNLASDIMEPFRPIIDRIVYQNRHNNFVKIKKELFSIFSETYLYNGKEMYLSNIVSDYTKKVIKALNQLGEEIPEFRI
+			r:MAGWRTVVVNIHSKLSYKNNHLIFRNSYKTEMIHLSEIDILLLETTDIVLTTMLVKRLVDENILVIFCDDKRLPTAFLTPYYARHDSSLQIARQIAWKENVKCEVWTAIIAQKILNQSYYLGECSFFEKSQSIMELYHGLERFDPSNREGHSARIYFNTLFGNDFTRESDNDINAALDYGYTLLLSMFAREVVVCGCMTQIGLKHANQFNQFNLASDIMEPFRPIIDRIVYQNRHNNFVKIKKELFSIFSETYLYNGKEMYLSNIVSDYTKKVIKALNQLGEEIPEFRI
+Gene: sp|G3ECR3|CAS2_STRTR CRISPR-associated endoribonuclease Cas2 OS=Streptococcus thermophilus OX=1308 GN=cas2 PE=1 SV=1:345
+		sp|G3ECR3|CAS2_STRTR CRISPR-associated endoribonuclease Cas2 OS=Streptococcus thermophilus OX=1308 GN=cas2 PE=1 SV=1
+			1084118...1084463
+			345
+			t:MSYRYMRMILMFDMPTDTAEERKAYRKFRKFLLSEGFIMHQFSVYSKLLLNHTANTAMVGRLKANNPKKGNITILTVTEKQFARMIYLYGDKNTSIANSEERLVFLGDNYCDED
+			r:MSYRYMRMILMFDMPTDTAEERKAYRKFRKFLLSEGFIMHQFSVYSKLLLNHTANTAMVGRLKANNPKKGNITILTVTEKQFARMIYLYGDKNTSIANSEERLVFLGDNYCDED
+Gene: sp|G3ECR4|CSN2_STRTR CRISPR-associated protein Csn2 OS=Streptococcus thermophilus OX=1308 GN=csn2 PE=1 SV=1:660
+		sp|G3ECR4|CSN2_STRTR CRISPR-associated protein Csn2 OS=Streptococcus thermophilus OX=1308 GN=csn2 PE=1 SV=1
+			1084452...1085112
+			660
+			t:MKINFSLLDEPMEVNLGTVLVIEDVSVFAQLVKEFYQYDEQSNLTIFDSKIRSIRSSELLLITDILGYDINTSQVLKLLHTDIVSQLNDKPEVRSEIDSLVSLITDIIMAECIENELDIEYDEITLLELIKALGVRIETKSCTVFEKIFEILQIFKYLVKKRILVFVNSLSYFSKDEIYQILEYTKLSQADVLFLEPRQIEGIQQFILDKDYILMPYNN
+			r:MKINFSLLDEPMEVNLGTVLVIEDVSVFAQLVKEFYQYDEQSNLTIFDSKIRSIRSSELLLITDILGYDINTSQVLKLLHTDIVSQLNDKPEVRSEIDSLVSLITDIIMAECIENELDIEYDEITLLELIKALGVRIETKSCTVFEKIFEILQIFKYLVKKRILVFVNSLSYFSKDEIYQILEYTKLSQADVLFLEPRQIEGIQQFILDKDYILMPYNN
+	
+	
+	1577775:30
+
+Gene: tr|A0A0A7HG95|A0A0A7HG95_STRTR CRISPR-associated endoribonuclease Cas2 OS=Streptococcus thermophilus OX=1308 GN=cas2 PE=3 SV=1:330
+		tr|A0A0A7HG95|A0A0A7HG95_STRTR CRISPR-associated endoribonuclease Cas2 OS=Streptococcus thermophilus OX=1308 GN=cas2 PE=3 SV=1
+			1578128...1578458
+			330
+			t:MGLYFNLSEEEREFAKQKTMFCLIIYDIRSNKRRLKLSKLLEGYGVRVQKSCFEVNLSRNDYQSLLKDIEDFYKADEEDSIIVYVTTKEEVTSFSPYHSAEKLDDILFF
+			r:MGLYFNLSEEEREFAKQKTMFCLIIYDIRSNKRRLKLSKLLEGYGVRVQKSCFEVDLSRNDYQSLLKDIEGFYKADEEDSIIVYVTTKEEVTSFSPYHSAEKLDDILFF
+Gene: tr|A0A0A7HIE4|A0A0A7HIE4_STRTR CRISPR-associated endonuclease Cas1 OS=Streptococcus thermophilus OX=1308 GN=cas1 PE=3 SV=1:1005
+		tr|A0A0A7HIE4|A0A0A7HIE4_STRTR CRISPR-associated endonuclease Cas1 OS=Streptococcus thermophilus OX=1308 GN=cas1 PE=3 SV=1
+			1578457...1579462
+			1005
+			t:MSDLYSQRSNYYLSLSEQRIIIKNDNKEIVKEVSISLVDNVLLFGNAQLTTQLIKALSKNKVNVYYFSNVGQFISSIETHRQDEFQKQELQAKAYFEEDFRLEVARSIATTKVRHQIALLREFDTDGLLDTSDYSRFEDSVNDIQRAYSITEIMGYEGRLAKSYFYYLNLLVPDDFHFNGRSRRTAEDCFNSALNFGYSILYSCLMGLIKKNGLSLGFGVIHKHHQHHATLASDLMEEWRPIIVDNTLMELIRNGKLLLSHFENKDQDFILTDEGREIFAWALRSRILEVHRYIELDKKRYSFLYTADRQIKSLIRAFRELDPSLYETSYTGGH
+			r:MSDLYSQRSNYYLSLSEQRIIIKNDNKEIVKEVSISLVDNVLLFGNAQLTTQLIKALSKNKMNGYYFSNVGQFISSIETHRQDEFQKQELQAKAYFEEDFRLEVARSIATTKVRHQIALLREFDTDGLLDTSDYSRFEDSVNDIQKAYSITEIMGYEGRLAKSYFYYLNLLVPDDFHFNGRSRRPAEDCFNSALNFGYSILYSCLMGLIKKNGLSLGFGVIHKHHQHHATLASDLIEEWRPIIVDNTLMELIRNGKLLLSHFENKDQDFILTDEGREIFARALRSRILEVHQYIELDKKRYSFLYTADRQIKSLIRAFRELDLSLYETSYTGGH
+	
+	
+	1824943:36
+
+Gene: tr|A0A3S4NYR0|A0A3S4NYR0_STRVE CRISPR-associated protein Cas7 OS=Streptococcus vestibularis OX=1343 GN=NCTC12167_00712 PE=4 SV=1:1011
+		tr|A0A3S4NYR0|A0A3S4NYR0_STRVE CRISPR-associated protein Cas7 OS=Streptococcus vestibularis OX=1343 GN=NCTC12167_00712 PE=4 SV=1
+			1827657...1828668
+			1011
+			t:MKFFVQHPYKDRIELNIGAITQIVGQNNELKYYILQILSWYFGGKKYSREDLSIFDYEEPTILDEAREIVKRSSYHYIDISSFKDLLEQMEYKKGTLAHGYLRKIVNQVDIVGHLEKINEQVELIEEAMNRHINLNCGQVEYHLENLPLTLDQLLTKNFSPFFTIENKNLSFEWVSNIDKLSLFLEMLDHLLLQTTEKYLIVLKNIDGFISEESYTIFYRQICHLVKKYPNLTFILFPSDQGYLKIDEENSRFVNILSDQVEHLYDVEFMYERVMKYYPSNDFPTREGFRMSLETVTPYLLTKMLRQPSLSLVDSVILNILNQLFHFSYRIRYSQT
+			r:MKFFVQHPYKERIELNIGVITQIVGQNNELKYYTWQILSWYFGGRKYSSEDLSIFDYEEPTILDETGEIVKRSSYHYIDISSFKDLLEQMEYKKGTLAHDYLSKVVNQVDIVAHLERINEQVELIEETMNRHINLNCGQVEYHLENRPLTLDQLLTKNFSPFFTIENMNLSFEWVSNTDKLSLFLEMLDRLLSQTTEKYLILLKNIDSFISEDSYDSFYKQIDQLVKKYPNLTFILFPSDQGYLKIDEENSKFVNILSDQVEHLYDVEFMYESVAKHYPSNNFPTREDFRISLETVTPYLLTKMLRQPSLSVVDSVILNILNQLFHFSYRIRYSQTSDEKLLQKFLESKD
+Gene: tr|A0A1F0BMV9|A0A1F0BMV9_9STRE CRISPR-associated endoribonuclease Cas2 OS=Streptococcus sp. HMSC078H03 OX=1715086 GN=cas2 PE=3 SV=1:324
+		tr|A0A1F0BMV9|A0A1F0BMV9_9STRE CRISPR-associated endoribonuclease Cas2 OS=Streptococcus sp. HMSC078H03 OX=1715086 GN=cas2 PE=3 SV=1
+			1828664...1828988
+			324
+			t:MRYEALRLLCFFDLPMESKDEKRIYRNFRKELISNGFEMLQFSVYYRTCPNRSFANKFYKKLKMSNLPAGNVRLLAVTEKQFSEMTLIIGGKTKQEEIVSDNKLVVI
+			r:MRYEALRLLCFFDLPMESKDEKRIYRNFRKELISNGFEMLQFSVYYRTCPNRSFANKFYKKLKMSNLPVGNVRLLAVTEKQFSEMTLIIGGKTKQEEIVSDNKLVVI
+Gene: tr|A0A0Y3MAW7|A0A0Y3MAW7_STREE CRISPR-associated endonuclease Cas1 OS=Streptococcus pneumoniae OX=1313 GN=cas1 PE=3 SV=1:4294967147
+		tr|A0A0Y3MAW7|A0A0Y3MAW7_STREE CRISPR-associated endonuclease Cas1 OS=Streptococcus pneumoniae OX=1313 GN=cas1 PE=3 SV=1
+			1829954...1830020
+			66
+			t:RDALHSYLNLAEATKIRLHAE
+			r:MLLQCIIIVTARDALHSYLNLAEATKIRLHAEFNTLSFMAGCFRFGKEENTMTWRIVHVCQSEKMKLKLDNLLIKKMGQEYVIPLSDISIIVAEGGETVVTLRLLSALSKYNIALIVCDNEHLPTGIYHSQNGHFRAYKKLQEQLLWTQEQKDKLWQIVTYFKINNQQDVLAMFEKNIDCIQLLADYKDHIEYEDKTNREGHAAKVYFNELFGKKFVRLTQQETDVINAGLNYGYAIMRAQMARIISGYGLNPLIGIFHKNEYNQFNLVDDLMEPFRQIIDVWVYQNLRDEEYLKYEFRLALTDTLNAKIRYGKETCSVTVAMDKYVKGFLKCISDKDTSKFYCPVVSSIEWS
+		tr|A0A0Y3MAW7|A0A0Y3MAW7_STREE CRISPR-associated endonuclease Cas1 OS=Streptococcus pneumoniae OX=1313 GN=cas1 PE=3 SV=1
+			1829061...1829805
+			744
+			t:PLSDISIIVAEGGDTVVTLRLLSALSKYNIALVVCDNEHLPTGIYHSQNGHFRAYKRLKEQLDWSQKQKDKAWQIVTYYKINNQEDVLAMFEKSLDNIRLLSDYKEQIEPGDRTNREGHAAKVYFNELFGKQFVRVTQQEADVINAGLNYGYAIMRAQMARIVAGYGLNGLLGIFHKNEYNQFNLVDDLMEPFRQIVDVWVYDNLRDQEFLKYEYRLGLTDLLNAKIKYGKETCSVTVAMDKYVKGF
+			r:MLLQCIIIVTARDALHSYLNLAEATKIRLHAEFNTLSFMAGCFRFGKEENTMTWRIVHVCQSEKMKLKLDNLLIKKMGQEYVIPLSDISIIVAEGGETVVTLRLLSALSKYNIALIVCDNEHLPTGIYHSQNGHFRAYKKLQEQLLWTQEQKDKLWQIVTYFKINNQQDVLAMFEKNIDCIQLLADYKDHIEYEDKTNREGHAAKVYFNELFGKKFVRLTQQETDVINAGLNYGYAIMRAQMARIISGYGLNPLIGIFHKNEYNQFNLVDDLMEPFRQIIDVWVYQNLRDEEYLKYEFRLALTDTLNAKIRYGKETCSVTVAMDKYVKGFLKCISDKDTSKFYCPVVSSIEWS
+Gene: sp|Q03LF7|CAS9A_STRTD CRISPR-associated endonuclease Cas9 1 OS=Streptococcus thermophilus (strain ATCC BAA-491 / LMD-9) OX=322159 GN=cas9-1 PE=1 SV=1:3363
+		sp|Q03LF7|CAS9A_STRTD CRISPR-associated endonuclease Cas9 1 OS=Streptococcus thermophilus (strain ATCC BAA-491 / LMD-9) OX=322159 GN=cas9-1 PE=1 SV=1
+			1830078...1833441
+			3363
+			t:MSDLVLGLDIGIGSVGVGILNKVTGEIIHKNSRIFPAAQAENNLVRRTNRQGRRLTRRKKHRRVRLNRLFEESGLITDFTKISINLNPYQLRVKGLTDELSNEELFIALKNMVKHRGISYLDDASDDGNSSVGDYAQIVKENSKQLETKTPGQIQLERYQTYGQLRGDFTVEKDGKKHRLINVFPTSAYRSEALRILQTQQEFNPQITDEFINRYLEILTGKRKYYHGPGNEKSRTDYGRYRTSGETLDNIFGILIGKCTFYPDEFRAAKASYTAQEFNLLNDLNNLTVPTETKKLSKEQKNQIINYVKNEKAMGPAKLFKYIAKLLSCDVADIKGYRIDKSGKAEIHTFEAYRKMKTLETLDIEQMDRETLDKLAYVLTLNTEREGIQEALEHEFADGSFSQKQVDELVQFRKANSSIFGKGWHNFSVKLMMELIPELYETSEEQMTILKRLGKQKTTSSSNKTKYIDEKLLTEEIYNPVVAKSIRQAIKIVNAAIKEYGDFDNIVIEMARETNEDDEKKAIQKIQKANKDEKDAAMLKAANQYNGKAELPHSVFHGHKQLATKIRLWHQQGERCLYTGKTISIHDLINNSNQFEVDHILPLSITFDDSLANKVLVYATANQEKGQRTPYQALDSMDDAWSFRELKAFVRESKTLSNKKKEYLLTEEDISKFDVRKKFIERNLVDTRYASRVVLNALQEHFRAHKIDTKVSVVRGQFTSQLRRHWGIEKTRDTYHHHAVDALIIAASSQLNLWKKQKNTLVSYSEDQLLDIETGELISDDEYKESVFKAPYQHFVDTLKSKEFEDSILFSYQVDSKFNRKISDATIYATRQAKVGKDKKDETYVLGKIKDIYTQDGYDAFMKIYKKDKSKFLMYRHDPQTFEKVIEPILENYPNKQMNEKGKEVPCNPFLKYKEEHGYIRKYSKKGNGPEIKSLKYYDSKLGNHIDITPKDSNNKVVLQSLKPWRTDVYFNKNTGKYEILGLKYSDMQFEKGTGKYSISKEQYENIKVREGVDENSEFKFTLYKNDLLLLKDSENGEQILLRFTSRNDTSKHYVELKPYNRQKFEGSEYLIKSLGTVVKGGRCIKGLGKSNISIYKVRTDVLGNQHIIKNEGDKPKLDF
+			r:MSDLVLGLDIGIGSVGVGILNKVTGEIIHKNSRIFPAAQAENNLVRRTNRQGRRLARRKKHRRVRLNRLFEESGLITDFTKISINLNPYQLRVKGLTDELSNEELFIALKNMVKHRGISYLDDASDDGNSSVGDYAQIVKENSKQLETKTPGQIQLERYQTYGQLRGDFTVEKDGKKHRLINVFPTSAYRSEALRILQTQQEFNPQITDEFINRYLEILTGKRKYYHGPGNEKSRTDYGRYRTSGETLDNIFGILIGKCTFYPDEFRAAKASYTAQEFNLLNDLNNLTVPTETKKLSKEQKNQIINYVKNEKAMGPAKLFKYIAKLLSCDVADIKGYRIDKSGKAEIHTFEAYRKMKTLETLDIEQMDRETLDKLAYVLTLNTEREGIQEALEHEFADGSFSQKQVDELVQFRKANSSIFGKGWHNFSVKLMMELIPELYETSEEQMTILTRLGKQKTTSSSNKTKYIDEKLLTEEIYNPVVAKSVRQAIKIVNAAIKEYGDFDNIVIEMARETNEDDEKKAIQKIQKANKDEKDAAMLKAANQYNGKAELPHSVFHGHKQLATKIRLWHQQGERCLYTGKTISIHDLINNSNQFEVDHILPLSITFDDSLANKVLVYATANQEKGQRTPYQALDSMDDAWSFRELKAFVRESKTLSNKKKEYLLTEEDISKFDVRKKFIERNLVDTRYASRVVLNALQEHFRAHKIDTKVSVVRGQFTSQLRRHWGIEKTRDTYHHHAVDALIIAASSQLNLWKKQKNTLVSYSEDQLLDIETGELISDDEYKESVFKAPYQHFVDTLKSKEFEDSILFSYQVDSKFNRKISDATIYATRQAKVGKDKADETYVLGKIKDIYTQDGYDAFMKIYKKDKSKFLMYRHDPQTFEKVIEPILENYPNKQINEKGKEVPCNPFLKYKEEHGYIRKYSKKGNGPEIKSLKYYDSKLGNHIDITPKDSNNKVVLQSVSPWRADVYFNKTTGKYEILGLKYADLQFEKGTGTYKISQEKYNDIKKKEGVDSDSEFKFTLYKNDLLLVKDTETKEQQLFRFLSRTMPKQKHYVELKPYDKQKFEGGEALIKVLGNVANSGQCKKGLGKSNISIYKVRTDVLGNQHIIKNEGDKPKLDF
+Gene: tr|A0A1L7LID9|A0A1L7LID9_9STRE CRISPR-associated protein, Csn1 family OS=Streptococcus troglodytae OX=1111760 GN=cas5 PE=4 SV=1:1740
+		tr|A0A1L7LID9|A0A1L7LID9_9STRE CRISPR-associated protein, Csn1 family OS=Streptococcus troglodytae OX=1111760 GN=cas5 PE=4 SV=1
+			1831548...1833288
+			1740
+			t:GRRLTRRKKHRRVRLNRLFEESGLITDFTKISINLNPYQLRVKGLTDELSNEELFIALKNMVKHRGISYLDDASDDGNSSVGDYAQIVKENSKQLETKTPGQIQLERYQTYGQLRGDFTVEKDGKKHRLINVFPTSAYRSEALRILQTQQEFNPQITDEFINRYLEILTGKRKYYHGPGNEKSRTDYGRYRTSGETLDNIFGILIGKCTFYPDEFRAAKASYTAQEFNLLNDLNNLTVPTETKKLSKEQKNQIINYVKNEKAMGPAKLFKYIAKLLSCDVADIKGYRIDKSGKAEIHTFEAYRKMKTLETLDIEQMDRETLDKLAYVLTLNTEREGIQEALEHEFADGSFSQKQVDELVQFRKANSSIFGKGWHNFSVKLMMELIPELYETSEEQMTILKRLGKQKTTSSSNKTKYIDEKLLTEEIYNPVVAKSIRQAIKIVNAAIKEYGDFDNIVIEMARETNEDDEKKAIQKIQKANKDEKDAAMLKAANQYNGKAELPHSVFHGHKQLATKIRLWHQQGERCLYTGKTISIHDLINNSNQFEVDHILPLSITFDDSLANKVLVYATANQEKGQRTP
+			r:MTNGKILGLDIGIASVGVGIINAKTGNVEHASSRIFPAANADNNVERRSARGGRRLTRRKKHRLKRVEDLFDKYNIDTDFSNLNLNPYQLRVKGLNEQLSNEELFAALKNIAKRRGISYLDDAEDDSVGGTDYAKSIDENRKLLKKQTPGEIQLKRLENYGQLRGNFTIQDENGDYHRLINVFSTSDYVKEAQRILKTQSYYNKFITESFVEDYIKILQGKRKYYVGPGNEKSRTDYGIYRTDGETLDNLFGILIGKCSFYPEEYRAAKASYTAQEYNFLNDLNNLTVPTETKKLSTEEKYQLVDFAKTASTLGAAKLLKEIAKLVGCQVEEIKGYRLDNKDKPDLHTFEPFRKLKSNLTTIAVENLSITTLDTLAHILTLNTEREGIEEAIQKELPNIFSDEQITEIIAVRKKNSQIFGKGWHSFSIKLMKELIPELYETSEEQKTILTRLKKVKVNNKITSRTKYINEEEITDEIYNPVVSKSIRQTVKIINAAIKKYGEFDQIVIEMPRESNEEDERKFIADLQKSNAKEKDDAMKQAALLYNGKDELPHDVFHGHKELATKIRLWYQQGERCLYSGKHIDIHDLIHNQNMFEIDHVLPLSLSFDDSLANKVLVYSWANQEKGQRTPFQALPQMASAWSFRELRDYISKQKGISKKNVTIC
+9171ms stdrun
+
+
+12311ms main

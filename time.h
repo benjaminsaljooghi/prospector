@@ -8,8 +8,6 @@ inline std::chrono::_V2::system_clock::time_point time()
     return std::chrono::high_resolution_clock::now();
 }
 
-
-
 inline std::chrono::_V2::system_clock::time_point time(const std::chrono::_V2::system_clock::time_point& start, const char* message, const char* indent)
 {
     auto curr = time();

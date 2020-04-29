@@ -93,6 +93,7 @@
         "__memory": "cpp",
         "ios": "cpp",
         "locale": "cpp",
-        "csignal": "cpp"
+        "csignal": "cpp",
+        "regex": "cpp"
     }
 }

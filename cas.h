@@ -25,6 +25,7 @@ struct Translation
 struct CasProfile
 {
     string name;
+    string gn;
     string raw;
     vector<string> kmers;
     vector<ui> encoded_kmers;
@@ -66,7 +67,7 @@ namespace CasUtil
     static const string stop = "Z";
     static const char stop_c = 'Z';
     static const ui upstream_size = 10000;
-    static const ui k = 4; // k * encoding size cannot exceed word size.
+    static const ui k = 5; // k * encoding size cannot exceed word size.
 
     vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
     vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
