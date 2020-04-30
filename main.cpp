@@ -280,8 +280,8 @@ int main()
     // write(cas_file, cache_file);
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
 
-    stdrun(genomes["thermophilus"], cas_profiles);
-    // stdrun(genomes["pyogenes"], cas_profiles);
+    // stdrun(genomes["thermophilus"], cas_profiles);
+    stdrun(genomes["pyogenes"], cas_profiles);
     time(start, "main");
 
     return 0;                                                                                                           

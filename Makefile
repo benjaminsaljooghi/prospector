@@ -8,7 +8,7 @@
 # $(B)/blast.o: blast.* $(B)/util.o $(B)/crispr.o
 	# $(CPP) -c $(BLAST_ARGS) $(INC_NCBI) blast.cpp -o $(B)/blast.o
 
-OPT = -O0
+OPT = -O3
 CPP = g++-9 $(OPT) --std=gnu++2a -g -Wall -fopenmp
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp $(OPT) 
 B = build
