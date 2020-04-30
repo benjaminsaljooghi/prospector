@@ -516,11 +516,11 @@ ui CasUtil::gen_n(CasProfile& profile)
 }
 
 
-regex re("Cas[0-9]*|Csm[0-9]*|Csn[0-9]*");
+regex re("cas[0-9]+|csm[0-9]+|csn[0-9]+", regex_constants::icase);
 
 map<string, string> gn_resolution
 {
-    {"Csn1", "Cas9"},
+    {"csn1", "cas9"},
 };
 
 string gn_from_name(string& name)
@@ -535,7 +535,8 @@ string gn_from_name(string& name)
     }
     else
     {
-        auto final_val = m[0];
+        auto final_val = string(m[0]);
+        std::transform(final_val.begin(), final_val.end(), final_val.begin(), ::tolower);
 
         if (gn_resolution.contains(final_val))
         {
