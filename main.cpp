@@ -208,7 +208,7 @@ string cas_file = "crispr-data/cas/cas.fasta";
 string cache_file = "crispr-data/cas/cache.fasta";
 
 
-void stdrun(const vector<CasProfile> cas_profiles, const string& genome)
+void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const string& genome_name)
 {
 
     // DEBUG HOOK
@@ -218,7 +218,7 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome)
     // fmt::print("{}\n", translation);
     // exit(0);
 
-    // auto start_run = time();
+    auto start_run = time();
 
     vector<Crispr> crisprs = get_crisprs(genome);
     vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
@@ -227,7 +227,7 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome)
     CrisprUtil::print(genome, crisprs);
     CasUtil::print_fragments(crisprs, fragments, genome);
 
-    // start_run = time(start_run, genome.first.c_str());
+    start_run = time(start_run, genome_name.c_str());
 }
 
 int main()
@@ -247,7 +247,7 @@ int main()
     // cas_profiles = Debug::cas_filter(cas_profiles, "Cas6"); // DEBUG HOOK
 
     auto genomes = Util::load_genomes(genome_dir);
-    for (auto genome : genomes) stdrun(cas_profiles, genome.second);
+    for (auto genome : genomes) stdrun(cas_profiles, genome.second, genome.first);
     // stdrun(cas_profiles, genomes["thermophilus"]);
     
     start_main = time(start_main, "prospector");

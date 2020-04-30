@@ -280,13 +280,13 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     return fragments;
 }
 
+
+
 void print_gene(Gene& gene)
 {
     ui size = gene.size();
     fmt::print("\t{}:{}:{}\n", gene.reference_profile->gn, size, gene.reference_profile->name);
     fmt::print("\t{}\n", gene.reference_profile->raw);
-    // vector<Fragment> fragments = gene.fragments;
-    // sort(fragments.begin(), fragments.end(), [](const Fragment& a, const Fragment&b) {  return a.details->genome_start < b.details->genome_start; });
     for (const Fragment& fragment : gene.fragments)
     {
         fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
@@ -296,6 +296,13 @@ void print_gene(Gene& gene)
 }
 
 
+string crispr_string(const Crispr& c)
+{
+    return fmt::format("{}:{}\n", c.start, c.k);
+}
+
+
+
 Gene gene_from_fragments(vector<Fragment>& fragments)
 {
     Gene gene;
@@ -303,13 +310,6 @@ Gene gene_from_fragments(vector<Fragment>& fragments)
     gene.fragments = fragments;
     return gene;
 }
-
-
-vector<Gene> all_genes(vector<Gene> genes)
-{
-    return genes;
-}
-
 
 
 vector<Gene> best_genes(vector<Gene> genes)
@@ -329,45 +329,8 @@ vector<Gene> best_genes(vector<Gene> genes)
     return __genes;
 }
 
-bool gene_overlap(const Gene& a, const Gene& b)
-{
-    return Util::any_overlap(
-                           a.fragments[0].details->genome_start,
-        a.fragments[a.fragments.size()-1].details->genome_final,
-                           b.fragments[0].details->genome_start,
-        b.fragments[b.fragments.size()-1].details->genome_final
-    );
-}
 
-// vector<Gene> post_best_overlap_genes(vector<Gene> genes)
-// {
-//     vector<Gene> filtered;
-//     for (ui i = 0; i < genes.size(); i++)
-//     {
-//         bool include_i = true;
-//         for (ui j = 0; j < genes.size(); j++)
-//         {
-//             if (i == j)
-//                 continue;
-
-//             if (gene_overlap(genes[i], genes[j]))
-//             {
-//                 if (genes[i].size() < genes[j].size())
-//                 {
-//                     include_i = false;
-//                     break;
-//                 }
-//             }
-
-//         }
-
-//         if (include_i)
-//             filtered.push_back(genes[i]);
-//     }
-//     return filtered;
-// }
-
-void print_fragments(vector<Fragment>& fragments, const string& genome)
+vector<Gene> genes_from_fragments(vector<Fragment>& fragments)
 {
     map<string, vector<Fragment>> gene_fragments;
     for (Fragment& a : fragments)
@@ -377,27 +340,52 @@ void print_fragments(vector<Fragment>& fragments, const string& genome)
     for (auto gene : gene_fragments)
         genes.push_back(gene_from_fragments(gene.second));
 
+    genes = best_genes(genes);
+    sort(genes.begin(), genes.end(), [](const Gene& a, const Gene& b) { return a.fragments[0].details->genome_start < b.fragments[0].details->genome_start; } );
 
-    auto funcy = best_genes; vector<Gene> __genes = funcy(genes);
-    // auto funcy2 = post_best_overlap_genes; __genes = funcy2(__genes);
-
-    sort(__genes.begin(), __genes.end(), [](const Gene& a, const Gene& b) { return a.fragments[0].details->genome_start < b.fragments[0].details->genome_start; } );
-
-    for (Gene& gene : __genes)
-        print_gene(gene);
+    return genes;
 }
 
 
-string crispr_string(const Crispr& c)
+
+
+map<string, string> class_lookup
 {
-    return fmt::format("{}:{}\n", c.start, c.k);
-}
+    {"I",   "1"},
+    {"III", "1"},
+    {"IV",  "1"},
+    {"II",  "2"},
+    {"V",   "2"},
+    {"VI",  "2"},
+    {"?",   "?"},
+};
 
+map<string, string> type_lookup
+{
+    {"cas3",  "I"},
+    {"cas10", "III"},
+    {"cas8",  "IV"},
+    {"cas9",  "II"},
+    {"cas12", "V"},
+    {"cas13", "VI"},
+};
+
+string crispr_type(vector<Gene> genes)
+{
+    for (Gene& gene : genes)
+    {
+        if (type_lookup.contains(gene.reference_profile->gn))
+        {
+            return type_lookup.at(gene.reference_profile->gn);
+        }
+    }
+    return "?";
+}
 
 void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome)
 {
 
-    map<string, vector<Fragment>> crispr_buckets;
+    map<string, vector<Fragment>> crispr_fragments;
     for (const Crispr& c : crisprs)
     {
         string c_string = crispr_string(c);
@@ -405,54 +393,35 @@ void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragme
         {
             if (f.reference_crispr->start == c.start && f.reference_crispr->k == c.k)
             {
-                crispr_buckets[c_string].push_back(f);
+                crispr_fragments[c_string].push_back(f);
             }
         }
     }
 
-    for (const Crispr& c : crisprs) // keep crispr sort order
+    map<string, vector<Gene>> crispr_genes;
+    for (const Crispr& c : crisprs)
     {
         string c_string = crispr_string(c);
-        fmt::print("\n{}", c_string);
-        print_fragments(crispr_buckets[c_string], genome);
+        crispr_genes[c_string] = genes_from_fragments(crispr_fragments.at(c_string));
+    }
+
+    for (const Crispr& c : crisprs)
+    {
+        string c_string = crispr_string(c);
+        vector<Gene> genes = crispr_genes.at(c_string);
+
+        string _type = crispr_type(genes);
+        string _class = class_lookup.at(_type);
+
+        fmt::print("\n{}:{}:{}", _class, _type, c_string);
+        
+        for (Gene& gene : genes)
+        {
+            print_gene(gene);
+        }
+
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -608,22 +577,6 @@ vector<CasProfile> CasUtil::load(string uniprot, function<ui(CasProfile&)> get_n
 
     return profiles;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
