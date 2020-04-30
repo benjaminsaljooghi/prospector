@@ -2,7 +2,6 @@
 
 #include "stdafx.h"
 #include "util.h"
-#include "blast.h"
 
 
 class Crispr

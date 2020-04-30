@@ -5,7 +5,6 @@
 #include "crispr.h"
 #include "util.h"
 #include "prospector.h"
-#include "blast.h"
 #include "cas.h"
 
 #include "time.h"
