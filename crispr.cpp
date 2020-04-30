@@ -372,18 +372,6 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
 }
 
 
-
-
-// map<string, int> CrisprUtil::get_spacer_scores(vector<Crispr>& crisprs, string target_db_path)
-// {
-//     set<string> all_spacers;
-//     for (Crispr& crispr : crisprs)
-//         all_spacers.insert(crispr.spacers.begin(), crispr.spacers.end());
-//     return BLAST(all_spacers, target_db_path);
-// }
-
-
-
 void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, ui end)
 {
 
