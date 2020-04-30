@@ -233,56 +233,49 @@ vector<Crispr> get_crisprs(const string& genome)
 }
 
 
-void stdrun(const string& genome, const vector<CasProfile>& cas_profiles)
+vector<CasProfile> read(string cas_file, string cache_file)
 {
-    auto start = time();
-
-    vector<Crispr> crisprs = get_crisprs(genome);
-    vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
-    vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
-
-    CrisprUtil::print(genome, crisprs);
-    CasUtil::print_fragments(crisprs, fragments, genome);
-
-    time(start, "stdrun");
-    fmt::print("\n\n");
+    CasUtil::load_cache(cache_file);
+    return CasUtil::load(cas_file, CasUtil::get_n);
 }
 
 void write(string cas_file, string cache_file)
 {
     vector<CasProfile> cas_profiles = CasUtil::load(cas_file, CasUtil::gen_n);
     CasUtil::write_cache(cache_file, cas_profiles);
-    fmt::print("cache written, exiting...\n");
-    exit(0);
 }
 
-vector<CasProfile> read(string cas_file, string cache_file)
-{
-    CasUtil::load_cache("crispr-data/cas/cache.fasta");
-    vector<CasProfile> cas_profiles = CasUtil::load(cas_file, CasUtil::get_n);
-    return cas_profiles;
-}
+string genome_dir = "crispr-data/genome";
+string cas_file = "crispr-data/cas/cas.fasta";
+string cache_file = "crispr-data/cas/cache.fasta";
 
 int main()
 {
     Prospector::device_init();
 
-    printf("running main...\n");
-    auto start = time();
+    printf("prospector initialized\n");
 
-    string genome_dir = "crispr-data/genome";
-    string cas_file = "crispr-data/cas/cas.fasta";
-    string cache_file = "crispr-data/cas/cache.fasta";
+    auto start_main = time();
 
-    map<string, string> genomes = Util::load_genomes(genome_dir);
+    if (!filesystem::exists(cache_file))
+        write(cas_file, cache_file);
 
-    // write(cas_file, cache_file);
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
+    for (auto genome : Util::load_genomes(genome_dir))
+    {
+        auto start_run = time();
 
-    // stdrun(genomes["thermophilus"], cas_profiles);
-    stdrun(genomes["pyogenes"], cas_profiles);
-    time(start, "main");
+        vector<Crispr> crisprs = get_crisprs(genome.second);
+        vector<Translation> flanks = CasUtil::get_translations(genome.second, crisprs);
+        vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome.second);
 
+        CrisprUtil::print(genome.second, crisprs);
+        CasUtil::print_fragments(crisprs, fragments, genome.second);
+
+        time(start_run, genome.first.c_str());
+    }
+    
+    start_main = time(start_main, "prospector");
     return 0;                                                                                                           
 }
 

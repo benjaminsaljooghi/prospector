@@ -25,13 +25,21 @@
 
 
 #define DEBUG 0
+
+cudaError_t checkCudaAlways(cudaError_t result)
+{
+    if (result != cudaSuccess)
+    {
+        fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
+        assert(result == cudaSuccess);
+    }
+    return result;
+}
+
 cudaError_t checkCuda(cudaError_t result)
 {
 #if DEBUG == 1
-    if (result != cudaSuccess) {
-    fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
-    assert(result == cudaSuccess);
-  }
+    checkCudaAlways(result);
 #endif
     return result;
 }
@@ -44,7 +52,7 @@ void cudaWait()
 void Prospector::device_init()
 {
     std::chrono::_V2::system_clock::time_point start = time();
-    cudaFree(0);
+    checkCudaAlways ( cudaFree(0) );
     time(start, "device init");
 }
 
@@ -62,6 +70,7 @@ __device__ ui scheme(const char c)
             return 3;
     }
     assert(0);
+    return 0;
 }
 
 __global__ void compute_encoding(const char* genome, ui* genome_encoding, ui genome_size, ui genome_encoding_size)

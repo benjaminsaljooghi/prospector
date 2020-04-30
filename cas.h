@@ -28,7 +28,6 @@ struct CasProfile
     string gn;
     string raw;
     vector<string> kmers;
-    vector<ui> encoded_kmers;
     set<ui> encoded_kmer_set;
     ui* hash_table;
     ui N;

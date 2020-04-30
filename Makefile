@@ -3,7 +3,7 @@ CPP = g++-9 $(OPT) --std=gnu++2a -g -Wall -fopenmp
 NVCC = /usr/local/cuda/bin/nvcc --std=c++14 -g -G -Xcompiler -fopenmp $(OPT) 
 B = build
 
-.PHONY: build rebuild clean
+.PHONY: run build rebuild clean
 run: build
 	$(B)/main.out
 build: $(B)/main.out
@@ -24,6 +24,8 @@ $(B)/dlinked.o: $(B)/prospector.o
 	$(NVCC) -dlink $(B)/prospector.o -o $(B)/dlinked.o
 $(B)/prospector.o: prospector.*
 	$(NVCC) -dc prospector.cu -o $(B)/prospector.o
+
+
 
 PROSP = $(B)/prospector.o $(B)/dlinked.o
 LIB = -L/usr/local/cuda/lib64 -lcudart -L/usr/local/lib -lfmt

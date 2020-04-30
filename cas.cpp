@@ -151,15 +151,15 @@ string translate_domain(const string& domain)
 vector<ui> kmers_encoded(vector<string> kmers)
 {
     assert(kmers[0].size() == CasUtil::k);
-    vector<ui> encoded;
-    for (string kmer : kmers)
+    vector<ui> encoded(kmers.size());
+    memset(&encoded[0], 0, sizeof(ui) * kmers.size());
+    for (ui j = 0; j < kmers.size(); j++)
     {
-        ui kmer_int = 0;
+        string kmer = kmers[j];
         for (ui i = 0; i < CasUtil::k; i++)
         {
-            kmer_int += amino_encoding[kmer[i]] << CasUtil::k * i;
+            encoded[j] += amino_encoding[kmer[i]] << CasUtil::k * i;
         }
-        encoded.push_back(kmer_int);
     }
     return encoded;
 }
@@ -294,10 +294,10 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
     bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
 
     #pragma omp parallel for
-    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
+    for (ull cas_i = 0; cas_i < num_cas; cas_i++)
     {  
         const CasProfile& cas_profile = cas_profiles[cas_i];
-        for (ull translation_i = 0; translation_i < translations.size(); translation_i++)
+        for (ull translation_i = 0; translation_i < num_translations; translation_i++)
         {
             for (ui i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
             {
@@ -327,9 +327,9 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     ull per_cas = per_translation * num_translations;
 
     vector<Fragment> fragments;
-    for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
+    for (ull cas_i = 0; cas_i < num_cas; cas_i++)
     {
-        for (ull translation_i = 0; translation_i < translations.size(); translation_i++)
+        for (ull translation_i = 0; translation_i < num_translations; translation_i++)
         {
             vector<ull> index;
             for (ull i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
@@ -371,11 +371,11 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
 void print_gene(const Gene& gene)
 {
     ui size = gene.size();
-    fmt::print("Gene: {}:{}\n", gene.reference_profile->name, size);
+    fmt::print("\t{}:{}\n", gene.reference_profile->name, size);
     for (const Fragment& fragment : gene.fragments)
     {
         fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-        fmt::print("\t\t\t{}\n", fragment.details->quality);
+        // fmt::print("\t\t\t{}\n", fragment.details->quality);
         fmt::print("\t\t\tt:{}\n", fragment.details->translation);
         fmt::print("\t\t\tr:{}\n", fragment.reference_profile->raw);
     }
@@ -455,6 +455,10 @@ void print_fragments(const vector<Fragment>& fragments, const string& genome)
 }
 
 
+string crispr_string(const Crispr& c)
+{
+    return fmt::format("{}:{}\n", c.start, c.k);
+}
 
 
 void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome)
@@ -463,22 +467,21 @@ void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragme
     map<string, vector<Fragment>> crispr_buckets;
     for (const Crispr& c : crisprs)
     {
-        string crispr_string = fmt::format("{}:{}\n", c.start, c.k);
-
+        string c_string = crispr_string(c);
         for (const Fragment& f : fragments)
         {
             if (f.reference_crispr->start == c.start && f.reference_crispr->k == c.k)
             {
-                crispr_buckets[crispr_string].push_back(f);
+                crispr_buckets[c_string].push_back(f);
             }
         }
     }
 
-
-    for (auto pairing : crispr_buckets)
+    for (const Crispr& c : crisprs) // keep crispr sort order
     {
-        fmt::print("\t{}\n", pairing.first);
-        print_fragments(pairing.second, genome);
+        string c_string = crispr_string(c);
+        fmt::print("\n{}", c_string);
+        print_fragments(crispr_buckets[c_string], genome);
     }
 }
 
@@ -531,13 +534,13 @@ ui CasUtil::gen_n(CasProfile& profile)
 }
 
 
+regex re("Cas[0-9]*|Csm[0-9]*|Csn[0-9]*");
+
 string gn_from_name(string& name)
 {
-    regex re("Cas[0-9]*|Csm[0-9]*|Csn[0-9]*");
-
     cmatch m;
     bool result = regex_search(name.c_str(), m, re);
-    
+   
     if (!result)
     {
         fmt::print("gn failure on {}\n", name);
@@ -551,23 +554,13 @@ string gn_from_name(string& name)
 
 vector<CasProfile> prelim_load(string uniprot)
 {
-    auto start = time();
-
     auto fasta = Util::parse_fasta(uniprot);
 
-    vector<string> names;
-    vector<string> raws;
-    for (pair<string, string> element : fasta) 
-    {
-        names.push_back(element.first);
-        raws.push_back(element.second);
-    }
-
     vector<CasProfile> profiles;
-    for (ui i = 0; i < names.size(); i++)
+    for (auto pairing : fasta)
     {
-        string name = names[i];
-        string raw = raws[i];
+        string name = pairing.first;
+        string raw = pairing.second;
         vector<string> kmers = Util::kmerize(raw, CasUtil::k);
         vector<ui> encoded_kmers = kmers_encoded(kmers);
         set<ui> encoded_kmer_set;
@@ -580,9 +573,7 @@ vector<CasProfile> prelim_load(string uniprot)
         string gn = gn_from_name(name);
 
         if (gn == "failure")
-        {
             continue;
-        }
 
         CasProfile cas_profile
         {
@@ -590,20 +581,22 @@ vector<CasProfile> prelim_load(string uniprot)
             gn,
             raw,
             kmers,
-            encoded_kmers,
             encoded_kmer_set,
             nullptr,
             0
         };
         profiles.push_back(cas_profile);
     }
-    start = time(start, "crispr profile load");
     return profiles;
 }
 
 vector<CasProfile> CasUtil::load(string uniprot, function<ui(CasProfile&)> get_n)
 {   
+    auto start = time();
+
     auto profiles = prelim_load(uniprot);
+
+    start = time(start, "prelim load");
 
     for (auto &p : profiles)
     {
@@ -616,6 +609,9 @@ vector<CasProfile> CasUtil::load(string uniprot, function<ui(CasProfile&)> get_n
         }
         p.hash_table = hash_table;
     }
+
+    start = time(start, "postlim load");
+
     return profiles;
 }
 
