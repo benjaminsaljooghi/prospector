@@ -26,7 +26,6 @@ namespace Prospector
 
     void device_init();
     Prospector::Encoding get_genome_encoding(const char* genome, const ui genome_size);
-
     uc* get_qmap_small(const ui* genome_encoding, const ui genome_encoding_size);
     uc* get_qmap_big(const ui* genome_encoding, const ui genome_encoding_size, const ui* queries, const ui queries_size);
 }
