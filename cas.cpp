@@ -166,15 +166,19 @@ vector<ui> kmers_encoded(vector<string> kmers)
 
 vector<vector<ull>> cluster_index(const vector<ull>& indices)
 {
-    vector<vector<ull>> clusters; vector<ull> cluster;
+    vector<vector<ull>> clusters;
+    vector<ull> cluster;
     ull prev = indices[0];
     for (ull index : indices)
     {
         if (index - prev > 5)
         {
-            vector<ull> cluster_cp = cluster; clusters.push_back(cluster_cp); cluster.clear();
+            vector<ull> cluster_cp = cluster; 
+            clusters.push_back(cluster_cp);
+            cluster.clear();
         }
-        cluster.push_back(index); prev = index;
+        cluster.push_back(index);
+        prev = index;
     }
     clusters.push_back(cluster);
     return clusters;
@@ -275,19 +279,21 @@ bool fragment_contains(const Fragment& a, const Fragment& b)
 }
 
 
-
-
-vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations, const string& genome)
+bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations )
 {
-    fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
-    auto start = time();  
+    auto start = time();
 
-    // ull target_map_size = cas_profiles.size() * translations.size() * 3334; // maximum size of a translation is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
-    // bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
-    vector<ui> target_map;
 
-    start = time(start, "target map preparation");
+    ull num_translations = translations.size();
+    ull num_cas = cas_profiles.size();
+    ull per_translation = 3334; // maximum size of a translation is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
+    ull per_cas = per_translation * num_translations;
 
+
+    ull target_map_size = num_cas * per_cas; 
+    bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
+
+    #pragma omp parallel for
     for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
     {  
         const CasProfile& cas_profile = cas_profiles[cas_i];
@@ -297,14 +303,30 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
             {
                 ui query = translations[translation_i].pure_kmerized_encoded[i];
                 auto at_index = cas_profile.hash_table[query % cas_profile.N];
-                target_map.push_back(at_index == query);
+                ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i; 
+                target_map[target_map_index] = at_index == query;
             }
         }
     }
+
     start = time(start, "target map construction");
 
+    return target_map;
+}
+
+vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations, const string& genome)
+{
+    fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
+    auto start = time();  
+
+    bool* target_map = compute_target_map(cas_profiles, translations);
+
+    ull num_translations = translations.size();
+    ull num_cas = cas_profiles.size();
+    ull per_translation = 3334; // maximum size of a translation is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
+    ull per_cas = per_translation * num_translations;
+
     vector<Fragment> fragments;
-    ull target_map_index = 0;
     for (ull cas_i = 0; cas_i < cas_profiles.size(); cas_i++)
     {
         for (ull translation_i = 0; translation_i < translations.size(); translation_i++)
@@ -312,7 +334,8 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
             vector<ull> index;
             for (ull i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
             {
-                if (target_map[target_map_index++])
+                ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i; 
+                if (target_map[target_map_index])
                 {
                     index.push_back(i);
                 }
@@ -331,97 +354,19 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
            
         }
     }
-    start = time(start, "fragments from target map construction");
-
-
+    start = time(start, "target map parse");
 
 
     for (Fragment& a : fragments)
         compute_demarc(a);
-    start = time(start, "compute fragment demarcs");
-
-
-    Util::sort(fragments, [](const Fragment& a, const Fragment& b) {
-        return a.demarc->clust_begin < b.demarc->clust_begin;
-    });
-    start = time(start, "cas sort fragments");
-
-    // vector<Fragment> containment_filtered;
-    // for (ui i = 0; i < fragments.size(); i++)
-    // {
-    //     auto a = fragments[i];
-    //     bool include_a = true;
-    //     for (ui j = 0; j < fragments.size(); j++)
-    //     {
-    //         if (i == j)
-    //             continue;
-
-    //         auto b = fragments[j];
-    //         if (fragment_contains(a, b))
-    //         {
-    //             include_a = false;
-    //             break;
-    //         }
-    //     }
-
-    //     if (include_a)
-    //         containment_filtered.push_back(a);
-    // }
-    // start = time(start, "cas fragment prune");
+    start = time(start, "fragment demarcs");
 
     for (Fragment& a : fragments)
         compute_details(a, genome);
-    start = time(start, "compute fragment details");
-
-
-
-    // vector<Fragment> equivalency_filtered;
-    // for (ui i = 0; i < containment_filtered.size(); i++)
-    // {
-    //     auto a = containment_filtered[i];
-    //     bool include_a = true;
-    //     for (ui j = 0; j < containment_filtered.size(); j++)
-    //     {
-    //         auto b = containment_filtered[j];
-    //         if (i == j) 
-    //             continue;
-    //         if (fragment_equivalent(a, b))
-    //         {
-    //             if (a.details->quality < b.details->quality)
-    //             {
-    //                 include_a = false; break;
-    //             }
-    //         }
-    //     }
-
-    //     if (include_a)
-    //         equivalency_filtered.push_back(a);
-
-    // }
-    // start = time(start, "cas equivalency prune");
-
-
-    // Are there multiple fragments aligned to the same name?
-
+    start = time(start, "fragment details");
 
     return fragments;
 }
-
-
-struct Gene
-{
-    vector<Fragment> fragments;
-    const CasProfile* reference_profile;
-
-    // eventually replace these functions with cached versions
-    
-    ui size() const
-    {
-        return fragments[fragments.size()-1].details->genome_final - fragments[0].details->genome_start;
-    }
-};
-
-
 
 void print_gene(const Gene& gene)
 {
@@ -429,7 +374,6 @@ void print_gene(const Gene& gene)
     fmt::print("Gene: {}:{}\n", gene.reference_profile->name, size);
     for (const Fragment& fragment : gene.fragments)
     {
-        fmt::print("\t\t{}\n", fragment.reference_profile->name);
         fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
         fmt::print("\t\t\t{}\n", fragment.details->quality);
         fmt::print("\t\t\tt:{}\n", fragment.details->translation);
@@ -609,11 +553,11 @@ vector<CasProfile> prelim_load(string uniprot)
 {
     auto start = time();
 
-    auto loading = Util::parse_fasta(uniprot);
+    auto fasta = Util::parse_fasta(uniprot);
 
     vector<string> names;
     vector<string> raws;
-    for (pair<string, string> element : loading) 
+    for (pair<string, string> element : fasta) 
     {
         names.push_back(element.first);
         raws.push_back(element.second);

@@ -34,7 +34,6 @@ struct CasProfile
     ui N;
 };
 
-
 struct FragDetails
 {
     ull genome_start;
@@ -58,6 +57,18 @@ struct Fragment
 
     FragDetails* details;
     FragDemarc* demarc;
+};
+
+struct Gene
+{
+    vector<Fragment> fragments;
+    const CasProfile* reference_profile;
+
+    // eventually replace these functions with cached versions
+    ui size() const
+    {
+        return fragments[fragments.size()-1].details->genome_final - fragments[0].details->genome_start;
+    }
 };
 
 
