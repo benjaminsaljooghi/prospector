@@ -8,6 +8,7 @@
 #include "cas.h"
 
 #include "time.h"
+#include "debug.h"
 
 
 ui difference_cpu(const ui& _a, const ui& _b)
@@ -76,37 +77,9 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 }
 
 
-// void debug_map()
-// {
-//     // ui query = 1283501;
-//     // ui q = genome_encoding[query];
-//     // for (ui i = 0; i < 1000; i++)
-//     // {
-//     //     ui pos = query + Prospector::k_start + Prospector::spacer_skip + i;
-//     //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
-
-//     //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
-//     // }
-// }
 
 
-// visualzie proximals
-// for ( auto const& [query, proximal] : proximal_targets)
-// {
-//     // vector<ui> proximals = proximal_targets[q_i];
-//     if (proximal.size() >= Prospector::repeats_min)
-//     {
-//         // ui query = queries[q_i];
-//         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
-//         for (ui target : proximal)
-//         {
-//             // ui qmap_index = q_i * Prospector::map_size_big + t_i;
-//             // ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
-//             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
-//         }
-//     }
-//     fmt::print("\n");
-// }
+
 
 
 vector<Crispr> prospector_main(const string& genome)
@@ -140,37 +113,22 @@ vector<Crispr> prospector_main(const string& genome)
             }
         }
 
-        // if any of these proximals are included in an existing proximal, then we cannot include
-        bool include = true;
-
         // remove any exact subsetting
+        auto check = [&]() {
+            for ( auto const& [query, proximal] : proximal_targets)
+                for (ui p : proximals)
+                    if (Util::contains(proximal, p))
+                        return false;
+            return true;
+        };
 
-        for ( auto const& [query, proximal] : proximal_targets)
-        {
-            for (ui p : proximals)
-            {
-                if (Util::contains(proximal, p))
-                {
-                    include = false;
-                    break;
-                }
-            }
-            if (include == false)
-            {
-                break;
-            }
-        }
-
-        if (include)
-        {
+        if (check())
             proximal_targets[query] = proximals;
-        }
+
     }
 
 
-
     vector<Crispr> all_crisprs;
-
     for ( auto const& [query, proximal] : proximal_targets)
     {
         vector<Crispr> candidates;
@@ -190,7 +148,6 @@ vector<Crispr> prospector_main(const string& genome)
 
                 if (mutant(genome.c_str(), encoding.encoding, k, allowed_mutations, query, target))
                     genome_indices.push_back(target);
-
             }
 
             if (genome_indices.size() >= Prospector::repeats_min)
@@ -224,11 +181,12 @@ vector<Crispr> get_crisprs(const string& genome)
 {
     vector<Crispr> crisprs = prospector_main(genome);      
     CrisprUtil::cache_crispr_information(genome, crisprs);
-    // CrisprUtil::debug(crisprs, genome, 1085431-1000, 1086854+1000);
     crisprs = Util::filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
     crisprs = CrisprUtil::get_domain_best(crisprs);
     Util::sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
+
+    // crisprs = Debug::crispr_filter(crisprs, 1471635, 1771635); // DEBUG HOOK
     return crisprs;
 }
 
@@ -249,8 +207,32 @@ string genome_dir = "crispr-data/genome";
 string cas_file = "crispr-data/cas/cas.fasta";
 string cache_file = "crispr-data/cas/cache.fasta";
 
+
+void stdrun(const vector<CasProfile> cas_profiles, const string& genome)
+{
+
+    // DEBUG HOOK
+    // string domain = genome.substr(1576908, 1577640 - 1576908);
+    // string domain = genome.substr(1578128, 	1578458 - 1578128);
+    // string translation = Util::translate_domain(domain);
+    // fmt::print("{}\n", translation);
+    // exit(0);
+
+    // auto start_run = time();
+
+    vector<Crispr> crisprs = get_crisprs(genome);
+    vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
+    vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
+
+    CrisprUtil::print(genome, crisprs);
+    CasUtil::print_fragments(crisprs, fragments, genome);
+
+    // start_run = time(start_run, genome.first.c_str());
+}
+
 int main()
 {
+
     Prospector::device_init();
 
     printf("prospector initialized\n");
@@ -261,19 +243,12 @@ int main()
         write(cas_file, cache_file);
 
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
-    for (auto genome : Util::load_genomes(genome_dir))
-    {
-        auto start_run = time();
 
-        vector<Crispr> crisprs = get_crisprs(genome.second);
-        vector<Translation> flanks = CasUtil::get_translations(genome.second, crisprs);
-        vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome.second);
+    // cas_profiles = Debug::cas_filter(cas_profiles, "Cas6"); // DEBUG HOOK
 
-        CrisprUtil::print(genome.second, crisprs);
-        CasUtil::print_fragments(crisprs, fragments, genome.second);
-
-        time(start_run, genome.first.c_str());
-    }
+    auto genomes = Util::load_genomes(genome_dir);
+    for (auto genome : genomes) stdrun(cas_profiles, genome.second);
+    // stdrun(cas_profiles, genomes["thermophilus"]);
     
     start_main = time(start_main, "prospector");
     return 0;                                                                                                           

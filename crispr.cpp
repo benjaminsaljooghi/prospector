@@ -207,7 +207,7 @@ void Crispr::print_generic(const string& genome, function<void(string)>& print_s
 void Crispr::print(const string& genome, map<string, int> spacer_scores)
 {
 	function<void(string)> print_spacer = [&](string spacer) {
-		printf("%d/%zd", spacer_scores[spacer], spacer.length());
+		// printf("%d/%zd", spacer_scores[spacer], spacer.length());
 	};
 
 	print_generic(genome, print_spacer);
@@ -216,14 +216,10 @@ void Crispr::print(const string& genome, map<string, int> spacer_scores)
 void Crispr::print(const string& genome)
 {
 	function<void(string)> print_spacer = [](string spacer) {
-		printf("%d/%zd", -1, spacer.length());
+		// printf("%d/%zd", -1, spacer.length());
 	};
 	print_generic(genome, print_spacer);
 }
-
-
-
-// CrisprUtil
 
 
 bool CrisprUtil::heuristic_less(const Crispr& a, const Crispr& b)
@@ -287,25 +283,15 @@ bool CrisprUtil::repeat_subset(Crispr a, Crispr b)
 	return true;
 }
 
-
 bool CrisprUtil::any_overlap(const Crispr& a, const Crispr& b)
 {
-
 	ui a_start = a.genome_indices[0];
-	ui a_end = a.genome_indices[a.size - 1] + a.k - 1;
-
+	ui a_final = a.genome_indices[a.size - 1] + a.k - 1;
 	ui b_start = b.genome_indices[0];
-	ui b_end = b.genome_indices[b.size - 1] + b.k - 1;
-
-
-	bool a_before_b = a_start <= b_start;
-	bool b_before_a = b_start <= a_start;
-
-	bool a_bleeds_into_b = a_before_b && a_end >= b_start;
-	bool b_bleeds_into_a = b_before_a && b_end >= a_start;
-
-	return a_bleeds_into_b || b_bleeds_into_a;
+	ui b_final = b.genome_indices[b.size - 1] + b.k - 1;
+	return Util::any_overlap(a_start, a_final, b_start, b_final);
 }
+
 
 
 vector<Crispr> CrisprUtil::get_domain_best(vector<Crispr> crisprs)
@@ -371,20 +357,3 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
     time(start, "cache crisprs");
 }
 
-
-void CrisprUtil::debug(vector<Crispr> crisprs, const string& genome, ui start, ui end)
-{
-
-    vector<Crispr> filtered = Util::filter(crisprs, [&](Crispr c) { return c.start > start && c.end < end; } );
-
-    // sort(filtered.begin(), filtered.end(), CrisprUtil::heuristic_less);
-
-    int how_many = filtered.size();
-    for (ull i = filtered.size()-how_many; i < filtered.size(); i++)
-	{
-        filtered[i].print(genome);
-	}
-
-	fmt::print("terminating after debug\n");
-	exit(0);
-}

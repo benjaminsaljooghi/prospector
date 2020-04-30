@@ -1,3 +1,6 @@
+#pragma once
+
+
 //std
 #include "stdafx.h"
 #include <filesystem>
@@ -8,6 +11,8 @@ namespace fs = std::filesystem;
 //proj
 #include "util.h"
 #include "crispr.h"
+
+
 
 struct Translation
 {
@@ -63,7 +68,7 @@ struct Gene
     vector<Fragment> fragments;
     const CasProfile* reference_profile;
 
-    // eventually replace these functions with cached versions
+    // eventually replace these functions with cached versions?
     ui size() const
     {
         return fragments[fragments.size()-1].details->genome_final - fragments[0].details->genome_start;
@@ -74,10 +79,10 @@ struct Gene
 
 namespace CasUtil
 {
-    static const string stop = "Z";
-    static const char stop_c = 'Z';
+
     static const ui upstream_size = 10000;
     static const ui k = 5; // k * encoding size cannot exceed word size.
+    static const ui cluster_metric_min = 5;
 
     vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
     vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
@@ -92,3 +97,4 @@ namespace CasUtil
     vector<CasProfile> load(string, function<ui(CasProfile&)> get_n);
 
 }
+

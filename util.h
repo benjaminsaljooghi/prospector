@@ -1,9 +1,110 @@
 #pragma once
 #include "stdafx.h"
 
+
+
+
+
 namespace Util
 {
-	const map <char, char> complement_table = {
+    static const string stop = "Z";
+    static const char stop_c = 'Z';
+
+	static const map <string, string> codon_table = {
+		{"TTT", "F"},
+		{"TTC", "F"},
+		{"TTA", "L"},
+		{"TTG", "L"},
+		{"CTT", "L"},
+		{"CTC", "L"},
+		{"CTA", "L"},
+		{"CTG", "L"},
+		{"ATT", "I"},
+		{"ATC", "I"},
+		{"ATA", "I"},
+		{"ATG", "M"},
+		{"GTT", "V"},
+		{"GTC", "V"},
+		{"GTA", "V"},
+		{"GTG", "V"},
+		{"TCT", "S"},
+		{"TCC", "S"},
+		{"TCA", "S"},
+		{"TCG", "S"},
+		{"CCT", "P"},
+		{"CCC", "P"},
+		{"CCA", "P"},
+		{"CCG", "P"},
+		{"ACT", "T"},
+		{"ACC", "T"},
+		{"ACA", "T"},
+		{"ACG", "T"},
+		{"GCT", "A"},
+		{"GCC", "A"},
+		{"GCA", "A"},
+		{"GCG", "A"},
+		{"TAT", "Y"},
+		{"TAC", "Y"},
+		{"TAA", stop},
+		{"TAG", stop},
+		{"CAT", "H"},
+		{"CAC", "H"},
+		{"CAA", "Q"},
+		{"CAG", "Q"},
+		{"AAT", "N"},
+		{"AAC", "N"},
+		{"AAA", "K"},
+		{"AAG", "K"},
+		{"GAT", "D"},
+		{"GAC", "D"},
+		{"GAA", "E"},
+		{"GAG", "E"},
+		{"TGT", "C"},
+		{"TGC", "C"},
+		{"TGA", stop},
+		{"TGG", "W"},
+		{"CGT", "R"},
+		{"CGC", "R"},
+		{"CGA", "R"},
+		{"CGG", "R"},
+		{"AGT", "S"},
+		{"AGC", "S"},
+		{"AGA", "R"},
+		{"AGG", "R"},
+		{"GGT", "G"},
+		{"GGC", "G"},
+		{"GGA", "G"},
+		{"GGG", "G"}
+	};
+
+	static const map<char, ui> amino_encoding {
+		{'F', 0},
+		{'L', 1},
+		{'I', 2},
+		{'M', 3},
+		{'V', 4},
+		{'S', 5},
+		{'P', 6},
+		{'T', 7},
+		{'A', 8},
+		{'Y', 9},
+		{'H', 10},
+		{'Q', 11},
+		{'N', 12},
+		{'K', 13},
+		{'D', 14},
+		{'E', 15},
+		{'C', 16},
+		{'W', 17},
+		{'R', 18},
+		{'G', 19},
+		{'X', 20}, // any amino acid, not sure how to handle this
+	};
+
+
+
+	static const map <char, char> complement_table =
+	{
 		{'A', 'T'},
 		{'T', 'A'},
 		{'C', 'G'},
@@ -11,6 +112,11 @@ namespace Util
 		{'N', 'N'},
 		{'n', 'n'},
 	};
+
+
+	string translate_domain(const string& domain);
+	bool any_overlap(ui a, ui b, ui x, ui y);
+
 
 	template <typename T> void print_vector(vector<T> a)
 	{

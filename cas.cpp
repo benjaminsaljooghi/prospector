@@ -45,108 +45,7 @@ size_t uiLevenshteinDistance(const std::string &s1, const std::string &s2)
 }
 
 
-const map <string, string> codon_table = {
-    {"TTT", "F"},
-    {"TTC", "F"},
-    {"TTA", "L"},
-    {"TTG", "L"},
-    {"CTT", "L"},
-    {"CTC", "L"},
-    {"CTA", "L"},
-    {"CTG", "L"},
-    {"ATT", "I"},
-    {"ATC", "I"},
-    {"ATA", "I"},
-    {"ATG", "M"},
-    {"GTT", "V"},
-    {"GTC", "V"},
-    {"GTA", "V"},
-    {"GTG", "V"},
-    {"TCT", "S"},
-    {"TCC", "S"},
-    {"TCA", "S"},
-    {"TCG", "S"},
-    {"CCT", "P"},
-    {"CCC", "P"},
-    {"CCA", "P"},
-    {"CCG", "P"},
-    {"ACT", "T"},
-    {"ACC", "T"},
-    {"ACA", "T"},
-    {"ACG", "T"},
-    {"GCT", "A"},
-    {"GCC", "A"},
-    {"GCA", "A"},
-    {"GCG", "A"},
-    {"TAT", "Y"},
-    {"TAC", "Y"},
-    {"TAA", CasUtil::stop},
-    {"TAG", CasUtil::stop},
-    {"CAT", "H"},
-    {"CAC", "H"},
-    {"CAA", "Q"},
-    {"CAG", "Q"},
-    {"AAT", "N"},
-    {"AAC", "N"},
-    {"AAA", "K"},
-    {"AAG", "K"},
-    {"GAT", "D"},
-    {"GAC", "D"},
-    {"GAA", "E"},
-    {"GAG", "E"},
-    {"TGT", "C"},
-    {"TGC", "C"},
-    {"TGA", CasUtil::stop},
-    {"TGG", "W"},
-    {"CGT", "R"},
-    {"CGC", "R"},
-    {"CGA", "R"},
-    {"CGG", "R"},
-    {"AGT", "S"},
-    {"AGC", "S"},
-    {"AGA", "R"},
-    {"AGG", "R"},
-    {"GGT", "G"},
-    {"GGC", "G"},
-    {"GGA", "G"},
-    {"GGG", "G"}
-};
 
-map<char, ui> amino_encoding {
-    {'F', 0},
-    {'L', 1},
-    {'I', 2},
-    {'M', 3},
-    {'V', 4},
-    {'S', 5},
-    {'P', 6},
-    {'T', 7},
-    {'A', 8},
-    {'Y', 9},
-    {'H', 10},
-    {'Q', 11},
-    {'N', 12},
-    {'K', 13},
-    {'D', 14},
-    {'E', 15},
-    {'C', 16},
-    {'W', 17},
-    {'R', 18},
-    {'G', 19},
-};
-
-string translate_domain(const string& domain)
-{
-    ull codon_size = 3;
-    string raw = "";
-    for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
-    {
-        string codon = domain.substr(i, codon_size);
-        string amino_acid = codon_table.at(codon);
-        raw += amino_acid;
-    }
-    return raw;
-}
 
 vector<ui> kmers_encoded(vector<string> kmers)
 {
@@ -158,7 +57,7 @@ vector<ui> kmers_encoded(vector<string> kmers)
         string kmer = kmers[j];
         for (ui i = 0; i < CasUtil::k; i++)
         {
-            encoded[j] += amino_encoding[kmer[i]] << CasUtil::k * i;
+            encoded[j] += Util::amino_encoding.at(kmer[i]) << CasUtil::k * i;
         }
     }
     return encoded;
@@ -185,13 +84,14 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
 }
 
 
-const ui cluster_metric_min = 5;
+/// next step: initiate programmatic diagnosis of specific fragments. Perhaps just something that loads in only Cas6 (by name)
+
 
 bool good_clusters(const vector<vector<ull>>& clusters)
 {
     for (vector<ull> cluster : clusters)
     {   
-        if (cluster.size() > cluster_metric_min)
+        if (cluster.size() > CasUtil::cluster_metric_min)
         {
             return true;
         }
@@ -202,7 +102,7 @@ bool good_clusters(const vector<vector<ull>>& clusters)
 ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 {
     for (const vector<ull>& cluster : clusters)
-        if (cluster.size() > cluster_metric_min)
+        if (cluster.size() > CasUtil::cluster_metric_min)
             return cluster[0];
     assert(false); return -1;
 }
@@ -210,7 +110,7 @@ ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 ull demarc_final_clusters(const vector<vector<ull>>& clusters)
 {
     for (ull i = clusters.size()-1; i >= 0; i--)
-        if (clusters[i].size() > cluster_metric_min)
+        if (clusters[i].size() > CasUtil::cluster_metric_min)
             return clusters[i][clusters[i].size()-1];
     assert(false); return -1;
 }
@@ -251,7 +151,7 @@ void compute_details(Fragment& fragment, const string& genome)
     
     string domain = genome.substr(genome_start, genome_final - genome_start);
     domain = fragment.reference_translation->pos ? domain : Util::reverse_complement(domain);
-    string translation = translate_domain(domain);
+    string translation = Util::translate_domain(domain);
     string profile = fragment.reference_profile->raw;
 
     // size_t distance = uiLevenshteinDistance(translation, profile);
@@ -314,6 +214,14 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
     return target_map;
 }
 
+
+// void debug_clusters(const vector<vector<ull>>& clusters)
+// {
+//     for (vector<ull> cluster : clusters) 
+//         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
+// }
+
+
 vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations, const string& genome)
 {
     fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
@@ -346,6 +254,10 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
 
             vector<vector<ull>> clusters = cluster_index(index);    
             
+
+            // fmt::print("{}:{}\n", cas_i, translation_i);
+            // debug_clusters(clusters);
+
             if (!good_clusters(clusters))
                 continue;
 
@@ -368,90 +280,111 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     return fragments;
 }
 
-void print_gene(const Gene& gene)
+void print_gene(Gene& gene)
 {
     ui size = gene.size();
-    fmt::print("\t{}:{}\n", gene.reference_profile->name, size);
+    fmt::print("\t{}:{}:{}\n", gene.reference_profile->gn, size, gene.reference_profile->name);
+    fmt::print("\t{}\n", gene.reference_profile->raw);
+    // vector<Fragment> fragments = gene.fragments;
+    // sort(fragments.begin(), fragments.end(), [](const Fragment& a, const Fragment&b) {  return a.details->genome_start < b.details->genome_start; });
     for (const Fragment& fragment : gene.fragments)
     {
         fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-        // fmt::print("\t\t\t{}\n", fragment.details->quality);
-        fmt::print("\t\t\tt:{}\n", fragment.details->translation);
-        fmt::print("\t\t\tr:{}\n", fragment.reference_profile->raw);
+        fmt::print("\t\t\t{}\n", fragment.details->translation);
     }
+    fmt::print("\n");
 }
 
 
-void print_fragments(const vector<Fragment>& fragments, const string& genome)
+Gene gene_from_fragments(vector<Fragment>& fragments)
 {
-    map<string, vector<Fragment>> name_map; // associates unique names with fragments
-    for (const Fragment& a : fragments)
-    {
-        name_map[a.reference_profile->name].push_back(a);
-    }
-
-    vector<Gene> genes;
-    for (auto pairing : name_map)
-    {
-        Gene gene;
-        gene.fragments = pairing.second;
-        gene.reference_profile = pairing.second[0].reference_profile;
-        genes.push_back(gene);
-    }
-
-    // ALL
-    // map<string, vector<Gene>> types;
-    // for (auto gene : genes)
-    // {
-    //     types[gene.reference_profile->gn].push_back(gene);
-
-    //     sort(types[gene.reference_profile->gn].begin(), types[gene.reference_profile->gn].end(), 
-    //         [](const Gene& a, const Gene& b) { return a.size() < b.size(); 
-    //     });
-    // }
-    // for (const pair<string, vector<Gene>>& pairing : types)
-    // {
-    //     for (const Gene& gene : pairing.second)
-    //     {
-    //         print_gene(gene, pairing.first);
-    //     }
-    // }
+    Gene gene;
+    gene.reference_profile = fragments[0].reference_profile;
+    gene.fragments = fragments;
+    return gene;
+}
 
 
-    // BEST
+vector<Gene> all_genes(vector<Gene> genes)
+{
+    return genes;
+}
+
+
+
+vector<Gene> best_genes(vector<Gene> genes)
+{
     map<string, Gene> types;
-    for (auto gene : genes)
+    for (const Gene& gene : genes)
     {
         auto gn = gene.reference_profile->gn;
-        if (types.contains(gene.reference_profile->gn))
-        {
-            // we already have an existing gn. Is the current gene better?
-            if (gene.size() > types.at(gn).size())
-            {
-                types[gn] = gene;
-            }
-        }
-        else
-        {
-            // we do not have an existing gn. Use this one.
-            types[gn] = gene;
-        }   
+        if (types.contains(gn) && gene.size() <= types.at(gn).size())
+            continue;
+        types[gn] = gene;
     }
-
-
-    // expose out genes to be sorted
     vector<Gene> __genes;
     for (auto pairing : types)
-    {
         __genes.push_back(pairing.second);
-    }
+        
+    return __genes;
+}
+
+bool gene_overlap(const Gene& a, const Gene& b)
+{
+    return Util::any_overlap(
+                           a.fragments[0].details->genome_start,
+        a.fragments[a.fragments.size()-1].details->genome_final,
+                           b.fragments[0].details->genome_start,
+        b.fragments[b.fragments.size()-1].details->genome_final
+    );
+}
+
+// vector<Gene> post_best_overlap_genes(vector<Gene> genes)
+// {
+//     vector<Gene> filtered;
+//     for (ui i = 0; i < genes.size(); i++)
+//     {
+//         bool include_i = true;
+//         for (ui j = 0; j < genes.size(); j++)
+//         {
+//             if (i == j)
+//                 continue;
+
+//             if (gene_overlap(genes[i], genes[j]))
+//             {
+//                 if (genes[i].size() < genes[j].size())
+//                 {
+//                     include_i = false;
+//                     break;
+//                 }
+//             }
+
+//         }
+
+//         if (include_i)
+//             filtered.push_back(genes[i]);
+//     }
+//     return filtered;
+// }
+
+void print_fragments(vector<Fragment>& fragments, const string& genome)
+{
+    map<string, vector<Fragment>> gene_fragments;
+    for (Fragment& a : fragments)
+        gene_fragments[a.reference_profile->name].push_back(a);
+
+    vector<Gene> genes;
+    for (auto gene : gene_fragments)
+        genes.push_back(gene_from_fragments(gene.second));
+
+
+    auto funcy = best_genes; vector<Gene> __genes = funcy(genes);
+    // auto funcy2 = post_best_overlap_genes; __genes = funcy2(__genes);
 
     sort(__genes.begin(), __genes.end(), [](const Gene& a, const Gene& b) { return a.fragments[0].details->genome_start < b.fragments[0].details->genome_start; } );
 
-    for (const Gene& gene : __genes)
-    {
+    for (Gene& gene : __genes)
         print_gene(gene);
-    }
 }
 
 
@@ -484,6 +417,55 @@ void CasUtil::print_fragments(const vector<Crispr>& crisprs, const vector<Fragme
         print_fragments(crispr_buckets[c_string], genome);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void CasUtil::write_cache(string file, vector<CasProfile> profiles)
 {
@@ -536,6 +518,11 @@ ui CasUtil::gen_n(CasProfile& profile)
 
 regex re("Cas[0-9]*|Csm[0-9]*|Csn[0-9]*");
 
+map<string, string> gn_resolution
+{
+    {"Csn1", "Cas9"},
+};
+
 string gn_from_name(string& name)
 {
     cmatch m;
@@ -548,7 +535,13 @@ string gn_from_name(string& name)
     }
     else
     {
-        return m[0];
+        auto final_val = m[0];
+
+        if (gn_resolution.contains(final_val))
+        {
+            return gn_resolution.at(final_val);
+        }
+        return final_val;
     }    
 }
 
@@ -615,11 +608,27 @@ vector<CasProfile> CasUtil::load(string uniprot, function<ui(CasProfile&)> get_n
     return profiles;
 }
 
-void debug_clusters(const vector<vector<ull>>& clusters)
-{
-    for (vector<ull> cluster : clusters) 
-        fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 vector<Translation> get_triframe(const string& genome, ull genome_start, ull genome_end, bool pos)
@@ -635,7 +644,7 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
         translation.genome_start = pos ? genome_start + frame : genome_start;
         translation.genome_end = pos ? genome_end : genome_end - frame;
 
-        translation.raw = translate_domain(domain.substr(frame));
+        translation.raw = Util::translate_domain(domain.substr(frame));
 
 		translation.pure = "";
 
@@ -643,7 +652,7 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
 		ull index = 0;
 		for (char elem : translation.raw )
 		{
-			if (elem == CasUtil::stop_c)
+			if (elem == Util::stop_c)
 			{
 				stop_count++;
 				continue;

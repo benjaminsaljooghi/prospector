@@ -1,5 +1,29 @@
 #include "util.h"
 
+string Util::translate_domain(const string& domain)
+{
+	ull codon_size = 3;
+	string raw = "";
+	for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
+	{
+		string codon = domain.substr(i, codon_size);
+		string amino_acid = codon_table.at(codon);
+		raw += amino_acid;
+	}
+	return raw;
+}
+
+bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
+{
+	bool a_before_b = a_start <= b_start;
+	bool b_before_a = b_start <= a_start;
+
+	bool a_bleeds_into_b = a_before_b && a_final >= b_start;
+	bool b_bleeds_into_a = b_before_a && b_final >= a_start;
+
+	return a_bleeds_into_b || b_bleeds_into_a;
+}
+
 
 map<string, string> Util::parse_fasta (string file_path)
 {
