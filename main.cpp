@@ -31,7 +31,7 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
     {
         for (ui i = 0; i < Prospector::map_size_small; i++)
         {
-            if (qmap[(query * Prospector::map_size_small) + i] <= (Prospector::size / Prospector::mutant_tolerance_ratio))
+            if (qmap[(query * Prospector::map_size_small) + i] <= (Prospector::size / Prospector::repeat_tolerance_ratio))
             {
                 queries.push_back(query);
                 break;
@@ -66,7 +66,7 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
     }
     const ui checked_so_far = (chunks * Prospector::size);
 
-    return diff <= checked_so_far / Prospector::mutant_tolerance_ratio;
+    return diff <= checked_so_far / Prospector::repeat_tolerance_ratio;
 
     // for (ui __i = checked_so_far; i < k; __i++)
     // {
@@ -97,7 +97,7 @@ vector<Crispr> prospector_main(const string& genome)
     auto start = time();
 
     map<ui, vector<ui>> proximal_targets;
-    ui tolerance = 16 / Prospector::mutant_tolerance_ratio;
+    ui tolerance = 16 / Prospector::repeat_tolerance_ratio;
 
     for (ui q_i = 0; q_i < queries.size(); q_i++)
     {
@@ -134,7 +134,7 @@ vector<Crispr> prospector_main(const string& genome)
         vector<Crispr> candidates;
         for (ui k = Prospector::k_end-1; k >= Prospector::k_start; k--)
         {
-            ui allowed_mutations = k / Prospector::mutant_tolerance_ratio;
+            ui allowed_mutations = k / Prospector::repeat_tolerance_ratio;
 
             vector<ui> genome_indices;
 
