@@ -27,6 +27,7 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
     auto start = time();
     // ui count = 0;
     vector<ui> queries;
+     
     for (ui query = 0; query < genome_encoding_size - 200; query++)
     {
         for (ui i = 0; i < Prospector::map_size_small; i++)
