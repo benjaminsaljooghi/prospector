@@ -209,6 +209,9 @@ string cas_file = "crispr-data/cas/cas.fasta";
 string cache_file = "crispr-data/cas/cache.fasta";
 
 
+
+
+
 void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const string& genome_name)
 {
 
@@ -224,9 +227,10 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const s
     vector<Crispr> crisprs = get_crisprs(genome);
     vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
     vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
+    auto genes = CasUtil::assemble_fragments(crisprs, fragments);
 
     CrisprUtil::print(genome, crisprs);
-    CasUtil::print_fragments(crisprs, fragments, genome);
+    CasUtil::print_fragments(crisprs, genes);
 
     start_run = time(start_run, genome_name.c_str());
 }

@@ -86,7 +86,10 @@ namespace CasUtil
 
     vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
     vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
-    void print_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments, const string& genome);
+    
+
+    map<string, vector<Gene>> assemble_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments);
+    void print_fragments(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes);
 
     ui get_n(CasProfile& profile);
     ui gen_n(CasProfile& profile);
