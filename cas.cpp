@@ -282,32 +282,6 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
 
 
 
-void print_gene_summary(Gene& gene)
-{
-    ui size = gene.size();
-    fmt::print("\t{}:{}\n", gene.reference_profile->gn, size);
-    // fmt::print("\t{}\n", gene.reference_profile->raw);
-    for (const Fragment& fragment : gene.fragments)
-    {
-        fmt::print("\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-        // fmt::print("\t\t\t{}\n", fragment.details->translation);
-    }
-    fmt::print("\n");
-}
-
-void print_gene(Gene& gene)
-{
-    ui size = gene.size();
-    fmt::print("\t{}:{}:{}\n", gene.reference_profile->gn, size, gene.reference_profile->name);
-    fmt::print("\t{}\n", gene.reference_profile->raw);
-    for (const Fragment& fragment : gene.fragments)
-    {
-        fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-        fmt::print("\t\t\t{}\n", fragment.details->translation);
-    }
-    fmt::print("\n");
-}
-
 
 string crispr_string(const Crispr& c)
 {
@@ -420,6 +394,31 @@ map<string, vector<Gene>> CasUtil::assemble_fragments(const vector<Crispr>& cris
     return crispr_genes;
 }
 
+
+void print_gene_summary(Gene& gene)
+{
+    fmt::print("\t{}\n", gene.reference_profile->gn);
+    for (const Fragment& fragment : gene.fragments)
+    {
+        fmt::print("\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
+    }
+    fmt::print("\n");
+}
+
+void print_gene_debug(Gene& gene)
+{
+    ui size = gene.size();
+    fmt::print("\t{}:{}:{}\n", gene.reference_profile->gn, size, gene.reference_profile->name);
+    fmt::print("\t{}\n", gene.reference_profile->raw);
+    for (const Fragment& fragment : gene.fragments)
+    {
+        fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
+        fmt::print("\t\t\t{}\n", fragment.details->translation);
+    }
+    fmt::print("\n");
+}
+
+
 void CasUtil::print_fragments(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes)
 {
     for (const Crispr& c : crisprs)
@@ -430,12 +429,14 @@ void CasUtil::print_fragments(const vector<Crispr>& crisprs, const map<string, v
         string _type = crispr_type(genes);
         string _class = class_lookup.at(_type);
 
-        fmt::print("\n{}:{}:{}", _class, _type, c_string);
         
         for (Gene& gene : genes)
         {
             print_gene_summary(gene);
         }
+
+        fmt::print("{}:{}:{}\n\n", _class, _type, c_string);
+
 
     }
 }
