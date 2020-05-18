@@ -194,7 +194,7 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
     bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
 
     #pragma omp parallel for
-    for (ull cas_i = 0; cas_i < num_cas; cas_i++)
+    for (signed long cas_i = 0; cas_i < num_cas; cas_i++)
     {  
         const CasProfile& cas_profile = cas_profiles[cas_i];
         for (ull translation_i = 0; translation_i < num_translations; translation_i++)

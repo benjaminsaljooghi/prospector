@@ -350,7 +350,7 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr>& 
 {
     auto start = time();
     #pragma omp parallel for
-    for (ull i = 0; i < crisprs.size(); i++)
+    for (signed long i = 0; i < crisprs.size(); i++)
     {
         crisprs[i].update(genome);
 	}

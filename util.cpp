@@ -142,7 +142,7 @@ map<string, string> Util::load_genomes(string dir)
 {
     map<string, string> genomes;
     for (const auto& entry : filesystem::directory_iterator(dir))
-        genomes[entry.path().stem()] = (parse_fasta_single(entry.path()));
+        genomes[entry.path().stem().string()] = (parse_fasta_single(entry.path().string()));
     return genomes;
 }
 

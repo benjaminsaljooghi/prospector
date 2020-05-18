@@ -204,9 +204,11 @@ void write(string cas_file, string cache_file)
     CasUtil::write_cache(cache_file, cas_profiles);
 }
 
-string genome_dir = "crispr-data/genome";
-string cas_file = "crispr-data/cas/cas.fasta";
-string cache_file = "crispr-data/cas/cache.fasta";
+
+string basedir = "D:\\prospector\\";
+string genome_dir = basedir + "crispr-data/genome";
+string cas_file = basedir + "crispr-data/cas/cas.fasta";
+string cache_file = basedir + "crispr-data/cas/cache.fasta";
 
 
 
