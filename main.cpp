@@ -77,12 +77,6 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
     
 }
 
-
-
-
-
-
-
 vector<Crispr> prospector_main(const string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
@@ -186,8 +180,6 @@ vector<Crispr> get_crisprs(const string& genome)
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
     crisprs = CrisprUtil::get_domain_best(crisprs);
     Util::sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
-
-    // crisprs = Debug::crispr_filter(crisprs, 1471635, 1771635); // DEBUG HOOK
     return crisprs;
 }
 
@@ -205,58 +197,43 @@ void write(string cas_file, string cache_file)
 }
 
 
-string basedir = "D:\\prospector\\";
-string genome_dir = basedir + "crispr-data/genome";
-string cas_file = basedir + "crispr-data/cas/cas.fasta";
-string cache_file = basedir + "crispr-data/cas/cache.fasta";
-
-
-
-
-
 void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const string& genome_name)
 {
-
-    // DEBUG HOOK
-    // string domain = genome.substr(1576908, 1577640 - 1576908);
-    // string domain = genome.substr(1578128, 	1578458 - 1578128);
-    // string translation = Util::translate_domain(domain);
-    // fmt::print("{}\n", translation);
-    // exit(0);
 
     auto start_run = time();
 
     vector<Crispr> crisprs = get_crisprs(genome);
     vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
     vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
-    auto genes = CasUtil::assemble_fragments(crisprs, fragments);
+    map<string, vector<Gene>> genes = CasUtil::assemble_genes(crisprs, fragments);
 
     CrisprUtil::print(genome, crisprs);
-    CasUtil::print_fragments(crisprs, genes);
+    CasUtil::print_genes(crisprs, genes);
 
     start_run = time(start_run, genome_name.c_str());
 }
 
+string genome_dir = "T:\\crispr-impl\\crispr-genome";
+string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
+string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
+
 int main()
 {
-
     Prospector::device_init();
-
-    printf("prospector initialized\n");
-
     auto start_main = time();
-
     if (!filesystem::exists(cache_file))
+    {
         write(cas_file, cache_file);
-
+    }
+        
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
-
-    // cas_profiles = Debug::cas_filter(cas_profiles, "Cas6"); // DEBUG HOOK
-
     auto genomes = Util::load_genomes(genome_dir);
-    for (auto genome : genomes) stdrun(cas_profiles, genome.second, genome.first);
-    // stdrun(cas_profiles, genomes["thermophilus"]);
     
+    for (auto genome : genomes)
+    {
+        stdrun(cas_profiles, genome.second, genome.first);
+    }
+     
     start_main = time(start_main, "prospector");
     return 0;                                                                                                           
 }

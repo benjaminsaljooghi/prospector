@@ -315,10 +315,10 @@ vector<Gene> best_genes(vector<Gene> genes)
 }
 
 
-vector<Gene> genes_from_fragments(vector<Fragment>& fragments)
+vector<Gene> genes_from_fragments(const vector<Fragment>& fragments)
 {
     map<string, vector<Fragment>> gene_fragments;
-    for (Fragment& a : fragments)
+    for (const Fragment& a : fragments)
         gene_fragments[a.reference_profile->name].push_back(a);
 
     vector<Gene> genes;
@@ -368,10 +368,13 @@ string crispr_type(vector<Gene> genes)
 }
 
 
-map<string, vector<Gene>> CasUtil::assemble_fragments(const vector<Crispr>& crisprs, const vector<Fragment>& fragments)
+map<string, vector<Gene>> CasUtil::assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments)
 {
+    //map<string, Crispr> crispr_map;
 
     map<string, vector<Fragment>> crispr_fragments;
+    map<string, vector<Gene>> crispr_genes;
+
     for (const Crispr& c : crisprs)
     {
         string c_string = crispr_string(c);
@@ -384,11 +387,9 @@ map<string, vector<Gene>> CasUtil::assemble_fragments(const vector<Crispr>& cris
         }
     }
 
-    map<string, vector<Gene>> crispr_genes;
-    for (const Crispr& c : crisprs)
+    for (auto const& [c_string, fragments] : crispr_fragments)
     {
-        string c_string = crispr_string(c);
-        crispr_genes[c_string] = genes_from_fragments(crispr_fragments.at(c_string));
+        crispr_genes[c_string] = genes_from_fragments(fragments);
     }
 
     return crispr_genes;
@@ -419,11 +420,17 @@ void print_gene_debug(Gene& gene)
 }
 
 
-void CasUtil::print_fragments(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes)
+void CasUtil::print_genes(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes)
 {
     for (const Crispr& c : crisprs)
     {
         string c_string = crispr_string(c);
+
+        if (!crispr_genes.contains(c_string))
+        {
+            continue;
+        }
+
         vector<Gene> genes = crispr_genes.at(c_string);
 
         string _type = crispr_type(genes);
