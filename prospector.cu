@@ -25,6 +25,9 @@
 
 
 #define DEBUG 0
+#define GRID 32
+#define BLOCK 256
+
 
 cudaError_t checkCudaAlways(cudaError_t result)
 {
@@ -105,7 +108,7 @@ Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui geno
     ui bytes_encoding = sizeof(ui) * encoding_size; 
     er = cudaMalloc(&encoding_d, bytes_encoding); checkCuda(er);
 
-    compute_encoding KERNEL_ARGS3(128, 1024, 0) (d_genome, encoding_d, genome_size, encoding_size);
+    compute_encoding KERNEL_ARGS3(GRID, BLOCK, 0) (d_genome, encoding_d, genome_size, encoding_size);
 
     ui* encoding;
     er = cudaMallocHost(&encoding, bytes_encoding); checkCuda(er);
@@ -184,7 +187,7 @@ uc* Prospector::get_qmap_small(const ui* encoding_d, const ui encoding_size)
     er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
     start = time(start, "qmap small mallochost");
 
-    compute_qmap_small KERNEL_ARGS3(128, 1024, 0) (encoding_d, encoding_size, qmap_d);
+    compute_qmap_small KERNEL_ARGS3(GRID, BLOCK, 0) (encoding_d, encoding_size, qmap_d);
 
     cudaWait();
     start = time(start, "qmap small kernel");
@@ -222,7 +225,7 @@ uc* Prospector::get_qmap_big(const ui* encoding_d, const ui encoding_size, const
     er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
     start = time(start, "qmap big mallochost");
 
-    compute_qmap_big KERNEL_ARGS3(128, 1024, 0) (encoding_d, encoding_size, queries_d, queries_size, qmap_d);
+    compute_qmap_big KERNEL_ARGS3(GRID, BLOCK, 0) (encoding_d, encoding_size, queries_d, queries_size, qmap_d);
     
     cudaWait();
     start = time(start, "qmap big kernel");
