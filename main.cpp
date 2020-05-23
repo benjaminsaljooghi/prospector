@@ -207,8 +207,8 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const s
     vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
     map<string, vector<Gene>> genes = CasUtil::assemble_genes(crisprs, fragments);
 
-    CrisprUtil::print(genome, crisprs);
-    CasUtil::print_genes(crisprs, genes);
+    //CrisprUtil::print(genome, crisprs);
+    CasUtil::print_all(crisprs, genes, genome);
 
     start_run = time(start_run, genome_name.c_str());
 }
@@ -227,6 +227,8 @@ int main()
     }
         
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
+    
+    
     auto genomes = Util::load_genomes(genome_dir);
     
     for (auto genome : genomes)

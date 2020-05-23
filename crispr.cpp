@@ -160,7 +160,7 @@ void Crispr::update(const string& genome)
 }
 
 
-void Crispr::print_generic(const string& genome, function<void(string)>& print_spacer)
+void Crispr::print_generic(const string& genome, function<void(string)>& print_spacer) const
 {
 	// header
 	printf("%d - %d %d\n\n", start, end, k);
@@ -204,7 +204,7 @@ void Crispr::print_generic(const string& genome, function<void(string)>& print_s
 
 }
 
-void Crispr::print(const string& genome, map<string, int> spacer_scores)
+void Crispr::print(const string& genome, map<string, int> spacer_scores) const
 {
 	function<void(string)> print_spacer = [&](string spacer) {
 		// printf("%d/%zd", spacer_scores[spacer], spacer.length());
@@ -213,7 +213,7 @@ void Crispr::print(const string& genome, map<string, int> spacer_scores)
 	print_generic(genome, print_spacer);
 }
 
-void Crispr::print(const string& genome)
+void Crispr::print(const string& genome) const
 {
 	function<void(string)> print_spacer = [](string spacer) {
 		// printf("%d/%zd", -1, spacer.length());

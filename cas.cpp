@@ -420,10 +420,13 @@ void print_gene_debug(Gene& gene)
 }
 
 
-void CasUtil::print_genes(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes)
+void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome)
 {
     for (const Crispr& c : crisprs)
     {
+        c.print(genome);
+
+
         string c_string = crispr_string(c);
 
         if (!crispr_genes.contains(c_string))

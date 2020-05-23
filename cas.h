@@ -89,13 +89,14 @@ namespace CasUtil
     
 
     map<string, vector<Gene>> assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments);
-    void print_genes(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes);
+    void print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome);
 
     ui get_n(CasProfile& profile);
     ui gen_n(CasProfile& profile);
 
 
     void load_cache(string);
+    void print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome);
     void write_cache(string, vector<CasProfile>);
     vector<CasProfile> load(string, function<ui(CasProfile&)> get_n);
 

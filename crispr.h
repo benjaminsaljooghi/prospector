@@ -28,9 +28,9 @@ class Crispr
 
         Crispr(unsigned int, vector<unsigned int>, ull);
         void update(const string& genome);
-        void print_generic(const string& genome, function<void(string)>& print_spacer);
-        void print(const string& genome, map<string, int>);
-        void print(const string& genome);
+        void print_generic(const string& genome, function<void(string)>& print_spacer) const;
+        void print(const string& genome, map<string, int>) const;
+        void print(const string& genome) const;
         // void cache_upstream_aminos(string, ull, unsigned int);
 };
 
