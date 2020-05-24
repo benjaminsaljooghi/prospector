@@ -128,12 +128,35 @@ string Util::seqs_to_fasta (vector <string> seqs)
     return string_stream.str();
 }
 
-vector <string> Util::kmerize (string seq, unsigned int k)
+vector <string> Util::kmerize (string seq, ui k)
 {
 	vector<string> kmers;
-	for (ull i = 0; i < seq.length() - k + 1; i++)
+	for (ui i = 0; i < seq.length() - k + 1; i++)
 		kmers.push_back(seq.substr(i, k));
 	return kmers;
+}
+
+
+vector<ui> Util::encode_amino_kmers(vector<string> kmers, ui k)
+{
+	assert(kmers[0].size() == k);
+	vector<ui> encoded(kmers.size());
+	memset(&encoded[0], 0, sizeof(ui) * kmers.size());
+	for (ui j = 0; j < kmers.size(); j++)
+	{
+		string kmer = kmers[j];
+		
+		if (kmer.find('N') != string::npos || kmer.find('O') != string::npos)
+		{
+			continue;
+		}
+
+		for (ui i = 0; i < k; i++)
+		{
+			encoded[j] += Util::amino_encoding.at(kmer[i]) << k * i;
+		}
+	}
+	return encoded;
 }
 
 

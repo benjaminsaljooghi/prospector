@@ -218,6 +218,8 @@ namespace Util
 	string reverse_complement(string);
 	int mismatch_count(string);
 	string seqs_to_fasta(vector<string>);
-	vector<string> kmerize(string, unsigned int);
+	vector<string> kmerize(string, ui);
+	vector<ui> encode_amino_kmers(vector<string>, ui);
+
     map<string, string> load_genomes(string dir);
 }

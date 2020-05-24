@@ -8,7 +8,7 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
     ull prev = indices[0];
     for (ull index : indices)
     {
-        if (index - prev > 5)
+        if (index - prev > CasUtil::cluster_definition)
         {
             vector<ull> cluster_cp = cluster; 
             clusters.push_back(cluster_cp);
@@ -74,18 +74,18 @@ void compute_details(Fragment& fragment, const string& genome)
     if (fragment.reference_translation->pos)
     {
         genome_start = fragment.reference_translation->genome_start + (raw_pos_start * 3); 
-        genome_final = fragment.reference_translation->genome_start + ((raw_pos_end + CasUtil::k) * 3) + 3;
+        genome_final = fragment.reference_translation->genome_start + ((raw_pos_end + CasProfileUtil::k) * 3) + 3;
     }
     else
     {
         genome_final = fragment.reference_translation->genome_end - (raw_pos_start * 3);
-        genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + CasUtil::k) * 3) + 3 );
+        genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + CasProfileUtil::k) * 3) + 3 );
     }
     
     string domain = genome.substr(genome_start, genome_final - genome_start);
     domain = fragment.reference_translation->pos ? domain : Util::reverse_complement(domain);
     string translation = Util::translate_domain(domain);
-    string profile = fragment.reference_profile->raw;
+    //string profile = fragment.reference_profile->raw;
 
     // size_t distance = uiLevenshteinDistance(translation, profile);
 
@@ -130,10 +130,19 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
         {
             for (ui i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
             {
-                ui query = translations[translation_i].pure_kmerized_encoded[i];
-                auto at_index = cas_profile.hash_table[query % cas_profile.N];
-                ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i; 
-                target_map[target_map_index] = at_index == query;
+                //ui query = translations[translation_i].pure_kmerized_encoded[i];
+                string query_kmer = translations[translation_i].pure_kmerized[i];
+
+                ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i;
+
+                //auto at_index = cas_profile.hash_table[query % cas_profile.N]; 
+                //bool contains = at_index == query;
+
+                //bool contains = cas_profile.hash_table.contains(query);
+
+                bool contains = std::find(cas_profile.hash_table.begin(), cas_profile.hash_table.end(), query_kmer) != cas_profile.hash_table.end();
+
+                target_map[target_map_index] = contains;
             }
         }
     }
@@ -230,7 +239,7 @@ vector<Gene> genes_from_fragments(const vector<Fragment>& fragments)
 {
     map<string, vector<Fragment>> gene_fragments;
     for (const Fragment& a : fragments)
-        gene_fragments[a.reference_profile->name].push_back(a);
+        gene_fragments[a.reference_profile->gn].push_back(a);
 
     vector<Gene> genes;
     for (auto gene : gene_fragments)
@@ -315,8 +324,8 @@ void print_gene_summary(Gene& gene)
 void print_gene_debug(Gene& gene)
 {
     ui size = gene.size();
-    fmt::print("\t{}:{}:{}\n", gene.reference_profile->gn, size, gene.reference_profile->name);
-    fmt::print("\t{}\n", gene.reference_profile->raw);
+    fmt::print("\t{}:{}\n", gene.reference_profile->gn, size/*, gene.reference_profile->name*/);
+    //fmt::print("\t{}\n", gene.reference_profile->raw);
     for (const Fragment& fragment : gene.fragments)
     {
         fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
@@ -347,7 +356,7 @@ void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<
         
         for (Gene& gene : genes)
         {
-            print_gene_summary(gene);
+            print_gene_debug(gene);
         }
 
         fmt::print("{}:{}:{}\n\n", _class, _type, c_string);
@@ -393,8 +402,8 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
 			translation.pure_mapping.push_back(index + stop_count);
 			index++;
 		}
-        translation.pure_kmerized = Util::kmerize(translation.pure, CasUtil::k);
-        translation.pure_kmerized_encoded = kmers_encoded(translation.pure_kmerized);
+        translation.pure_kmerized = Util::kmerize(translation.pure, CasProfileUtil::k);
+        translation.pure_kmerized_encoded = Util::encode_amino_kmers(translation.pure_kmerized, CasProfileUtil::k);
         translations.push_back(translation);
     }
     return translations;

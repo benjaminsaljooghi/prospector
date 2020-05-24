@@ -5,6 +5,7 @@
 #include "cas.h"
 #include "time.h"
 #include "debug.h"
+#include "cas_profiles.h"
 
 
 ui difference_cpu(const ui& _a, const ui& _b)
@@ -76,17 +77,12 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
 vector<Crispr> prospector_main(const string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
-
     uc* qmap = Prospector::get_qmap_small(encoding.encoding_d, encoding.size);
-
     vector<ui> queries = get_candidate_queries(qmap, encoding.size);
-    
     uc* qmap_big = Prospector::get_qmap_big(encoding.encoding_d, encoding.size, &queries[0], queries.size());
 
     // vector<vector<ui>> proximal_targets;
-
     auto start = time();
-
     map<ui, vector<ui>> proximal_targets;
     ui tolerance = 16 / Prospector::repeat_tolerance_ratio;
 
@@ -126,11 +122,8 @@ vector<Crispr> prospector_main(const string& genome)
         for (ui k = Prospector::k_end-1; k >= Prospector::k_start; k--)
         {
             ui allowed_mutations = k / Prospector::repeat_tolerance_ratio;
-
             vector<ui> genome_indices;
-
             genome_indices.push_back(query);
-
             for (ui target : proximal)
             {
                 ui end = genome_indices[genome_indices.size()-1] + k;
@@ -239,8 +232,9 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const s
 string genome_dir = "T:\\crispr-impl\\crispr-genome";
 string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
 string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
+string uniprot_dl = "T:\\supp-stuff\\uniprot-CRISPR-associated.fasta\\uniprot-CRISPR-associated.fasta";
 
-
+string cas9_tigrfam = "T:\\supp-stuff\\TIGRFAMs_15.0_SEED.tar\\TIGR01865.SEED";
 
 
 int main()
@@ -248,19 +242,26 @@ int main()
 
     Prospector::device_init();
     auto start_main = time();
-    if (!filesystem::exists(cache_file))
+
+    /*if (!filesystem::exists(cache_file))
     {
         write(cas_file, cache_file);
     }
-        
-    vector<CasProfile> cas_profiles = read(cas_file, cache_file);
+    */    
+    //vector<CasProfile> cas_profiles = read(cas_file, cache_file);
     
+
+    //auto cas_profiles = CasProfileUtil::cas_profiles_from_uniprot_download(uniprot_dl);
+    auto cas9 = CasProfileUtil::cas_profile_from_tigrfam(cas9_tigrfam);
+    
+    vector<CasProfile> cas_profiles;
+
+    cas_profiles.push_back(cas9);
+
+
     auto genomes = Util::load_genomes(genome_dir);
-    
     for (auto genome : genomes)
-    {
         stdrun(cas_profiles, genome.second, genome.first);
-    }
      
     start_main = time(start_main, "prospector");
     return 0;                                                                                                           

@@ -22,11 +22,12 @@
     <ClCompile Include="cas.cpp" />
     <ClCompile Include="crispr.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="serializer.cpp" />
+    <ClCompile Include="cas_profiles.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cas.h" />
+    <ClInclude Include="cas_profiles.h" />
     <ClInclude Include="crispr.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="prospector.h" />

@@ -1,16 +1,17 @@
 #pragma once
 
-//std
 #include "stdafx.h"
 #include <filesystem>
 #include "fmt/core.h"
 #include "fmt/format.h"
-namespace fs = std::filesystem;
 
-//proj
+
 #include "util.h"
 #include "crispr.h"
+#include "cas_profiles.h"
 
+
+namespace fs = std::filesystem;
 
 struct Translation
 {
@@ -34,12 +35,6 @@ struct Translation
 //    set<ui> encoded_kmer_set;
 //};
 
-struct CasProfile
-{
-    string gn;
-    ui* hash_table;
-    ui N;
-};
 
 struct FragDetails
 {
@@ -78,28 +73,16 @@ struct Gene
 };
 
 
-
 namespace CasUtil
 {
-
     static const ui upstream_size = 10000;
-    static const ui k = 5; // k * encoding size cannot exceed word size.
     static const ui cluster_metric_min = 5;
+    static const ui cluster_definition = 5;
 
-    //vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
-    //vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
-    //
+    vector<Translation> get_translations(const string& genome, const vector<Crispr>&);    
+    vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
+    map<string, vector<Gene>> assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments);
+    void print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome);
 
-    //map<string, vector<Gene>> assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments);
-    //void print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome);
-
-    //ui get_n(CasProfile& profile);
-    //ui gen_n(CasProfile& profile);
-
-
-    //void load_cache(string);
-    //void print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome);
-    //void write_cache(string, vector<CasProfile>);
-    //vector<CasProfile> load(string, function<ui(CasProfile&)> get_n);
 }
 
