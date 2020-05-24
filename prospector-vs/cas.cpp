@@ -1,67 +1,5 @@
 #include "cas.h"
 
-#include <regex>
-
-size_t uiLevenshteinDistance(const std::string &s1, const std::string &s2)
-{
-  const size_t m(s1.size());
-  const size_t n(s2.size());
- 
-  if( m==0 ) return n;
-  if( n==0 ) return m;
- 
-  size_t *costs = new size_t[n + 1];
- 
-  for( size_t k=0; k<=n; k++ ) costs[k] = k;
- 
-  size_t i = 0;
-  for ( std::string::const_iterator it1 = s1.begin(); it1 != s1.end(); ++it1, ++i )
-  {
-    costs[0] = i+1;
-    size_t corner = i;
-
-    size_t j = 0;
-    for ( std::string::const_iterator it2 = s2.begin(); it2 != s2.end(); ++it2, ++j )
-    {
-        size_t upper = costs[j+1];
-        if( *it1 == *it2 )
-        {
-            costs[j+1] = corner;
-        }
-        else
-        {
-        size_t t(upper<corner?upper:corner);
-        costs[j+1] = (costs[j]<t?costs[j]:t)+1;
-        }
-
-        corner = upper;
-    }
-  }
- 
-  size_t result = costs[n];
-  delete [] costs;
- 
-  return result;
-}
-
-
-
-
-vector<ui> kmers_encoded(vector<string> kmers)
-{
-    assert(kmers[0].size() == CasUtil::k);
-    vector<ui> encoded(kmers.size());
-    memset(&encoded[0], 0, sizeof(ui) * kmers.size());
-    for (ui j = 0; j < kmers.size(); j++)
-    {
-        string kmer = kmers[j];
-        for (ui i = 0; i < CasUtil::k; i++)
-        {
-            encoded[j] += Util::amino_encoding.at(kmer[i]) << CasUtil::k * i;
-        }
-    }
-    return encoded;
-}
 
 vector<vector<ull>> cluster_index(const vector<ull>& indices)
 {
@@ -82,10 +20,6 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
     clusters.push_back(cluster);
     return clusters;
 }
-
-
-/// next step: initiate programmatic diagnosis of specific fragments. Perhaps just something that loads in only Cas6 (by name)
-
 
 bool good_clusters(const vector<vector<ull>>& clusters)
 {
@@ -114,7 +48,6 @@ ull demarc_final_clusters(const vector<vector<ull>>& clusters)
             return clusters[i][clusters[i].size()-1];
     assert(false); return -1;
 }
-
 
 void compute_demarc(Fragment& frag)
 {
@@ -166,8 +99,6 @@ void compute_details(Fragment& fragment, const string& genome)
     fragment.details = details;
 }
 
-
-
 bool fragment_equivalent(const Fragment& a, const Fragment& b)
 {
     return a.demarc->clust_begin == b.demarc->clust_begin && a.demarc->clust_final == b.demarc->clust_final;
@@ -178,11 +109,9 @@ bool fragment_contains(const Fragment& a, const Fragment& b)
     return a.demarc->clust_begin > b.demarc->clust_begin && a.demarc->clust_final < b.demarc->clust_final;
 }
 
-
 bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations )
 {
     auto start = time();
-
 
     ull num_translations = translations.size();
     ull num_cas = cas_profiles.size();
@@ -213,14 +142,6 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
 
     return target_map;
 }
-
-
-// void debug_clusters(const vector<vector<ull>>& clusters)
-// {
-//     for (vector<ull> cluster : clusters) 
-//         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
-// }
-
 
 vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations, const string& genome)
 {
@@ -280,14 +201,6 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     return fragments;
 }
 
-
-
-
-string crispr_string(const Crispr& c)
-{
-    return fmt::format("{}:{}\n", c.start, c.k);
-}
-
 Gene gene_from_fragments(vector<Fragment>& fragments)
 {
     Gene gene;
@@ -295,7 +208,6 @@ Gene gene_from_fragments(vector<Fragment>& fragments)
     gene.fragments = fragments;
     return gene;
 }
-
 
 vector<Gene> best_genes(vector<Gene> genes)
 {
@@ -314,7 +226,6 @@ vector<Gene> best_genes(vector<Gene> genes)
     return __genes;
 }
 
-
 vector<Gene> genes_from_fragments(const vector<Fragment>& fragments)
 {
     map<string, vector<Fragment>> gene_fragments;
@@ -330,9 +241,6 @@ vector<Gene> genes_from_fragments(const vector<Fragment>& fragments)
 
     return genes;
 }
-
-
-
 
 map<string, string> class_lookup
 {
@@ -367,7 +275,6 @@ string crispr_type(vector<Gene> genes)
     return "?";
 }
 
-
 map<string, vector<Gene>> CasUtil::assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments)
 {
     //map<string, Crispr> crispr_map;
@@ -377,7 +284,7 @@ map<string, vector<Gene>> CasUtil::assemble_genes(const vector<Crispr>& crisprs,
 
     for (const Crispr& c : crisprs)
     {
-        string c_string = crispr_string(c);
+        string c_string = c.identifier_string();
         for (const Fragment& f : fragments)
         {
             if (f.reference_crispr->start == c.start && f.reference_crispr->k == c.k)
@@ -394,7 +301,6 @@ map<string, vector<Gene>> CasUtil::assemble_genes(const vector<Crispr>& crisprs,
 
     return crispr_genes;
 }
-
 
 void print_gene_summary(Gene& gene)
 {
@@ -419,7 +325,6 @@ void print_gene_debug(Gene& gene)
     fmt::print("\n");
 }
 
-
 void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome)
 {
     for (const Crispr& c : crisprs)
@@ -427,7 +332,7 @@ void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<
         c.print(genome);
 
 
-        string c_string = crispr_string(c);
+        string c_string = c.identifier_string();
 
         if (!crispr_genes.contains(c_string))
         {
@@ -449,161 +354,6 @@ void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<
 
 
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void CasUtil::write_cache(string file, vector<CasProfile> profiles)
-{
-    ofstream myfile;
-    myfile.open(file);
-    for (auto p : profiles)
-    {
-        myfile << ">" + p.name << endl << p.N << endl;
-    }
-    myfile.close();
-}
-
-map<string, string> loaded_cache;
-
-void CasUtil::load_cache(string file)
-{
-    loaded_cache = Util::parse_fasta(file);
-}
-
-ui CasUtil::get_n(CasProfile& profile)
-{
-    return atoi(loaded_cache.at(profile.name).c_str());
-}
-
-ui CasUtil::gen_n(CasProfile& profile)
-{   
-    ui N = 1;
-    for (;;N++)
-    {       
-        bool* bools = (bool*) malloc(sizeof(bool) * N);
-        memset(bools, 0, sizeof(bool) * N);
-
-        bool succeed = true;
-        for (ui kmer : profile.encoded_kmer_set)
-        {
-            if (bools[kmer % N])
-            {
-                succeed = false;
-                break;
-            }
-            bools[kmer % N] = true;
-        }
-        free(bools);
-        if (succeed)
-            break;    
-    }
-    return N;
-}
-
-
-regex re("cas[0-9]+|csm[0-9]+|csn[0-9]+", regex_constants::icase);
-
-map<string, string> gn_resolution
-{
-    {"csn1", "cas9"},
-};
-
-string gn_from_name(string& name)
-{
-    cmatch m;
-    bool result = regex_search(name.c_str(), m, re);
-   
-    if (!result)
-    {
-        fmt::print("gn failure on {}\n", name);
-        return "failure";
-    }
-    else
-    {
-        auto final_val = string(m[0]);
-        std::transform(final_val.begin(), final_val.end(), final_val.begin(), ::tolower);
-
-        if (gn_resolution.contains(final_val))
-        {
-            return gn_resolution.at(final_val);
-        }
-        return final_val;
-    }    
-}
-
-vector<CasProfile> prelim_load(string uniprot)
-{
-    auto fasta = Util::parse_fasta(uniprot);
-
-    vector<CasProfile> profiles;
-    for (auto pairing : fasta)
-    {
-        string name = pairing.first;
-        string raw = pairing.second;
-        vector<string> kmers = Util::kmerize(raw, CasUtil::k);
-        vector<ui> encoded_kmers = kmers_encoded(kmers);
-        set<ui> encoded_kmer_set;
-
-        for (ui kmer : encoded_kmers)
-        {
-            encoded_kmer_set.insert(kmer);
-        }
-
-        string gn = gn_from_name(name);
-
-        if (gn == "failure")
-            continue;
-
-        CasProfile cas_profile
-        {
-            name,
-            gn,
-            raw,
-            kmers,
-            encoded_kmer_set,
-            nullptr,
-            0
-        };
-        profiles.push_back(cas_profile);
-    }
-    return profiles;
-}
-
-vector<CasProfile> CasUtil::load(string uniprot, function<ui(CasProfile&)> get_n)
-{   
-    auto start = time();
-
-    auto profiles = prelim_load(uniprot);
-
-    start = time(start, "prelim load");
-
-    for (auto &p : profiles)
-    {
-        p.N = get_n(p);
-        ui* hash_table = (ui*) malloc(sizeof(ui) * p.N);
-        memset(hash_table, 0, sizeof(ui) * p.N);
-        for (ui kmer : p.encoded_kmer_set)
-        {
-            hash_table[kmer % p.N] = kmer;
-        }
-        p.hash_table = hash_table;
-    }
-
-    start = time(start, "postlim load");
-
-    return profiles;
 }
 
 

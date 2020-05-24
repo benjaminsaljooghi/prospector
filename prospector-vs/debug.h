@@ -45,6 +45,12 @@ namespace Debug
 
 
 
+    // void debug_clusters(const vector<vector<ull>>& clusters)
+    // {
+    //     for (vector<ull> cluster : clusters) 
+    //         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
+    // }
+
     vector<CasProfile> cas_filter(vector<CasProfile> profiles, string gn)
     {
         return Util::filter(profiles, [&](CasProfile p) {return p.gn == gn ; });

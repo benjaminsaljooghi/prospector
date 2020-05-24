@@ -19,22 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\cas.cpp" />
-    <ClCompile Include="..\crispr.cpp" />
-    <ClCompile Include="..\main.cpp" />
-    <ClCompile Include="..\util.cpp" />
+    <ClCompile Include="cas.cpp" />
+    <ClCompile Include="crispr.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="serializer.cpp" />
+    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\cas.h" />
-    <ClInclude Include="..\crispr.h" />
-    <ClInclude Include="..\debug.h" />
-    <ClInclude Include="..\prospector.h" />
-    <ClInclude Include="..\stdafx.h" />
-    <ClInclude Include="..\time.h" />
-    <ClInclude Include="..\util.h" />
+    <ClInclude Include="cas.h" />
+    <ClInclude Include="crispr.h" />
+    <ClInclude Include="debug.h" />
+    <ClInclude Include="prospector.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="time.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="..\prospector.cu" />
+    <CudaCompile Include="prospector.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

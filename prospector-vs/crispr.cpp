@@ -221,6 +221,11 @@ void Crispr::print(const string& genome) const
 	print_generic(genome, print_spacer);
 }
 
+string Crispr::identifier_string() const
+{
+	return fmt::format("{}:{}\n", this->start, this->k);
+}
+
 
 bool CrisprUtil::heuristic_less(const Crispr& a, const Crispr& b)
 {

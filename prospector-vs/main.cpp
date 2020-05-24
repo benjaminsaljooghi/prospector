@@ -1,12 +1,8 @@
-//std
 #include "stdafx.h"
-
-//proj
 #include "crispr.h"
 #include "util.h"
 #include "prospector.h"
 #include "cas.h"
-
 #include "time.h"
 #include "debug.h"
 
@@ -184,17 +180,44 @@ vector<Crispr> get_crisprs(const string& genome)
 }
 
 
-vector<CasProfile> read(string cas_file, string cache_file)
-{
-    CasUtil::load_cache(cache_file);
-    return CasUtil::load(cas_file, CasUtil::get_n);
-}
 
-void write(string cas_file, string cache_file)
-{
-    vector<CasProfile> cas_profiles = CasUtil::load(cas_file, CasUtil::gen_n);
-    CasUtil::write_cache(cache_file, cas_profiles);
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//vector<CasProfile> read(string cas_file, string cache_file)
+//{
+//    CasUtil::load_cache(cache_file);
+//    return CasUtil::load(cas_file, CasUtil::get_n);
+//}
+//
+//void write(string cas_file, string cache_file)
+//{
+//    vector<CasProfile> cas_profiles = CasUtil::load(cas_file, CasUtil::gen_n);
+//    CasUtil::write_cache(cache_file, cas_profiles);
+//}
 
 
 void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const string& genome_name)
@@ -217,8 +240,12 @@ string genome_dir = "T:\\crispr-impl\\crispr-genome";
 string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
 string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
 
+
+
+
 int main()
 {
+
     Prospector::device_init();
     auto start_main = time();
     if (!filesystem::exists(cache_file))
@@ -227,7 +254,6 @@ int main()
     }
         
     vector<CasProfile> cas_profiles = read(cas_file, cache_file);
-    
     
     auto genomes = Util::load_genomes(genome_dir);
     

@@ -15,44 +15,47 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\cas.cpp">
+    <ClCompile Include="cas.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\crispr.cpp">
+    <ClCompile Include="crispr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\util.cpp">
+    <ClCompile Include="util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="serializer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\cas.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="cas.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\crispr.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="crispr.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\debug.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="debug.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\prospector.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="prospector.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\stdafx.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\time.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="time.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\util.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="util.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="..\prospector.cu">
+    <CudaCompile Include="prospector.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

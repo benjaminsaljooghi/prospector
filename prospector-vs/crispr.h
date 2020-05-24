@@ -32,6 +32,7 @@ class Crispr
         void print(const string& genome, map<string, int>) const;
         void print(const string& genome) const;
         // void cache_upstream_aminos(string, ull, unsigned int);
+        string identifier_string() const;
 };
 
 
