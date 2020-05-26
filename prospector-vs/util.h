@@ -98,7 +98,7 @@ namespace Util
 		{'W', 17},
 		{'R', 18},
 		{'G', 19},
-		{'X', 20}, // any amino acid, not sure how to handle this
+		//{'X', 20}, // any amino acid, not sure how to handle this
 	};
 
 
@@ -114,7 +114,9 @@ namespace Util
 	};
 
 
-	string translate_domain(const string& domain);
+	string translate_domain(const string&);
+	string translate_genome(const string&, ui, ui, bool);
+
 	bool any_overlap(ui a, ui b, ui x, ui y);
 
 

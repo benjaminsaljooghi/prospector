@@ -112,23 +112,16 @@ vector<string> multi_seq_from_tigfram(string file_path)
     string line;
     while (getline(input, line))
     {
-        if (line.starts_with('#') || line.starts_with('//'))
+        if (line == "" || line.starts_with('#') || line.starts_with('//'))
         {
             continue;
         }
 
-
-        // get first space
         auto result = line.find(' ');
-
         auto line_without_id = line.substr(result);
-
         auto first_not_of = line_without_id.find_first_not_of(' ');
-
-
         auto seq = line_without_id.substr(first_not_of);
-        // then continue until next char is not a space
-
+        seq.erase(std::remove(seq.begin(), seq.end(), '.'), seq.end());
         seqs.push_back(seq);
     }
 
@@ -164,34 +157,54 @@ vector<string> kmer_set_from_tigfram(string file_path, ull k)
     return kmer_set;
 }
 
-CasProfile CasProfileUtil::cas_profile_from_tigrfam(string file_path)
+vector<CasProfile> CasProfileUtil::cas_profiles_from_tigrfam(string dir)
 {
-    vector<string> kmer_set = kmer_set_from_tigfram(file_path, CasProfileUtil::k);
-
-    for (auto kmer : kmer_set)
+    map<string, string> map_id_gn
     {
-        fmt::print("{}\n", kmer);
+        {"TIGR01865", "cas9"},
+        {"TIGR01573", "cas2"},
+        {"TIGR00372", "cas4"},
+    };
+
+    vector<CasProfile> profiles;
+
+    for (const auto& entry : filesystem::directory_iterator(dir))
+    {
+        string id = entry.path().stem().string();
+
+        if (!map_id_gn.contains(id))
+        {
+            //fmt::print("skipping {}\n", id);
+            continue;
+        }
+
+        vector<string> kmer_set = kmer_set_from_tigfram(entry.path().string(), CasProfileUtil::k);
+
+        /*for (auto kmer : kmer_set)
+        {
+            fmt::print("{}\n", kmer);
+        }*/
+
+        auto encoded = Util::encode_amino_kmers(kmer_set, CasProfileUtil::k);
+
+        unordered_set<ui> hash_table;
+        for (auto kmer : encoded) hash_table.insert(kmer);
+
+
+        CasProfile profile;
+        profile.gn = map_id_gn.at(id);
+        profile.hash_table = hash_table;
+
+
+        //profile.N = gen_n(hash_table);
+        //profile.hash_table = gen_perfect_hash_table(profile.N, hash_table);
+        //profile.hash_table = hash_table;
+        //profile.hash_table = kmer_set;
+
+        profiles.push_back(profile);
     }
-
-    //auto encoded = Util::encode_amino_kmers(kmer_set, CasProfileUtil::k);
-
-    /*unordered_set<ui> hash_table;
-    for (auto kmer : encoded)
-    {
-        hash_table.insert(kmer);
-    }*/
-
-
-    CasProfile profile;
-    profile.gn = "cas9";
-
-    //profile.N = gen_n(hash_table);
-    //profile.hash_table = gen_perfect_hash_table(profile.N, hash_table);
-    //profile.hash_table = hash_table;
-
-    profile.hash_table = kmer_set;
-
-    return profile;
+        
+    return profiles;
 }
 
 //void serialize_profile(CasProfile profile)

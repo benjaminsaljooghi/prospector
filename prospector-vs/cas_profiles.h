@@ -1,4 +1,5 @@
 
+
 #pragma once
 
 #include <unordered_set>
@@ -8,8 +9,8 @@ struct CasProfile
     string gn;
     ui N;
     //ui* hash_table;
-    //unordered_set<ui> hash_table;
-    vector<string> hash_table;
+    unordered_set<ui> hash_table;
+    //vector<string> hash_table;
 
 };
 

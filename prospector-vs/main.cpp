@@ -234,7 +234,17 @@ string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
 string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
 string uniprot_dl = "T:\\supp-stuff\\uniprot-CRISPR-associated.fasta\\uniprot-CRISPR-associated.fasta";
 
-string cas9_tigrfam = "T:\\supp-stuff\\TIGRFAMs_15.0_SEED.tar\\TIGR01865.SEED";
+
+
+string tigrfam = "T:\\supp-stuff\\TIGRFAMs_15.0_SEED.tar";
+
+/*if (!filesystem::exists(cache_file))
+{
+    write(cas_file, cache_file);
+}
+*/
+//vector<CasProfile> cas_profiles = read(cas_file, cache_file);
+
 
 
 int main()
@@ -242,26 +252,16 @@ int main()
 
     Prospector::device_init();
     auto start_main = time();
+    auto genomes = Util::load_genomes(genome_dir);
 
-    /*if (!filesystem::exists(cache_file))
-    {
-        write(cas_file, cache_file);
-    }
-    */    
-    //vector<CasProfile> cas_profiles = read(cas_file, cache_file);
-    
+    /*auto genome = genomes.at("GCA_000145615.1_ASM14561v1_genomic");
+    string translation = Debug::translation_test(genome, 2638027, 2638291, false, 6);
+    fmt::print("translation test: {}\n", translation);*/
 
     //auto cas_profiles = CasProfileUtil::cas_profiles_from_uniprot_download(uniprot_dl);
-    auto cas9 = CasProfileUtil::cas_profile_from_tigrfam(cas9_tigrfam);
-    
-    vector<CasProfile> cas_profiles;
+    auto cas_profiles = CasProfileUtil::cas_profiles_from_tigrfam(tigrfam);
 
-    cas_profiles.push_back(cas9);
-
-
-    auto genomes = Util::load_genomes(genome_dir);
-    for (auto genome : genomes)
-        stdrun(cas_profiles, genome.second, genome.first);
+    for (auto genome : genomes) stdrun(cas_profiles, genome.second, genome.first);
      
     start_main = time(start_main, "prospector");
     return 0;                                                                                                           

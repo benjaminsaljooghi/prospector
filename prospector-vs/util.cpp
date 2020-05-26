@@ -13,6 +13,13 @@ string Util::translate_domain(const string& domain)
 	return raw;
 }
 
+string Util::translate_genome(const string& genome, ui genome_start, ui genome_final, bool pos)
+{
+	string domain = genome.substr(genome_start, genome_final - genome_start);
+	domain = pos ? domain : Util::reverse_complement(domain);
+	return Util::translate_domain(domain);
+}
+
 bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
 {
 	bool a_before_b = a_start <= b_start;
@@ -146,10 +153,10 @@ vector<ui> Util::encode_amino_kmers(vector<string> kmers, ui k)
 	{
 		string kmer = kmers[j];
 		
-		if (kmer.find('N') != string::npos || kmer.find('O') != string::npos)
+		/*if (kmer.find('N') != string::npos || kmer.find('O') != string::npos)
 		{
 			continue;
-		}
+		}*/
 
 		for (ui i = 0; i < k; i++)
 		{

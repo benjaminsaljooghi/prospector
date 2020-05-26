@@ -1,4 +1,5 @@
 #include "cas.h"
+#include "debug.h"
 
 
 vector<vector<ull>> cluster_index(const vector<ull>& indices)
@@ -57,6 +58,8 @@ void compute_demarc(Fragment& frag)
     frag.demarc = demarc;
 }
 
+
+
 void compute_details(Fragment& fragment, const string& genome)
 {    
     // ull index_kmer_start = demarc_start_clusters(fragment.clusters);
@@ -81,14 +84,12 @@ void compute_details(Fragment& fragment, const string& genome)
         genome_final = fragment.reference_translation->genome_end - (raw_pos_start * 3);
         genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + CasProfileUtil::k) * 3) + 3 );
     }
+
+   
+    string translation = Debug::translation_test(genome, genome_start, genome_final, fragment.reference_translation->pos, 4);
+    //string translation = Util::translate_genome(genome, genome_start, genome_final, fragment.reference_translation->pos);
     
-    string domain = genome.substr(genome_start, genome_final - genome_start);
-    domain = fragment.reference_translation->pos ? domain : Util::reverse_complement(domain);
-    string translation = Util::translate_domain(domain);
-    //string profile = fragment.reference_profile->raw;
-
-    // size_t distance = uiLevenshteinDistance(translation, profile);
-
+    
     FragDetails* details = new FragDetails();
     
     details->genome_start = genome_start;
@@ -130,17 +131,17 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
         {
             for (ui i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
             {
-                //ui query = translations[translation_i].pure_kmerized_encoded[i];
+                ui query = translations[translation_i].pure_kmerized_encoded[i];
                 string query_kmer = translations[translation_i].pure_kmerized[i];
 
                 ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i;
 
+                // A
                 //auto at_index = cas_profile.hash_table[query % cas_profile.N]; 
                 //bool contains = at_index == query;
 
-                //bool contains = cas_profile.hash_table.contains(query);
-
-                bool contains = std::find(cas_profile.hash_table.begin(), cas_profile.hash_table.end(), query_kmer) != cas_profile.hash_table.end();
+                // B
+                bool contains = cas_profile.hash_table.contains(query);
 
                 target_map[target_map_index] = contains;
             }
@@ -329,7 +330,7 @@ void print_gene_debug(Gene& gene)
     for (const Fragment& fragment : gene.fragments)
     {
         fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-        fmt::print("\t\t\t{}\n", fragment.details->translation);
+        fmt::print("\t\t\t{}", fragment.details->translation);
     }
     fmt::print("\n");
 }

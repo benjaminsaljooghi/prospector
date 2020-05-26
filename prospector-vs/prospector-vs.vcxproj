@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="cas.cpp" />
     <ClCompile Include="crispr.cpp" />
+    <ClCompile Include="debug.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="cas_profiles.cpp" />
     <ClCompile Include="util.cpp" />
