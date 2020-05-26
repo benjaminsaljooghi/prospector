@@ -219,13 +219,11 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const s
     auto start_run = time();
 
     vector<Crispr> crisprs = get_crisprs(genome);
-    vector<Translation> flanks = CasUtil::get_translations(genome, crisprs);
-    vector<Fragment> fragments = CasUtil::cas(cas_profiles, flanks, genome);
-    map<string, vector<Gene>> genes = CasUtil::assemble_genes(crisprs, fragments);
-
+    vector<Translation> translations = Cas::crispr_proximal_translations(genome, crisprs);
+    vector<Fragment> fragments = Cas::cas(cas_profiles, translations, genome);
+    map<string, vector<Gene>> genes = Cas::assemble_genes(crisprs, fragments);
     //CrisprUtil::print(genome, crisprs);
-    CasUtil::print_all(crisprs, genes, genome);
-
+    Cas::print_all(crisprs, genes, genome);
     start_run = time(start_run, genome_name.c_str());
 }
 
@@ -233,37 +231,28 @@ string genome_dir = "T:\\crispr-impl\\crispr-genome";
 string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
 string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
 string uniprot_dl = "T:\\supp-stuff\\uniprot-CRISPR-associated.fasta\\uniprot-CRISPR-associated.fasta";
-
-
-
 string tigrfam = "T:\\supp-stuff\\TIGRFAMs_15.0_SEED.tar";
-
-/*if (!filesystem::exists(cache_file))
-{
-    write(cas_file, cache_file);
-}
-*/
+//if (!filesystem::exists(cache_file)) write(cas_file, cache_file);
 //vector<CasProfile> cas_profiles = read(cas_file, cache_file);
-
 
 
 int main()
 {
+    Prospector::device_init(); auto start_main = time();
 
-    Prospector::device_init();
-    auto start_main = time();
     auto genomes = Util::load_genomes(genome_dir);
+    auto genome = genomes.at("GCA_000145615.1_ASM14561v1_genomic");
 
-    /*auto genome = genomes.at("GCA_000145615.1_ASM14561v1_genomic");
-    string translation = Debug::translation_test(genome, 2638027, 2638291, false, 6);
-    fmt::print("translation test: {}\n", translation);*/
-
-    //auto cas_profiles = CasProfileUtil::cas_profiles_from_uniprot_download(uniprot_dl);
     auto cas_profiles = CasProfileUtil::cas_profiles_from_tigrfam(tigrfam);
+    
+    fmt::print("hard-coded translation: {}\n", Debug::translation_test(genome, 2638027, 2638291, false, 3));
 
-    for (auto genome : genomes) stdrun(cas_profiles, genome.second, genome.first);
+    //Debug::cas_detect(genome, 2638027, 2638291, false, cas_profiles[0], CasProfileUtil::k);
+
+    stdrun(cas_profiles, genome, "GCA_000145615.1_ASM14561v1_genomic");
+
+    //for (auto genome : genomes) stdrun(cas_profiles, genome.second, genome.first);
      
-    start_main = time(start_main, "prospector");
-    return 0;                                                                                                           
+    start_main = time(start_main, "prospector"); return 0;                                                                                                           
 }
 

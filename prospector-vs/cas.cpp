@@ -9,7 +9,7 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
     ull prev = indices[0];
     for (ull index : indices)
     {
-        if (index - prev > CasUtil::cluster_definition)
+        if (index - prev > Cas::cluster_definition)
         {
             vector<ull> cluster_cp = cluster; 
             clusters.push_back(cluster_cp);
@@ -26,7 +26,7 @@ bool good_clusters(const vector<vector<ull>>& clusters)
 {
     for (vector<ull> cluster : clusters)
     {   
-        if (cluster.size() > CasUtil::cluster_metric_min)
+        if (cluster.size() > Cas::cluster_metric_min)
         {
             return true;
         }
@@ -37,7 +37,7 @@ bool good_clusters(const vector<vector<ull>>& clusters)
 ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 {
     for (const vector<ull>& cluster : clusters)
-        if (cluster.size() > CasUtil::cluster_metric_min)
+        if (cluster.size() > Cas::cluster_metric_min)
             return cluster[0];
     assert(false); return -1;
 }
@@ -45,7 +45,7 @@ ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 ull demarc_final_clusters(const vector<vector<ull>>& clusters)
 {
     for (ull i = clusters.size()-1; i >= 0; i--)
-        if (clusters[i].size() > CasUtil::cluster_metric_min)
+        if (clusters[i].size() > Cas::cluster_metric_min)
             return clusters[i][clusters[i].size()-1];
     assert(false); return -1;
 }
@@ -81,12 +81,12 @@ void compute_details(Fragment& fragment, const string& genome)
     }
     else
     {
-        genome_final = fragment.reference_translation->genome_end - (raw_pos_start * 3);
-        genome_start = fragment.reference_translation->genome_end - ( ((raw_pos_end + CasProfileUtil::k) * 3) + 3 );
+        genome_final = fragment.reference_translation->genome_final - (raw_pos_start * 3);
+        genome_start = fragment.reference_translation->genome_final - ( ((raw_pos_end + CasProfileUtil::k) * 3) + 3 );
     }
 
    
-    string translation = Debug::translation_test(genome, genome_start, genome_final, fragment.reference_translation->pos, 4);
+     string translation = Debug::translation_test(genome, genome_start, genome_final, fragment.reference_translation->pos, 6);
     //string translation = Util::translate_genome(genome, genome_start, genome_final, fragment.reference_translation->pos);
     
     
@@ -110,12 +110,12 @@ bool fragment_contains(const Fragment& a, const Fragment& b)
     return a.demarc->clust_begin > b.demarc->clust_begin && a.demarc->clust_final < b.demarc->clust_final;
 }
 
-bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations )
+bool* Cas::compute_target_map(const vector<CasProfile>& profiles, const vector<Translation>& translations )
 {
     auto start = time();
 
     ull num_translations = translations.size();
-    ull num_cas = cas_profiles.size();
+    ull num_cas = profiles.size();
     ull per_translation = 3334; // maximum size of a translation is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
     ull per_cas = per_translation * num_translations;
 
@@ -126,7 +126,7 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
     #pragma omp parallel for
     for (signed long cas_i = 0; cas_i < num_cas; cas_i++)
     {  
-        const CasProfile& cas_profile = cas_profiles[cas_i];
+        const CasProfile& cas_profile = profiles[cas_i];
         for (ull translation_i = 0; translation_i < num_translations; translation_i++)
         {
             for (ui i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
@@ -143,6 +143,8 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
                 // B
                 bool contains = cas_profile.hash_table.contains(query);
 
+                //fmt::print("{}:{}:{}:{}:{}:{}\n", target_map_index, cas_i, translation_i, i, contains, query_kmer, query);
+
                 target_map[target_map_index] = contains;
             }
         }
@@ -153,15 +155,15 @@ bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Tr
     return target_map;
 }
 
-vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations, const string& genome)
+vector<Fragment> Cas::cas(const vector<CasProfile>& profiles, const vector<Translation>& translations, const string& genome)
 {
     fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
     auto start = time();  
 
-    bool* target_map = compute_target_map(cas_profiles, translations);
+    bool* target_map = compute_target_map(profiles, translations);
 
     ull num_translations = translations.size();
-    ull num_cas = cas_profiles.size();
+    ull num_cas = profiles.size();
     ull per_translation = 3334; // maximum size of a translation is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
     ull per_cas = per_translation * num_translations;
 
@@ -192,7 +194,7 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
             if (!good_clusters(clusters))
                 continue;
 
-            Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], &cas_profiles[cas_i], clusters};
+            Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], &profiles[cas_i], clusters};
             fragments.push_back(f);
            
         }
@@ -200,12 +202,10 @@ vector<Fragment> CasUtil::cas(const vector<CasProfile>& cas_profiles, const vect
     start = time(start, "target map parse");
 
 
-    for (Fragment& a : fragments)
-        compute_demarc(a);
+    for (Fragment& a : fragments) compute_demarc(a);
     start = time(start, "fragment demarcs");
 
-    for (Fragment& a : fragments)
-        compute_details(a, genome);
+    for (Fragment& a : fragments) compute_details(a, genome);
     start = time(start, "fragment details");
 
     return fragments;
@@ -285,7 +285,7 @@ string crispr_type(vector<Gene> genes)
     return "?";
 }
 
-map<string, vector<Gene>> CasUtil::assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments)
+map<string, vector<Gene>> Cas::assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments)
 {
     //map<string, Crispr> crispr_map;
 
@@ -322,20 +322,25 @@ void print_gene_summary(Gene& gene)
     fmt::print("\n");
 }
 
+
+void Cas::print_fragment_debug(const Fragment& fragment)
+{
+    fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
+    fmt::print("\t\t\t{}", fragment.details->translation);
+}
+
 void print_gene_debug(Gene& gene)
 {
     ui size = gene.size();
-    fmt::print("\t{}:{}\n", gene.reference_profile->gn, size/*, gene.reference_profile->name*/);
-    //fmt::print("\t{}\n", gene.reference_profile->raw);
+    fmt::print("\t{}:{}\n", gene.reference_profile->gn, size);
     for (const Fragment& fragment : gene.fragments)
-    {
-        fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-        fmt::print("\t\t\t{}", fragment.details->translation);
-    }
+        Cas::print_fragment_debug(fragment);
+
     fmt::print("\n");
 }
 
-void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome)
+
+void Cas::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome)
 {
     for (const Crispr& c : crisprs)
     {
@@ -373,9 +378,9 @@ void CasUtil::print_all(const vector<Crispr>& crisprs, const map<string, vector<
 
 
 
-vector<Translation> get_triframe(const string& genome, ull genome_start, ull genome_end, bool pos)
+vector<Translation> Cas::get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos)
 {
-    string domain = genome.substr(genome_start, genome_end - genome_start);
+    string domain = genome.substr(genome_start, genome_final - genome_start);
     domain = pos ? domain : Util::reverse_complement(domain);
     
     vector<Translation> translations;
@@ -384,7 +389,7 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
         Translation translation;
         translation.pos = pos;
         translation.genome_start = pos ? genome_start + frame : genome_start;
-        translation.genome_end = pos ? genome_end : genome_end - frame;
+        translation.genome_final = pos ? genome_final : genome_final - frame;
 
         translation.raw = Util::translate_domain(domain.substr(frame));
 
@@ -410,18 +415,31 @@ vector<Translation> get_triframe(const string& genome, ull genome_start, ull gen
     return translations;
 }
 
+vector <Translation> Cas::get_sixframe(const string& genome, ull genome_start, ull genome_final)
+{
+    vector<Translation> sixframe;
 
-vector<Translation> CasUtil::get_translations(const string& genome, const vector<Crispr>& crisprs)
+    for (Translation translation : Cas::get_triframe(genome, genome_start, genome_final, true))
+        sixframe.push_back(translation);
+
+    for (Translation translation : Cas::get_triframe(genome, genome_start, genome_final, false))
+        sixframe.push_back(translation);
+
+    return sixframe;
+}
+
+
+vector<Translation> Cas::crispr_proximal_translations(const string& genome, const vector<Crispr>& crisprs)
 {
     auto start = time();
     vector<Translation> translations;
     for (const Crispr& c : crisprs)
     {
-        ull genome_start = c.start - CasUtil::upstream_size; genome_start = genome_start < c.start ? genome_start : 0;
-        ull genome_end = c.end + CasUtil::upstream_size; genome_end = genome_end > c.end ? genome_end : genome.size()-1;
+        ull genome_start = c.start - Cas::upstream_size; genome_start = genome_start < c.start ? genome_start : 0;
+        ull genome_end = c.end + Cas::upstream_size; genome_end = genome_end > c.end ? genome_end : genome.size()-1;
 
-        vector<Translation> up = get_triframe(genome, genome_start, c.start, true);
-        vector<Translation> down = get_triframe(genome, c.end, genome_end, false);
+        vector<Translation> up = get_sixframe(genome, genome_start, c.start);
+        vector<Translation> down = get_sixframe(genome, c.end, genome_end);
 
         for (Translation& t : up)
         {

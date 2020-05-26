@@ -128,31 +128,18 @@ vector<string> multi_seq_from_tigfram(string file_path)
     return seqs;
 }
 
-vector<string> kmerize_tigfram_seq(string seq, ull k)
-{
-    vector<string> kmers;
-    for (ull i = 0; i < seq.size() - k + 1; i++)
-    {
-        auto substr = seq.substr(i, k);
 
-        if (substr.find('.') != string::npos)
-        {
-            continue;
-        }
-
-        kmers.push_back(substr);
-    }
-    return kmers;
-}
-
-vector<string> kmer_set_from_tigfram(string file_path, ull k)
+unordered_set<string> kmer_set_from_tigfram(string file_path, ull k)
 {
     auto seqs = multi_seq_from_tigfram(file_path);
-    vector<string> kmer_set;
+    unordered_set<string> kmer_set;
     for (const string& seq : seqs)
     {
-        auto kmers = kmerize_tigfram_seq(seq, k);
-        kmer_set.insert(kmer_set.end(), kmers.begin(), kmers.end());
+        for (ull i = 0; i < seq.size() - k + 1; i++)
+        {
+            auto substr = seq.substr(i, k);
+            kmer_set.insert(substr);
+        }
     }
     return kmer_set;
 }
@@ -161,9 +148,9 @@ vector<CasProfile> CasProfileUtil::cas_profiles_from_tigrfam(string dir)
 {
     map<string, string> map_id_gn
     {
-        {"TIGR01865", "cas9"},
+        //{"TIGR01865", "cas9"},
         {"TIGR01573", "cas2"},
-        {"TIGR00372", "cas4"},
+        //{"TIGR00372", "cas4"},
     };
 
     vector<CasProfile> profiles;
@@ -172,29 +159,18 @@ vector<CasProfile> CasProfileUtil::cas_profiles_from_tigrfam(string dir)
     {
         string id = entry.path().stem().string();
 
-        if (!map_id_gn.contains(id))
-        {
-            //fmt::print("skipping {}\n", id);
-            continue;
-        }
+        if (!map_id_gn.contains(id)) continue;
 
-        vector<string> kmer_set = kmer_set_from_tigfram(entry.path().string(), CasProfileUtil::k);
-
-        /*for (auto kmer : kmer_set)
-        {
-            fmt::print("{}\n", kmer);
-        }*/
-
-        auto encoded = Util::encode_amino_kmers(kmer_set, CasProfileUtil::k);
+        unordered_set<string> kmer_set = kmer_set_from_tigfram(entry.path().string(), CasProfileUtil::k);
 
         unordered_set<ui> hash_table;
-        for (auto kmer : encoded) hash_table.insert(kmer);
-
+        for (string kmer : kmer_set)
+            hash_table.insert(Util::encode_amino_kmer(kmer, CasProfileUtil::k));
 
         CasProfile profile;
         profile.gn = map_id_gn.at(id);
         profile.hash_table = hash_table;
-
+        profile.kmer_set = kmer_set;
 
         //profile.N = gen_n(hash_table);
         //profile.hash_table = gen_perfect_hash_table(profile.N, hash_table);

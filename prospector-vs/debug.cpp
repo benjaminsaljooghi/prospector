@@ -50,9 +50,10 @@ vector<Crispr>Debug::crispr_filter(vector<Crispr> crisprs, ui start, ui end)
     return Util::filter(crisprs, [&](Crispr c) { return c.start > start && c.end < end; });
 }
 
+
+
 string Debug::translation_test(const string& genome, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
 {
-
     genome_start -= debug_aminos * 3;
     genome_final += debug_aminos * 3;
 
@@ -63,9 +64,49 @@ string Debug::translation_test(const string& genome, ui genome_start, ui genome_
     auto b = translation.substr(debug_aminos, len - (debug_aminos * 2));
     auto c = translation.substr(len - debug_aminos);
 
-
     return fmt::format("\t\t\t{}--{}--{}\n", a, b, c);
 }
+
+Translation Debug::translation_obj(const string& genome, ui genome_start, ui genome_final, bool pos)
+{
+    auto triframe = Cas::get_triframe(genome, genome_start, genome_final, pos);
+    return triframe[0];
+}
+
+
+void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, CasProfile profile, ui k)
+{
+    fmt::print("input CasProfile:\n");
+    //for (string kmer : profile.kmer_set)
+        //fmt::print("{}\n", kmer);
+    
+    Translation translation = Debug::translation_obj(genome, genome_start, genome_final, pos);
+    fmt::print("pure translation: {}\n", translation.pure);
+    for (ui kmer : translation.pure_kmerized_encoded)
+    {
+        bool contains = profile.hash_table.contains(kmer);
+        fmt::print("{} : {}\n", contains, kmer);
+    }
+
+    vector<CasProfile> profiles;
+    profiles.push_back(profile);
+
+    vector<Translation> translations;
+    translations.push_back(translation);
+
+    //auto target_map = Cas::compute_target_map(profiles, translations);
+
+
+    auto fragments = Cas::cas(profiles, translations, genome);
+
+    fmt::print("fragment debug info:\n");
+
+    for (Fragment& fragment : fragments)
+        Cas::print_fragment_debug(fragment);
+
+}
+
+
 
 void Debug::crispr_print(vector<Crispr> crisprs, const string& genome, ui start, ui end)
 {
