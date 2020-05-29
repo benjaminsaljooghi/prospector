@@ -9,10 +9,13 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
     ull prev = indices[0];
     for (ull index : indices)
     {
-        if (index - prev > Cas::cluster_definition)
+        if (index - prev > Cas::max_inter_cluster_dist)
         {
             vector<ull> cluster_cp = cluster; 
-            clusters.push_back(cluster_cp);
+            if (cluster_cp.size() > 1)
+            {
+                clusters.push_back(cluster_cp);
+            }
             cluster.clear();
         }
         cluster.push_back(index);
@@ -86,7 +89,7 @@ void compute_details(Fragment& fragment, const string& genome)
     }
 
    
-     string translation = Debug::translation_test(genome, genome_start, genome_final, fragment.reference_translation->pos, 6);
+     string genome_translation = Debug::translation_test(genome, genome_start, genome_final, fragment.reference_translation->pos, 6);
     //string translation = Util::translate_genome(genome, genome_start, genome_final, fragment.reference_translation->pos);
     
     
@@ -94,7 +97,7 @@ void compute_details(Fragment& fragment, const string& genome)
     
     details->genome_start = genome_start;
     details->genome_final = genome_final;
-    details->translation = translation;
+    details->genome_translation = genome_translation;
     details->quality = genome_final - genome_start;
     
     fragment.details = details;
@@ -182,6 +185,7 @@ vector<Fragment> Cas::cas(const vector<CasProfile>& profiles, const vector<Trans
                 }
             }
 
+
             if (index.size() == 0)
                 continue;
 
@@ -193,8 +197,24 @@ vector<Fragment> Cas::cas(const vector<CasProfile>& profiles, const vector<Trans
 
             if (!good_clusters(clusters))
                 continue;
+           
+            if (profiles[cas_i].gn == "HATPase_c")
+            {
+                printf("break");
+            }
 
             Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], &profiles[cas_i], clusters};
+
+            compute_demarc(f);
+
+            if (f.demarc->clust_final - f.demarc->clust_begin <= 15)
+            {
+                continue;
+            }
+
+            compute_details(f, genome);
+
+
             fragments.push_back(f);
            
         }
@@ -202,18 +222,22 @@ vector<Fragment> Cas::cas(const vector<CasProfile>& profiles, const vector<Trans
     start = time(start, "target map parse");
 
 
-    for (Fragment& a : fragments) compute_demarc(a);
-    start = time(start, "fragment demarcs");
+    //for (Fragment& a : fragments) compute_demarc(a);
+    //start = time(start, "fragment demarcs");
 
-    for (Fragment& a : fragments) compute_details(a, genome);
-    start = time(start, "fragment details");
+    //for (Fragment& a : fragments) compute_details(a, genome);
+    //start = time(start, "fragment details");
 
     return fragments;
 }
 
 Gene gene_from_fragments(vector<Fragment>& fragments)
 {
+    sort(fragments.begin(), fragments.end(), [](const Fragment& a, const Fragment& b) { return a.details->genome_start < b.details->genome_start;  });
+
+
     Gene gene;
+
     gene.reference_profile = fragments[0].reference_profile;
     gene.fragments = fragments;
     return gene;
@@ -246,7 +270,7 @@ vector<Gene> genes_from_fragments(const vector<Fragment>& fragments)
     for (auto gene : gene_fragments)
         genes.push_back(gene_from_fragments(gene.second));
 
-    genes = best_genes(genes);
+    //genes = best_genes(genes);
     sort(genes.begin(), genes.end(), [](const Gene& a, const Gene& b) { return a.fragments[0].details->genome_start < b.fragments[0].details->genome_start; } );
 
     return genes;
@@ -325,8 +349,8 @@ void print_gene_summary(Gene& gene)
 
 void Cas::print_fragment_debug(const Fragment& fragment)
 {
-    fmt::print("\t\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
-    fmt::print("\t\t\t{}", fragment.details->translation);
+    fmt::print("\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
+    fmt::print("{}\n", fragment.details->genome_translation);
 }
 
 void print_gene_debug(Gene& gene)
@@ -363,6 +387,7 @@ void Cas::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene
         for (Gene& gene : genes)
         {
             print_gene_debug(gene);
+            //print_gene_summary(gene);
         }
 
         fmt::print("{}:{}:{}\n\n", _class, _type, c_string);

@@ -64,7 +64,13 @@ string Debug::translation_test(const string& genome, ui genome_start, ui genome_
     auto b = translation.substr(debug_aminos, len - (debug_aminos * 2));
     auto c = translation.substr(len - debug_aminos);
 
-    return fmt::format("\t\t\t{}--{}--{}\n", a, b, c);
+    return fmt::format("{}--{}--{}", a, b, c);
+}
+
+void Debug::translation_print(const string& genome, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
+{
+    string translation = Debug::translation_test(genome, genome_start, genome_final, pos, debug_aminos);
+    fmt::print("debug: {}\n", translation);
 }
 
 Translation Debug::translation_obj(const string& genome, ui genome_start, ui genome_final, bool pos)

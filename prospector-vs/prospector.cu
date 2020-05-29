@@ -55,6 +55,7 @@ void cudaWait()
 void Prospector::device_init()
 {
     std::chrono::high_resolution_clock::time_point start = time();
+    cudaDeviceReset();
     checkCudaAlways ( cudaFree(0) );
     time(start, "device init");
 }

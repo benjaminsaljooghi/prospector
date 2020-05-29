@@ -27,4 +27,6 @@ namespace CasProfileUtil
     vector<CasProfile> cas_profiles_from_uniprot_download(string file_path);
     CasProfile cas_profile_from_tigrfam(string file_path);
     vector<CasProfile> cas_profiles_from_tigrfam(string file_path);
+    map<string, vector<string>> pfam(string path);
+    vector<CasProfile> pfam_profiles(string path);
 }

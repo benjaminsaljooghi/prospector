@@ -40,7 +40,7 @@ struct FragDetails
 {
     ull genome_start;
     ull genome_final;
-    string translation;  
+    string genome_translation;  
     size_t quality;
 };
 
@@ -76,8 +76,8 @@ struct Gene
 namespace Cas
 {
     static const ui upstream_size = 10000;
-    static const ui cluster_metric_min = 4;
-    static const ui cluster_definition = 4;
+    static const ui cluster_metric_min = 5;
+    static const ui max_inter_cluster_dist = 2;
 
     vector<Translation> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);
 
