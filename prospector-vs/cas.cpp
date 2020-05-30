@@ -113,7 +113,7 @@ bool fragment_contains(const Fragment& a, const Fragment& b)
     return a.demarc->clust_begin > b.demarc->clust_begin && a.demarc->clust_final < b.demarc->clust_final;
 }
 
-bool* Cas::compute_target_map(const vector<CasProfile>& profiles, const vector<Translation>& translations )
+bool* Cas::compute_target_map(const vector<const CasProfile*>& profiles, const vector<Translation>& translations )
 {
     auto start = time();
 
@@ -129,7 +129,7 @@ bool* Cas::compute_target_map(const vector<CasProfile>& profiles, const vector<T
     #pragma omp parallel for
     for (signed long cas_i = 0; cas_i < num_cas; cas_i++)
     {  
-        const CasProfile& cas_profile = profiles[cas_i];
+        const CasProfile* cas_profile = profiles[cas_i];
         for (ull translation_i = 0; translation_i < num_translations; translation_i++)
         {
             for (ui i = 0; i < translations[translation_i].pure_kmerized_encoded.size(); i++)
@@ -144,7 +144,7 @@ bool* Cas::compute_target_map(const vector<CasProfile>& profiles, const vector<T
                 //bool contains = at_index == query;
 
                 // B
-                bool contains = cas_profile.hash_table.contains(query);
+                bool contains = cas_profile->hash_table.contains(query);
 
                 //fmt::print("{}:{}:{}:{}:{}:{}\n", target_map_index, cas_i, translation_i, i, contains, query_kmer, query);
 
@@ -158,7 +158,7 @@ bool* Cas::compute_target_map(const vector<CasProfile>& profiles, const vector<T
     return target_map;
 }
 
-vector<Fragment> Cas::cas(const vector<CasProfile>& profiles, const vector<Translation>& translations, const string& genome)
+vector<Fragment> Cas::cas(const vector<const CasProfile*>& profiles, const vector<Translation>& translations, const string& genome)
 {
     fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
     auto start = time();  
@@ -198,12 +198,12 @@ vector<Fragment> Cas::cas(const vector<CasProfile>& profiles, const vector<Trans
             if (!good_clusters(clusters))
                 continue;
            
-            if (profiles[cas_i].gn == "HATPase_c")
+            if (profiles[cas_i]->gn == "HATPase_c")
             {
                 printf("break");
             }
 
-            Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], &profiles[cas_i], clusters};
+            Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], profiles[cas_i], clusters};
 
             compute_demarc(f);
 

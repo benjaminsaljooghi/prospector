@@ -84,8 +84,8 @@ namespace Cas
     vector<Translation> get_sixframe(const string& genome, ull genome_start, ull genome_final);
 
     vector<Translation> crispr_proximal_translations(const string& genome, const vector<Crispr>&);
-    bool* compute_target_map(const vector<CasProfile>& cas_profiles, const vector<Translation>& translations);
-    vector<Fragment> cas(const vector<CasProfile>& cas_profiles, const vector<Translation>&, const string&);
+    bool* compute_target_map(const vector<const CasProfile*>& cas_profiles, const vector<Translation>& translations);
+    vector<Fragment> cas(const vector<const CasProfile*>& cas_profiles, const vector<Translation>&, const string&);
     map<string, vector<Gene>> assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments);
     void print_fragment_debug(const Fragment& fragment);
     void print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene>>& crispr_genes, const string& genome);

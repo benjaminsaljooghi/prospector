@@ -191,7 +191,7 @@ vector<Crispr> get_crisprs(const string& genome)
 //}
 
 
-void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const string& genome_name)
+void stdrun(const vector<const CasProfile*>& cas_profiles, const string& genome, const string& genome_name)
 {
 
     auto start_run = time();
@@ -205,44 +205,46 @@ void stdrun(const vector<CasProfile> cas_profiles, const string& genome, const s
     start_run = time(start_run, genome_name.c_str());
 }
 
-string genome_dir = "T:\\crispr-impl\\crispr-genome";
-string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
-string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
-string uniprot_dl = "T:\\supp-stuff\\uniprot-CRISPR-associated.fasta\\uniprot-CRISPR-associated.fasta";
-string tigrfam = "T:\\supp-stuff\\TIGRFAMs_15.0_SEED.tar";
+//string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
+//string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
 //if (!filesystem::exists(cache_file)) write(cas_file, cache_file);
 //vector<CasProfile> cas_profiles = read(cas_file, cache_file);
 
 
+
+string genome_dir = "T:\\crispr-impl\\crispr-genome";
+
+
+
+//Debug::cas_detect(genomes.at("pyogenes"), 858856, 859726, true, profiles[0], CasProfileUtil::k);
+//for (auto genome : genomes) stdrun(profiles, genome.second, genome.first);
+
+
+//CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
+
+//Debug::translation_print(genomes.at("pyogenes"), 858856, 859726, true, 2);
+
 int main()
 {
     Prospector::device_init(); auto start_main = time();
-
     auto genomes = Util::load_genomes(genome_dir);
 
 
-    Debug::translation_print(genomes.at("pyogenes"), 858856, 859726, true, 10);
+
+    auto profiles_a = CasProfileUtil::profiles_from_tigrfam_dir("T:\\data\\TIGRFAMs_13.0_SEED");
+    auto profiles_b = CasProfileUtil::pfam("T:\\data\\Pfam-A.filt");
 
 
+    vector<const CasProfile*> profiles;
+
+    profiles.insert(profiles.end(), profiles_a.begin(), profiles_a.end());
+    profiles.insert(profiles.end(), profiles_b.begin(), profiles_b.end());
 
 
-
-    return 0;
-
-    auto cas_profiles = CasProfileUtil::pfam_profiles("T:\\Pfam-A.seed\\Pfam-A.seed");
-
+    stdrun(profiles, genomes.at("pyogenes"), "pyogenes");
+        
     
-    //auto cas_profiles = CasProfileUtil::cas_profiles_from_tigrfam(tigrfam);
-
-    //fmt::print("hard-coded translation: {}\n", Debug::translation_test(genome, 2638027, 2638291, false, 3));
-
-    //Debug::cas_detect(genome, 2638027, 2638291, false, cas_profiles[0], CasProfileUtil::k);
-
-    //stdrun(cas_profiles, genomes.at("GCA_000145615.1_ASM14561v1_genomic"), "GCA_000145615.1_ASM14561v1_genomic");
-    stdrun(cas_profiles, genomes.at("pyogenes"), "pyogenes");
-
-    //for (auto genome : genomes) stdrun(cas_profiles, genome.second, genome.first);
-     
     start_main = time(start_main, "prospector"); return 0;                                                                                                           
 }
+
 

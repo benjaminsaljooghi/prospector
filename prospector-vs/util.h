@@ -222,7 +222,7 @@ namespace Util
 	string seqs_to_fasta(vector<string>);
 	vector<string> kmerize(string, ui);
 
-	ui encode_amino_kmer(string, ui);
+	ui encode_amino_kmer(string);
 	vector<ui> encode_amino_kmers(vector<string>, ui);
 
     map<string, string> load_genomes(string dir);

@@ -80,31 +80,24 @@ Translation Debug::translation_obj(const string& genome, ui genome_start, ui gen
 }
 
 
-void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, CasProfile profile, ui k)
+void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, const CasProfile* profile, ui k)
 {
-    fmt::print("input CasProfile:\n");
-    //for (string kmer : profile.kmer_set)
-        //fmt::print("{}\n", kmer);
-    
     Translation translation = Debug::translation_obj(genome, genome_start, genome_final, pos);
-    fmt::print("pure translation: {}\n", translation.pure);
-    for (ui kmer : translation.pure_kmerized_encoded)
+    fmt::print("translation of genome: {}\n", translation.pure);
+    for (string kmer : translation.pure_kmerized)
     {
-        bool contains = profile.hash_table.contains(kmer);
+        bool contains = profile->kmer_set.contains(kmer);
         fmt::print("{} : {}\n", contains, kmer);
     }
 
-    vector<CasProfile> profiles;
+    vector<const CasProfile*> profiles;
     profiles.push_back(profile);
 
     vector<Translation> translations;
     translations.push_back(translation);
 
-    //auto target_map = Cas::compute_target_map(profiles, translations);
-
-
+    
     auto fragments = Cas::cas(profiles, translations, genome);
-
     fmt::print("fragment debug info:\n");
 
     for (Fragment& fragment : fragments)

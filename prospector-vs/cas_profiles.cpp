@@ -93,89 +93,6 @@
 //    }
 //}
 
-//vector<string> multi_seq_from_tigfram(string file_path)
-//{
-//    ifstream input(file_path);
-//
-//    if (!input.good())
-//    {
-//        throw runtime_error(strerror(errno));
-//    }
-//
-//    vector<string> seqs;
-//
-//    string line;
-//    while (getline(input, line))
-//    {
-//        if (line == "" || line.starts_with('#') || line.starts_with('//'))
-//        {
-//            continue;
-//        }
-//
-//        auto result = line.find(' ');
-//        auto line_without_id = line.substr(result);
-//        auto first_not_of = line_without_id.find_first_not_of(' ');
-//        auto seq = line_without_id.substr(first_not_of);
-//        seq.erase(std::remove(seq.begin(), seq.end(), '.'), seq.end());
-//        seqs.push_back(seq);
-//    }
-//
-//    return seqs;
-//}
-
-unordered_set<string> kmer_set_from_seqs(vector<string> seqs, ull k)
-{
-    unordered_set<string> kmer_set;
-    for (const string& seq : seqs)
-    {
-        for (ull i = 0; i < seq.size() - k + 1; i++)
-        {
-            auto substr = seq.substr(i, k);
-            kmer_set.insert(substr);
-        }
-    }
-    return kmer_set;
-}
-
-//vector<CasProfile> CasProfileUtil::cas_profiles_from_tigrfam(string dir)
-//{
-//    map<string, string> map_id_gn
-//    {
-//        //{"TIGR01865", "cas9"},
-//        {"TIGR01573", "cas2"},
-//        //{"TIGR00372", "cas4"},
-//    };
-//
-//    vector<CasProfile> profiles;
-//
-//    for (const auto& entry : filesystem::directory_iterator(dir))
-//    {
-//        string id = entry.path().stem().string();
-//
-//        if (!map_id_gn.contains(id)) continue;
-//
-//        unordered_set<string> kmer_set = kmer_set_from_tigfram(entry.path().string(), CasProfileUtil::k);
-//
-//        unordered_set<ui> hash_table;
-//        for (string kmer : kmer_set)
-//            hash_table.insert(Util::encode_amino_kmer(kmer, CasProfileUtil::k));
-//
-//        CasProfile profile;
-//        profile.gn = map_id_gn.at(id);
-//        profile.hash_table = hash_table;
-//        profile.kmer_set = kmer_set;
-//
-//        //profile.N = gen_n(hash_table);
-//        //profile.hash_table = gen_perfect_hash_table(profile.N, hash_table);
-//        //profile.hash_table = hash_table;
-//        //profile.hash_table = kmer_set;
-//
-//        profiles.push_back(profile);
-//    }
-//        
-//    return profiles;
-//}
-
 //void serialize_profile(CasProfile profile)
 //{
 //    FILE* write_ptr;
@@ -295,19 +212,111 @@ unordered_set<string> kmer_set_from_seqs(vector<string> seqs, ull k)
 //    return profiles;
 //}
 
+//unordered_set<ui> encode_kmer_set(unordered_set<string> kmer_set, ull k)
+//{
+//	unordered_set<ui> kmer_set_encoded;
+//	for (string& kmer : kmer_set)
+//	{
+//		if (kmer.find('O') != string::npos || kmer.find('X') != string::npos || kmer.find('B') != string::npos || kmer.find('Z') != string::npos)
+//			continue;
+//
+//		kmer_set_encoded.insert(Util::encode_amino_kmer(kmer, k));
+//	}
+//	return kmer_set_encoded;
+//}
+//
+//unordered_set<string> kmer_set_from_seqs(vector<string> seqs, ull k)
+//{
+//	unordered_set<string> kmer_set;
+//	for (const string& seq : seqs)
+//	{
+//		for (ull i = 0; i < seq.size() - k + 1; i++)
+//		{
+//			auto substr = seq.substr(i, k);
+//			kmer_set.insert(substr);
+//		}
+//	}
+//	return kmer_set;
+//}
 
-
-map<string, vector<string>> CasProfileUtil::pfam(string path)
+CasProfile* profile_factory(string id, vector<string> seqs, ull k)
 {
-	ifstream input(path);
+	CasProfile* profile = new CasProfile;
+	profile->gn = id;
+	for (string& seq : seqs)
+	{
+		seq.erase(remove(seq.begin(), seq.end(), '.'), seq.end());
+		seq.erase(remove(seq.begin(), seq.end(), '-'), seq.end());
+		transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
-	if (!input.good())
-		throw runtime_error(strerror(errno));
+		for (ull i = 0; i < seq.size() - k + 1; i++)
+		{
+			string kmer = seq.substr(i, k);
 
-	//vector<string> seqs;
-	string line;
+			if (kmer.find('O') != string::npos || kmer.find('X') != string::npos || kmer.find('B') != string::npos || kmer.find('Z') != string::npos)
+				continue;
+
+			ui kmer_enc = Util::encode_amino_kmer(kmer);
+			profile->kmer_set.insert(kmer);
+			profile->hash_table.insert(kmer_enc);
+		}
+	}
+	return profile;
+}
+
+vector<string> seqs_from_tigrfam_file(string path)
+{
+    ifstream input(path);
+
+    if (!input.good())
+        throw runtime_error(strerror(errno));
+
+    vector<string> seqs;
+
+    string line;
+    while (getline(input, line))
+    {
+        if (line == "" || line.starts_with('#') || line.starts_with('//'))
+            continue;
+
+        auto result = line.find(' ');
+        auto line_without_id = line.substr(result);
+        auto first_not_of = line_without_id.find_first_not_of(' ');
+        auto seq = line_without_id.substr(first_not_of);
+        seqs.push_back(seq);
+    }
+    return seqs;
+}
+
+vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(string dir)
+{
+    map<string, string> map_id_gn
+    {
+		{"TIGR00287", "cas1"},
+		{"TIGR03639", "cas1_a"},
+        {"TIGR01865", "cas9"},
+        {"TIGR01573", "cas2"},
+        {"TIGR00372", "cas4"},
+    };
+
+    vector<const CasProfile*> profiles;
+    for (const auto& entry : filesystem::directory_iterator(dir))
+    {
+        string id = entry.path().stem().string();
+        if (!map_id_gn.contains(id)) continue;
+		
+		auto seqs = seqs_from_tigrfam_file(entry.path().string());
+
+		auto profile = profile_factory(map_id_gn.at(id), seqs, CasProfileUtil::k);
+
+        profiles.push_back(profile);
+    }
+    return profiles;
+}
 
 
+void CasProfileUtil::pfam_filter(string in, string out)
+{
 	unordered_set<string> known
 	{
 		"PF18765",
@@ -482,131 +491,110 @@ map<string, vector<string>> CasProfileUtil::pfam(string path)
 		"PF00005",
 	};
 	
+	
+	ifstream input(in);
+	ofstream output(out);
+	if (!input.good())
+		throw runtime_error(strerror(errno));
 
-	map<string, string> info;
-	vector<string> seqs;
-
-	map<string, vector<string>> mapping;
-
+	vector<string> buffer;
+	string ac;
+	string line;
+	ui line_count = 0;
 	while (getline(input, line))
 	{
+		if (++line_count % 20000 == 0) fmt::print("{}\n", line_count);
+		buffer.push_back(line);
+		if (line.starts_with("#=GF AC"))
+		{
+			ac = line;
+			ac.erase(0, 10);
+			ac.erase(ac.find_first_of('.'));
+		}
+
+		if (line.starts_with("//"))
+		{
+			if (known.contains(ac))
+			{
+				for (string& line : buffer)
+				{
+					output << line << endl;
+				}
+			}
+
+			line.clear();
+			ac.clear();
+			buffer.clear();
+		}
+	}
+	
+	input.close();
+	output.close();
+
+
+}
+
+
+void refine_seq(string& line)
+{
+	int first_space = line.find(' ');
+	line.erase(0, first_space);
+	int first_amino = line.find_first_not_of(' ');
+	line.erase(0, first_amino);
+}
+
+vector<const CasProfile*> CasProfileUtil::pfam(string path)
+{
+	ifstream input(path);
+
+	if (!input.good())
+		throw runtime_error(strerror(errno));
+
+	vector<const CasProfile*> profiles;
+	ui line_count = 0;
+	string line;
+	string id;
+	vector<string> seqs;
+	while (getline(input, line))
+	{
+		if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
+
+		if (line.starts_with("#=GF ID"))
+		{
+			id = line.substr(10);
+			continue;
+		}
+
 		if (
 			line.starts_with(" ") ||
+			line.starts_with("#=GF") ||
 			line.starts_with("#=GS") ||
 			line.starts_with("#=GC") ||
 			line.starts_with("#=GR") ||
 			line.starts_with("# STOCKHOLM 1.0") ||
 			line == ""
-		)
+			)
 		{
 			continue;
 		}
 
 
-
-		if (line == "//") // at end of alignment, do something with what we have
+		if (line.starts_with("//"))
 		{
-			string ac = info["AC"];
-			ac = ac.substr(0, ac.find_first_of('.'));
-
-			if (known.contains(ac))
-			{
-				// we want to map this ID against the seqs
-				mapping[info["ID"]] = seqs;
-
-			}
-
-			info.clear();
+			CasProfile* profile = profile_factory(id, seqs, CasProfileUtil::k);
+			profiles.push_back(profile);
+			id.clear();
 			seqs.clear();
-
 			continue;
 		}
 
-
-
-
-		if (line.starts_with("#=GF"))
-		{
-
-			int a = line.find_first_of(' ');
-			line = line.substr(a);
-			a = line.find_first_not_of(' ');
-			line = line.substr(a);
-			string info_id = line.substr(0, 2);
-
-			int b = line.find_first_of(' ');
-			line = line.substr(b);
-			b = line.find_first_not_of(' ');
-			line = line.substr(b);
-			int c = 5;
-			string info_val = line;
-
-			info[info_id] = info_val;
-
-			continue;
-		}
-
-
-		// parse the entire sequence set
-		
-
-		int a = line.find(' ');
-		line = line.substr(a);
-		int first_not_of = line.find_first_not_of(' ');
-		string seq = line.substr(first_not_of);
-		seq.erase(remove(seq.begin(), seq.end(), '.'), seq.end());
-		transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-		seqs.push_back(seq);
-
-
-
-
-
-
-	}
-
-
-	return mapping;
-
-}
-
-
-unordered_set<ui> encode_kmer_set(unordered_set<string> kmer_set, ull k)
-{
-	unordered_set<ui> kmer_set_encoded;
-	for (string kmer : kmer_set)
-	{
-		if (kmer.find('O') != string::npos || kmer.find('X') != string::npos)
-			continue;
-
-		kmer_set_encoded.insert(Util::encode_amino_kmer(kmer, k));
-	}
-	return kmer_set_encoded;
-}
-
-CasProfile profile_factory(string id, vector<string> seqs, ull k)
-{
-	unordered_set<string> kmer_set = kmer_set_from_seqs(seqs, k);
-	unordered_set<ui> kmer_set_encoded = encode_kmer_set(kmer_set, k);
-    CasProfile profile;
-	profile.gn = id;
-    profile.hash_table = kmer_set_encoded;
-    profile.kmer_set = kmer_set;
-	return profile;
-}
-
-
-vector<CasProfile> CasProfileUtil::pfam_profiles(string path)
-{
-	auto mapping = CasProfileUtil::pfam(path);
-
-	vector<CasProfile> profiles;
-	for (auto const& [id, seqs] : mapping)
-	{
-		profiles.push_back(profile_factory(id, seqs, CasProfileUtil::k));
+		refine_seq(line);
+		seqs.push_back(line);
 	}
 	return profiles;
 }
+
+
 
 
 

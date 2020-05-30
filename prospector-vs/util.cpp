@@ -143,8 +143,9 @@ vector <string> Util::kmerize (string seq, ui k)
 	return kmers;
 }
 
-ui Util::encode_amino_kmer(string kmer, ui k)
+ui Util::encode_amino_kmer(string kmer)
 {
+	ull k = kmer.size();
 	ui encoded = 0;
 	for (ui i = 0; i < k; i++)
 		encoded += Util::amino_encoding.at(kmer[i]) << k * i;
@@ -157,10 +158,7 @@ vector<ui> Util::encode_amino_kmers(vector<string> kmers, ui k)
 	vector<ui> encoded(kmers.size());
 	memset(&encoded[0], 0, sizeof(ui) * kmers.size());
 	for (ui j = 0; j < kmers.size(); j++)
-	{
-		encoded[j] = encode_amino_kmer(kmers[j], k);
-
-	}
+		encoded[j] = encode_amino_kmer(kmers[j]);
 	return encoded;
 }
 
