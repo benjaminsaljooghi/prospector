@@ -220,25 +220,26 @@ string genome_dir = "T:\\crispr-impl\\crispr-genome";
 //for (auto genome : genomes) stdrun(profiles, genome.second, genome.first);
 
 
-//CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
-
 //Debug::translation_print(genomes.at("pyogenes"), 858856, 859726, true, 2);
 
 string pfam_in = "T:\\data\\Pfam-A.full";
 string pfam_filt = "T:\\data\\Pfam-A.full_filt";
+string serial_dir = "T:\\data\\serial";
+
+void instantiation_routine()
+{
+    //CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
+    vector<const CasProfile*> profiles = CasProfileUtil::pfam(pfam_filt);
+    CasProfileUtil::serialize(serial_dir, profiles);
+    exit(0);
+}
 
 int main()
 {
     Prospector::device_init(); auto start_main = time();
     auto genomes = Util::load_genomes(genome_dir);
-
-    //CasProfileUtil::pfam_filter(pfam_in, pfam_filt);
-    //return 0;
-
-    vector<const CasProfile*> profiles = CasProfileUtil::pfam(pfam_filt);
-
-    stdrun(profiles, genomes.at("pyogenes"), "pyogenes");
-    
+    auto deserialized_profiles = CasProfileUtil::deserialize(serial_dir);
+    stdrun(deserialized_profiles, genomes.at("pyogenes"), "pyogenes");
     start_main = time(start_main, "prospector"); return 0;                                                                                                           
 }
 

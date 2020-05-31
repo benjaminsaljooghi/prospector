@@ -27,10 +27,19 @@
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="btree.h" />
     <ClInclude Include="cas.h" />
     <ClInclude Include="cas_profiles.h" />
     <ClInclude Include="crispr.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="meminfo.h" />
+    <ClInclude Include="phmap.h" />
+    <ClInclude Include="phmap_base.h" />
+    <ClInclude Include="phmap_bits.h" />
+    <ClInclude Include="phmap_config.h" />
+    <ClInclude Include="phmap_dump.h" />
+    <ClInclude Include="phmap_fwd_decl.h" />
+    <ClInclude Include="phmap_utils.h" />
     <ClInclude Include="prospector.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="time.h" />

@@ -80,30 +80,30 @@ Translation Debug::translation_obj(const string& genome, ui genome_start, ui gen
 }
 
 
-void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, const CasProfile* profile, ui k)
-{
-    Translation translation = Debug::translation_obj(genome, genome_start, genome_final, pos);
-    fmt::print("translation of genome: {}\n", translation.pure);
-    for (string kmer : translation.pure_kmerized)
-    {
-        bool contains = profile->kmer_set.contains(kmer);
-        fmt::print("{} : {}\n", contains, kmer);
-    }
-
-    vector<const CasProfile*> profiles;
-    profiles.push_back(profile);
-
-    vector<Translation> translations;
-    translations.push_back(translation);
-
-    
-    auto fragments = Cas::cas(profiles, translations, genome);
-    fmt::print("fragment debug info:\n");
-
-    for (Fragment& fragment : fragments)
-        Cas::print_fragment_debug(fragment);
-
-}
+//void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, const CasProfile* profile, ui k)
+//{
+//    Translation translation = Debug::translation_obj(genome, genome_start, genome_final, pos);
+//    fmt::print("translation of genome: {}\n", translation.pure);
+//    for (string kmer : translation.pure_kmerized)
+//    {
+//        bool contains = profile->kmer_set.contains(kmer);
+//        fmt::print("{} : {}\n", contains, kmer);
+//    }
+//
+//    vector<const CasProfile*> profiles;
+//    profiles.push_back(profile);
+//
+//    vector<Translation> translations;
+//    translations.push_back(translation);
+//
+//    
+//    auto fragments = Cas::cas(profiles, translations, genome);
+//    fmt::print("fragment debug info:\n");
+//
+//    for (Fragment& fragment : fragments)
+//        Cas::print_fragment_debug(fragment);
+//
+//}
 
 
 
