@@ -191,7 +191,7 @@ vector<Crispr> get_crisprs(const string& genome)
 //}
 
 
-void stdrun(const vector<const CasProfile*>& cas_profiles, const string& genome, const string& genome_name)
+void prospect(const vector<const CasProfile*>& cas_profiles, const string& genome, const string& genome_name)
 {
 
     auto start_run = time();
@@ -200,7 +200,6 @@ void stdrun(const vector<const CasProfile*>& cas_profiles, const string& genome,
     vector<Translation> translations = Cas::crispr_proximal_translations(genome, crisprs);
     vector<Fragment> fragments = Cas::cas(cas_profiles, translations, genome);
     map<string, vector<Gene>> genes = Cas::assemble_genes(crisprs, fragments);
-    //CrisprUtil::print(genome, crisprs);
     Cas::print_all(crisprs, genes, genome);
     start_run = time(start_run, genome_name.c_str());
 }
@@ -220,11 +219,16 @@ void instantiation_routine()
 
 int main()
 {
-    Prospector::device_init(); auto start_main = time();
+    Prospector::device_init(); 
+    auto profiles = CasProfileUtil::deserialize(serial_dir);
     auto genomes = Util::load_genomes(genome_dir);
-    auto deserialized_profiles = CasProfileUtil::deserialize(serial_dir);
-    stdrun(deserialized_profiles, genomes.at("pyogenes"), "pyogenes");
-    start_main = time(start_main, "prospector"); return 0;                                                                                                           
+
+    auto start_main = time();
+
+    prospect(profiles, genomes.at("pyogenes"), "pyogenes");
+
+    start_main = time(start_main, "main");
+    return 0;                                                                                                           
 }
 
 
