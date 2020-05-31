@@ -166,9 +166,11 @@ vector<ui> Util::encode_amino_kmers(vector<string> kmers, ui k)
 
 map<string, string> Util::load_genomes(string dir)
 {
+	auto start = time();
     map<string, string> genomes;
     for (const auto& entry : filesystem::directory_iterator(dir))
         genomes[entry.path().stem().string()] = (parse_fasta_single(entry.path().string()));
-    return genomes;
+	start = time(start, "genome load");
+	return genomes;
 }
 

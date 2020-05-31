@@ -197,12 +197,7 @@ vector<Fragment> Cas::cas(const vector<const CasProfile*>& profiles, const vecto
 
             if (!good_clusters(clusters))
                 continue;
-           
-            if (profiles[cas_i]->gn == "HATPase_c")
-            {
-                printf("break");
-            }
-
+          
             Fragment f = {translations[translation_i].reference_crispr, &translations[translation_i], profiles[cas_i], clusters};
 
             compute_demarc(f);

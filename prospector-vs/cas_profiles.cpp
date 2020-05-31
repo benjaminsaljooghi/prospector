@@ -619,59 +619,23 @@ void CasProfileUtil::serialize(string dir, vector<const CasProfile*> profiles)
 		string file_name = dir + "\\" + profile->gn;
 		phmap::BinaryOutputArchive archive(file_name.c_str());
 		profile->hash_table.dump(archive);
-
-	/*	FILE* file = fopen(file_name.c_str(), "wb");
-		auto size = profile->hash_table.size();
-		vector<ui> buffer;
-		for (ui kmer_enc : profile->hash_table)
-		{
-			buffer.push_back(kmer_enc);
-		}
-
-		fwrite(&buffer[0], sizeof(ui), size, file);
-	*/
-		//fclose(file);
-	
 	}
 }
 
 vector<const CasProfile*> CasProfileUtil::deserialize(string dir)
 {
-
-	
 	vector<const CasProfile*> profiles;
-
+	auto start = time();
 	for (const auto& entry : filesystem::directory_iterator(dir))
 	{
 		string file_path = entry.path().string();
 		phmap::BinaryInputArchive archive(file_path.c_str());
-
 		CasProfile* profile = new CasProfile;
 		profile->hash_table.load(archive);
 		profile->gn = entry.path().stem().string();
 		profiles.push_back(profile);
-
-		//FILE* file = fopen(file_path.c_str(), "rb");
-		//assert(file);
-		//fseek(file, 0, SEEK_END);
-		//long fsize = ftell(file);
-		//fseek(file, 0, SEEK_SET);
-		//ui* buffer = (ui*)malloc(fsize);
-		//fread(buffer, 4, fsize / 4, file);
-		//fclose(file);
-		//CasProfile* profile = new CasProfile;
-		////profile->hash_table = unordered_set<ui>{ buffer, buffer + (fsize / 4) };
-		//profile->hash_table.reserve(fsize / 4);
-		//for (ull i = 0; i < fsize / 4; i++)
-		//{
-		//	profile->hash_table.insert(buffer[i]);
-		//}
-		//free(buffer);
-		//profile->gn = entry.path().stem().string();
-		//profiles.push_back(profile);
-		//fmt::print("{} profiles deserialized\n", profiles.size());
-	
 	}
+	start = time(start, "profile deserialization");
 	return profiles;
 }
 

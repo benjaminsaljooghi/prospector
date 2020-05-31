@@ -205,23 +205,7 @@ void stdrun(const vector<const CasProfile*>& cas_profiles, const string& genome,
     start_run = time(start_run, genome_name.c_str());
 }
 
-//string cas_file = "T:\\crispr-impl\\crisrpr-cas\\cas.fasta";
-//string cache_file = "T:\\crispr-impl\\crisrpr-cas\\cache.fasta";
-//if (!filesystem::exists(cache_file)) write(cas_file, cache_file);
-//vector<CasProfile> cas_profiles = read(cas_file, cache_file);
-
-
-
 string genome_dir = "T:\\crispr-impl\\crispr-genome";
-
-
-
-//Debug::cas_detect(genomes.at("pyogenes"), 858856, 859726, true, profiles[0], CasProfileUtil::k);
-//for (auto genome : genomes) stdrun(profiles, genome.second, genome.first);
-
-
-//Debug::translation_print(genomes.at("pyogenes"), 858856, 859726, true, 2);
-
 string pfam_in = "T:\\data\\Pfam-A.full";
 string pfam_filt = "T:\\data\\Pfam-A.full_filt";
 string serial_dir = "T:\\data\\serial";
