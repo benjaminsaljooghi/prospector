@@ -143,7 +143,7 @@ vector <string> Util::kmerize (string seq, ui k)
 	return kmers;
 }
 
-ui Util::encode_amino_kmer(string kmer)
+ui Util::encode_amino_kmer(const string& kmer)
 {
 	ull k = kmer.size();
 	ui encoded = 0;

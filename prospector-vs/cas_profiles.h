@@ -16,14 +16,13 @@ struct CasProfile
 
 namespace CasProfileUtil
 {
-    static const ui k = 5; // k * encoding size cannot exceed word size.
+    static const ui k = 6; // k * encoding size cannot exceed word size.
 
 
 
-    vector<const CasProfile*> profiles_from_tigrfam_dir(string dir);
+    //vector<const CasProfile*> profiles_from_tigrfam_dir(string dir);
 
     void pfam_filter(string in, string out);
-
     vector<const CasProfile*> pfam(string path);
 
 }

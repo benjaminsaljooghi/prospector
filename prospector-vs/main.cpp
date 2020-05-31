@@ -224,25 +224,20 @@ string genome_dir = "T:\\crispr-impl\\crispr-genome";
 
 //Debug::translation_print(genomes.at("pyogenes"), 858856, 859726, true, 2);
 
+string pfam_in = "T:\\data\\Pfam-A.full";
+string pfam_filt = "T:\\data\\Pfam-A.full_filt";
+
 int main()
 {
     Prospector::device_init(); auto start_main = time();
     auto genomes = Util::load_genomes(genome_dir);
 
+    //CasProfileUtil::pfam_filter(pfam_in, pfam_filt);
+    //return 0;
 
-
-    auto profiles_a = CasProfileUtil::profiles_from_tigrfam_dir("T:\\data\\TIGRFAMs_13.0_SEED");
-    auto profiles_b = CasProfileUtil::pfam("T:\\data\\Pfam-A.filt");
-
-
-    vector<const CasProfile*> profiles;
-
-    profiles.insert(profiles.end(), profiles_a.begin(), profiles_a.end());
-    profiles.insert(profiles.end(), profiles_b.begin(), profiles_b.end());
-
+    vector<const CasProfile*> profiles = CasProfileUtil::pfam(pfam_filt);
 
     stdrun(profiles, genomes.at("pyogenes"), "pyogenes");
-        
     
     start_main = time(start_main, "prospector"); return 0;                                                                                                           
 }

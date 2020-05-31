@@ -225,10 +225,10 @@
 //	return kmer_set_encoded;
 //}
 //
-//unordered_set<string> kmer_set_from_seqs(vector<string> seqs, ull k)
+//unordered_set<string> kmer_set_from_seqs(vector<string> seq_buffer, ull k)
 //{
 //	unordered_set<string> kmer_set;
-//	for (const string& seq : seqs)
+//	for (const string& seq : seq_buffer)
 //	{
 //		for (ull i = 0; i < seq.size() - k + 1; i++)
 //		{
@@ -239,16 +239,19 @@
 //	return kmer_set;
 //}
 
-CasProfile* profile_factory(string id, vector<string> seqs, ull k)
+void clean_seq(string& seq)
+{
+	seq.erase(remove(seq.begin(), seq.end(), '.'), seq.end());
+	seq.erase(remove(seq.begin(), seq.end(), '-'), seq.end());
+	transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+}
+
+CasProfile* profile_factory(string id, vector<string> seq_buffer, ull k)
 {
 	CasProfile* profile = new CasProfile;
 	profile->gn = id;
-	for (string& seq : seqs)
-	{
-		seq.erase(remove(seq.begin(), seq.end(), '.'), seq.end());
-		seq.erase(remove(seq.begin(), seq.end(), '-'), seq.end());
-		transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-
+	for (string& seq : seq_buffer)
+	{	
 		for (ull i = 0; i < seq.size() - k + 1; i++)
 		{
 			string kmer = seq.substr(i, k);
@@ -257,63 +260,76 @@ CasProfile* profile_factory(string id, vector<string> seqs, ull k)
 				continue;
 
 			ui kmer_enc = Util::encode_amino_kmer(kmer);
-			profile->kmer_set.insert(kmer);
+			//profile->kmer_set.insert(kmer);
 			profile->hash_table.insert(kmer_enc);
 		}
 	}
 	return profile;
 }
 
-vector<string> seqs_from_tigrfam_file(string path)
+//vector<string> seqs_from_tigrfam_file(string path)
+//{
+//    ifstream input(path);
+//
+//    if (!input.good())
+//        throw runtime_error(strerror(errno));
+//
+//    vector<string> seq_buffer;
+//
+//    string line;
+//    while (getline(input, line))
+//    {
+//        if (line == "" || line.starts_with('#') || line.starts_with('//'))
+//            continue;
+//
+//        auto result = line.find(' ');
+//        auto line_without_id = line.substr(result);
+//        auto first_not_of = line_without_id.find_first_not_of(' ');
+//        auto seq = line_without_id.substr(first_not_of);
+//        seq_buffer.push_back(seq);
+//    }
+//    return seq_buffer;
+//}
+
+//vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(string dir)
+//{
+//    map<string, string> map_id_gn
+//    {
+//		//{"TIGR00287", "cas1"},
+//		//{"TIGR03639", "cas1_a"},
+//        //{"TIGR01865", "cas9"},
+//        //{"TIGR01573", "cas2"},
+//        {"TIGR00372", "cas4"},
+//    };
+//
+//    vector<const CasProfile*> profiles;
+//    for (const auto& entry : filesystem::directory_iterator(dir))
+//    {
+//        string id = entry.path().stem().string();
+//        if (!map_id_gn.contains(id)) continue;
+//		
+//		auto seq_buffer = seqs_from_tigrfam_file(entry.path().string());
+//
+//		auto profile = profile_factory(map_id_gn.at(id), seq_buffer, CasProfileUtil::k);
+//
+//        profiles.push_back(profile);
+//    }
+//    return profiles;
+//}
+
+
+bool non_seq(string& line)
 {
-    ifstream input(path);
-
-    if (!input.good())
-        throw runtime_error(strerror(errno));
-
-    vector<string> seqs;
-
-    string line;
-    while (getline(input, line))
-    {
-        if (line == "" || line.starts_with('#') || line.starts_with('//'))
-            continue;
-
-        auto result = line.find(' ');
-        auto line_without_id = line.substr(result);
-        auto first_not_of = line_without_id.find_first_not_of(' ');
-        auto seq = line_without_id.substr(first_not_of);
-        seqs.push_back(seq);
-    }
-    return seqs;
+	return
+		line.starts_with(" ") ||
+		line.starts_with("#=GF") ||
+		line.starts_with("#=GS") ||
+		line.starts_with("#=GC") ||
+		line.starts_with("#=GR") ||
+		line.starts_with("# STOCKHOLM 1.0") ||
+		line.starts_with("//") ||
+		line == "";
 }
-
-vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(string dir)
-{
-    map<string, string> map_id_gn
-    {
-		{"TIGR00287", "cas1"},
-		{"TIGR03639", "cas1_a"},
-        {"TIGR01865", "cas9"},
-        {"TIGR01573", "cas2"},
-        {"TIGR00372", "cas4"},
-    };
-
-    vector<const CasProfile*> profiles;
-    for (const auto& entry : filesystem::directory_iterator(dir))
-    {
-        string id = entry.path().stem().string();
-        if (!map_id_gn.contains(id)) continue;
-		
-		auto seqs = seqs_from_tigrfam_file(entry.path().string());
-
-		auto profile = profile_factory(map_id_gn.at(id), seqs, CasProfileUtil::k);
-
-        profiles.push_back(profile);
-    }
-    return profiles;
-}
-
 
 void CasProfileUtil::pfam_filter(string in, string out)
 {
@@ -497,64 +513,12 @@ void CasProfileUtil::pfam_filter(string in, string out)
 	if (!input.good())
 		throw runtime_error(strerror(errno));
 
-	vector<string> buffer;
+	vector<string> seq_buffer;
+	string id;
 	string ac;
 	string line;
 	ui line_count = 0;
-	while (getline(input, line))
-	{
-		if (++line_count % 20000 == 0) fmt::print("{}\n", line_count);
-		buffer.push_back(line);
-		if (line.starts_with("#=GF AC"))
-		{
-			ac = line;
-			ac.erase(0, 10);
-			ac.erase(ac.find_first_of('.'));
-		}
-
-		if (line.starts_with("//"))
-		{
-			if (known.contains(ac))
-			{
-				for (string& line : buffer)
-				{
-					output << line << endl;
-				}
-			}
-
-			line.clear();
-			ac.clear();
-			buffer.clear();
-		}
-	}
-	
-	input.close();
-	output.close();
-
-
-}
-
-
-void refine_seq(string& line)
-{
-	int first_space = line.find(' ');
-	line.erase(0, first_space);
-	int first_amino = line.find_first_not_of(' ');
-	line.erase(0, first_amino);
-}
-
-vector<const CasProfile*> CasProfileUtil::pfam(string path)
-{
-	ifstream input(path);
-
-	if (!input.good())
-		throw runtime_error(strerror(errno));
-
-	vector<const CasProfile*> profiles;
-	ui line_count = 0;
-	string line;
-	string id;
-	vector<string> seqs;
+	bool engage = false;
 	while (getline(input, line))
 	{
 		if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
@@ -565,39 +529,81 @@ vector<const CasProfile*> CasProfileUtil::pfam(string path)
 			continue;
 		}
 
-		if (
-			line.starts_with(" ") ||
-			line.starts_with("#=GF") ||
-			line.starts_with("#=GS") ||
-			line.starts_with("#=GC") ||
-			line.starts_with("#=GR") ||
-			line.starts_with("# STOCKHOLM 1.0") ||
-			line == ""
-			)
+		if (line.starts_with("#=GF AC"))
 		{
+			ac = line;
+			ac.erase(0, 10);
+			ac.erase(ac.find_first_of('.'));
+
+			if (known.contains(ac))
+			{
+				engage = true;
+			}
+
 			continue;
 		}
 
+		if (!engage)
+		{
+			continue;
+		}
 
 		if (line.starts_with("//"))
 		{
-			CasProfile* profile = profile_factory(id, seqs, CasProfileUtil::k);
-			profiles.push_back(profile);
-			id.clear();
-			seqs.clear();
+			output << id << endl;
+
+			for (string& line : seq_buffer)
+			{
+				int first_space = line.find(' ');
+				line.erase(0, first_space);
+				int first_amino = line.find_first_not_of(' ');
+				line.erase(0, first_amino);
+
+				clean_seq(line);
+
+				output << line << endl;
+			}
+
+			output << "//" << endl;
+
+			seq_buffer.clear();
+			engage = false;
 			continue;
 		}
 
-		refine_seq(line);
-		seqs.push_back(line);
+		if (non_seq(line)) continue;
+		seq_buffer.push_back(line);
 	}
-	return profiles;
+	
+	input.close();
+	output.close();
 }
 
 
 
+vector<const CasProfile*> CasProfileUtil::pfam(string path)
+{
+	ifstream input(path);
 
+	if (!input.good())
+		throw runtime_error(strerror(errno));
 
+	vector<const CasProfile*> profiles;
+	string line;
+	while (getline(input, line))
+	{
+		string id = line;
+
+		vector<string> seq_buffer;
+		while (getline(input, line) && line != "//")
+		{
+			seq_buffer.push_back(line);
+		}
+
+		profiles.push_back(profile_factory(id, seq_buffer, CasProfileUtil::k));
+	}
+	return profiles;
+}
 
 
 
