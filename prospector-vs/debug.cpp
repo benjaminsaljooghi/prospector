@@ -73,10 +73,14 @@ void Debug::translation_print(const string& genome, ui genome_start, ui genome_f
     fmt::print("debug: {}\n", translation);
 }
 
-Translation Debug::translation_obj(const string& genome, ui genome_start, ui genome_final, bool pos)
+void Debug::triframe_print(const string& genome, ui genome_start, ui genome_final, bool pos)
 {
     auto triframe = Cas::get_triframe(genome, genome_start, genome_final, pos);
-    return triframe[0];
+    for (auto translation : triframe)
+    {
+        fmt::print("{}\n", translation.pure);
+    }
+    //return triframe;
 }
 
 

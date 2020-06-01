@@ -24,6 +24,8 @@ struct CasProfile
     //unordered_set<string> kmer_set;
 };
 
+
+
 namespace CasProfileUtil
 {
     static const ui k = 6; // k * encoding size cannot exceed word size.

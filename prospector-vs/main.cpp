@@ -165,7 +165,11 @@ vector<Crispr> get_crisprs(const string& genome)
 {
     vector<Crispr> crisprs = prospector_main(genome);      
     CrisprUtil::cache_crispr_information(genome, crisprs);
-    crisprs = Util::filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.75; });
+
+    //CrisprUtil::print(genome, Debug::crispr_filter(crisprs, 315799 - 100, 316092 + 100));
+    //exit(0);
+
+    crisprs = Util::filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.5; });
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
     crisprs = CrisprUtil::get_domain_best(crisprs);
     Util::sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
@@ -191,10 +195,12 @@ vector<Crispr> get_crisprs(const string& genome)
 //}
 
 
-void prospect(const vector<const CasProfile*>& cas_profiles, const string& genome, const string& genome_name)
+void prospect(const vector<const CasProfile*>& cas_profiles, map<string, string>& genomes, const string& genome_name)
 {
 
     auto start_run = time();
+
+    const string& genome = genomes.at(genome_name);
 
     vector<Crispr> crisprs = get_crisprs(genome);
     vector<Translation> translations = Cas::crispr_proximal_translations(genome, crisprs);
@@ -225,7 +231,9 @@ int main()
 
     auto start_main = time();
 
-    prospect(profiles, genomes.at("pyogenes"), "pyogenes");
+
+
+    prospect(profiles, genomes, "thermophilus");
 
     start_main = time(start_main, "main");
     return 0;                                                                                                           

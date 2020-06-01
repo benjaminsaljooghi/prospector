@@ -381,8 +381,8 @@ void Cas::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene
         
         for (Gene& gene : genes)
         {
-            //print_gene_debug(gene);
-            print_gene_summary(gene);
+            print_gene_debug(gene);
+            //print_gene_summary(gene);
         }
 
         fmt::print("{}:{}:{}\n\n", _class, _type, c_string);

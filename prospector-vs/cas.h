@@ -76,7 +76,7 @@ struct Gene
 namespace Cas
 {
     static const ui upstream_size = 10000;
-    static const ui cluster_metric_min = 30;
+    static const ui cluster_metric_min = 20;
     static const ui max_inter_cluster_dist = 2;
 
     vector<Translation> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);

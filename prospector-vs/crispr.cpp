@@ -155,7 +155,7 @@ void Crispr::update(const string& genome)
 	this->spacer_variance = get_spacer_variance(spacers) / 100;
 	this->conservation_spacers2 = get_conservation_spacer(spacers);
 
-	double subtraction = (1.25 * conservation_spacers2) + (4*spacer_variance);
+	double subtraction = (4 * conservation_spacers2) + (4*spacer_variance);
 	this->overall_heuristic = conservation_repeats - subtraction;
 }
 
@@ -247,6 +247,7 @@ void CrisprUtil::print(string genome, vector<Crispr> crisprs, map<string, int> s
 void CrisprUtil::print(string genome, vector<Crispr> crisprs)
 {
 	printf("printing %zd crisprs\n", crisprs.size());
+	Util::sort(crisprs, CrisprUtil::heuristic_greater);
 	for (Crispr crispr : crisprs) crispr.print(genome);
 }
 
