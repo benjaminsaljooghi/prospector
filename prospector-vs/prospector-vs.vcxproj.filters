@@ -92,4 +92,7 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="output.txt" />
+  </ItemGroup>
 </Project>

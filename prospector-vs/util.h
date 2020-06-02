@@ -103,15 +103,15 @@ namespace Util
 
 
 
-	static const map <char, char> complement_table =
-	{
-		{'A', 'T'},
-		{'T', 'A'},
-		{'C', 'G'},
-		{'G', 'C'},
-		{'N', 'N'},
-		{'n', 'n'},
-	};
+	//static const map <char, char> complement_table =
+	//{
+	//	{'A', 'T'},
+	//	{'T', 'A'},
+	//	{'C', 'G'},
+	//	{'G', 'C'},
+	//	{'N', 'N'},
+	//	{'n', 'n'},
+	//};
 
 
 	string translate_domain(const string&);
@@ -217,15 +217,17 @@ namespace Util
 
 	map<string, string> parse_fasta(string);
 	string parse_fasta_single(string);
-	string reverse_complement(string);
+
+	char complement(char nuc);
+	void complement(string&);
+	void reverse_complement(string&);
+	
 	int mismatch_count(string);
 	string seqs_to_fasta(vector<string>);
 	vector<string> kmerize(string, ui);
 
 	ui encode_amino_kmer(const string& kmer);
 
-	
-	
 	vector<ui> encode_amino_kmers(vector<string>, ui);
 
     map<string, string> load_genomes(string dir);

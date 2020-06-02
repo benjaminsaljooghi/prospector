@@ -233,7 +233,7 @@ int main()
 
 
 
-    prospect(profiles, genomes, "thermophilus");
+    prospect(profiles, genomes, "thermosaccharolyticum");
 
     start_main = time(start_main, "main");
     return 0;                                                                                                           

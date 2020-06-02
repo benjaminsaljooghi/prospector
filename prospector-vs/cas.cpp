@@ -158,6 +158,65 @@ bool* Cas::compute_target_map(const vector<const CasProfile*>& profiles, const v
     return target_map;
 }
 
+
+void fragment_expansion(Fragment* fragment, const string& genome)
+{
+    // potential performance optimization: compare amino acids of codons in the translation rather than codons in the genome.
+    // should be faster to compare single chars rather than strings.
+
+    bool pos = fragment->reference_translation->pos;
+
+    unordered_set<string> start_codons
+    {
+        {pos ? "ATG" : "TAC"},
+    };
+
+    unordered_set<string> stop_codons
+    {
+        {pos ? "TAA" : "ATT"},
+        {pos ? "TAG" : "ATC"},
+        {pos ? "TGA" : "ACT"},
+    };
+
+    std::function<bool(string&)> is_start_codon = [&](string& genome_substr)
+    {
+        return start_codons.contains(genome_substr);
+    };
+
+    std::function<bool(string&)>  is_stop_codon = [&](string& genome_substr)
+    {
+        return stop_codons.contains(genome_substr);
+    };
+
+    auto is_initiating_codon = pos ? is_start_codon : is_stop_codon;
+    auto is_terminating_codon = pos ? is_stop_codon : is_start_codon;
+
+    FragExpansion* expansion = new FragExpansion;
+
+    for (ull i = 0; i < 500; i++)
+    {
+        string substr = genome.substr(fragment->details->genome_start - i, 3);
+        if (is_initiating_codon(substr))
+        {
+            expansion->genome_start = fragment->details->genome_start - i;
+            break;
+        }
+    }
+
+    for (ull i = 0; i < 500; i++)
+    {
+        string substr = genome.substr(fragment->details->genome_final + i, 3);
+        if (is_terminating_codon(substr))
+        {
+            expansion->genome_final = fragment->details->genome_final + i;
+            break;
+        }
+    }
+
+    fragment->expansion = expansion;
+}
+
+
 vector<Fragment> Cas::cas(const vector<const CasProfile*>& profiles, const vector<Translation>& translations, const string& genome)
 {
     fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
@@ -209,6 +268,7 @@ vector<Fragment> Cas::cas(const vector<const CasProfile*>& profiles, const vecto
 
             compute_details(f, genome);
 
+            fragment_expansion(&f, genome);
 
             fragments.push_back(f);
            
@@ -218,10 +278,10 @@ vector<Fragment> Cas::cas(const vector<const CasProfile*>& profiles, const vecto
 
 
     //for (Fragment& a : fragments) compute_demarc(a);
-    //start = time(start, "fragment demarcs");
+    //genome_start = time(genome_start, "fragment demarcs");
 
     //for (Fragment& a : fragments) compute_details(a, genome);
-    //start = time(start, "fragment details");
+    //genome_start = time(genome_start, "fragment details");
 
     return fragments;
 }
@@ -304,6 +364,8 @@ string crispr_type(vector<Gene> genes)
     return "?";
 }
 
+
+
 map<string, vector<Gene>> Cas::assemble_genes(const vector<Crispr>& crisprs, const vector<Fragment>& fragments)
 {
     //map<string, Crispr> crispr_map;
@@ -318,15 +380,20 @@ map<string, vector<Gene>> Cas::assemble_genes(const vector<Crispr>& crisprs, con
         {
             if (f.reference_crispr->start == c.start && f.reference_crispr->k == c.k)
             {
-                crispr_fragments[c_string].push_back(f);
+                crispr_fragments[c_string].push_back(f); 
             }
         }
     }
+
+
 
     for (auto const& [c_string, fragments] : crispr_fragments)
     {
         crispr_genes[c_string] = genes_from_fragments(fragments);
     }
+
+    
+
 
     return crispr_genes;
 }
@@ -345,7 +412,9 @@ void print_gene_summary(Gene& gene)
 void Cas::print_fragment_debug(const Fragment& fragment)
 {
     fmt::print("\t\t{}...{}\n", fragment.details->genome_start, fragment.details->genome_final);
+    fmt::print("\t\t{}...{}\n", fragment.expansion->genome_start, fragment.details->genome_final);
     fmt::print("{}\n", fragment.details->genome_translation);
+
 }
 
 void print_gene_debug(Gene& gene)
@@ -401,8 +470,13 @@ void Cas::print_all(const vector<Crispr>& crisprs, const map<string, vector<Gene
 vector<Translation> Cas::get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos)
 {
     string domain = genome.substr(genome_start, genome_final - genome_start);
-    domain = pos ? domain : Util::reverse_complement(domain);
-    
+    //domain = pos ? domain : Util::reverse_complement(domain);
+
+    if (!pos)
+    {
+        Util::reverse_complement(domain);
+    }
+
     vector<Translation> translations;
     for (ull frame = 0; frame < 3; frame++)
 	{

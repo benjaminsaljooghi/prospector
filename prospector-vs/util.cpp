@@ -16,7 +16,11 @@ string Util::translate_domain(const string& domain)
 string Util::translate_genome(const string& genome, ui genome_start, ui genome_final, bool pos)
 {
 	string domain = genome.substr(genome_start, genome_final - genome_start);
-	domain = pos ? domain : Util::reverse_complement(domain);
+	//domain = pos ? domain : Util::reverse_complement(domain);
+	if (!pos)
+	{
+		Util::reverse_complement(domain);
+	}
 	return Util::translate_domain(domain);
 }
 
@@ -94,18 +98,33 @@ string Util::parse_fasta_single (string file_path)
 }
 
 
-string Util::reverse_complement (string seq)
+char Util::complement(char nuc)
 {
-    ull len = seq.length();
-    string complement = seq;
+	switch (nuc)
+	{
+		case 'A':
+			return 'T';
+		case 'T':
+			return 'A';
+		case 'C':
+			return 'G';
+		case 'G':
+			return 'C';
+		default:
+			return 'N';
+	}
+}
 
-    for (ull i = 0; i < len; i++)
-    {
-        complement[i] = Util::complement_table.at(seq[i]);
-    }
+void Util::complement(string& seq)
+{
+	for (ull i = 0; i < seq.length(); i++)
+		seq[i] = Util::complement(seq[i]);
+}
 
-	reverse(complement.begin(), complement.end());
-	return complement;
+void Util::reverse_complement(string& seq)
+{
+	Util::complement(seq);
+	reverse(seq.begin(), seq.end());
 }
 int Util::mismatch_count (string repeat)
 {
@@ -120,7 +139,7 @@ int Util::mismatch_count (string repeat)
 		char upstream = repeat[start_index + i];
 		char downstream = repeat[end_index - i];
 
-		_count += upstream == Util::complement_table.at(downstream) ? 0 : 1;
+		_count += upstream == Util::complement(downstream) ? 0 : 1;
 	}
 	return _count;
 }

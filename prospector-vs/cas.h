@@ -50,6 +50,12 @@ struct FragDemarc
     ull clust_final;
 };
 
+struct FragExpansion
+{
+    ull genome_start;
+    ull genome_final;
+};
+
 struct Fragment
 {
     const Crispr* reference_crispr;
@@ -59,6 +65,7 @@ struct Fragment
 
     FragDetails* details;
     FragDemarc* demarc;
+    FragExpansion* expansion;
 };
 
 struct Gene
