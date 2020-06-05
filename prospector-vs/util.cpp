@@ -13,10 +13,9 @@ string Util::translate_domain(const string& domain)
 	return raw;
 }
 
-string Util::translate_genome(const string& genome, ui genome_start, ui genome_final, bool pos)
+string Util::translate_genome(const string& genome, ui genome_begin, ui genome_final, bool pos)
 {
-	string domain = genome.substr(genome_start, genome_final - genome_start);
-	//domain = pos ? domain : Util::reverse_complement(domain);
+	string domain = genome.substr(genome_begin, genome_final - genome_begin);
 	if (!pos)
 	{
 		Util::reverse_complement(domain);
@@ -91,7 +90,6 @@ map<string, string> Util::parse_fasta (string file_path)
 	return seqs;
 }
 
-
 string Util::parse_fasta_single (string file_path)
 {
 	return Util::parse_fasta(file_path).begin()->second;
@@ -102,30 +100,32 @@ char Util::complement(char nuc)
 {
 	switch (nuc)
 	{
-		case 'A':
-			return 'T';
-		case 'T':
-			return 'A';
-		case 'C':
-			return 'G';
-		case 'G':
-			return 'C';
-		default:
-			return 'N';
+	case 'A':
+		return 'T';
+	case 'T':
+		return 'A';
+	case 'C':
+		return 'G';
+	case 'G':
+		return 'C';
+	default:
+		return 'N';
 	}
 }
 
 void Util::complement(string& seq)
 {
-	for (ull i = 0; i < seq.length(); i++)
-		seq[i] = Util::complement(seq[i]);
+	for (char& c : seq) c = Util::complement(c);
+	
 }
 
 void Util::reverse_complement(string& seq)
 {
-	Util::complement(seq);
+	complement(seq);
 	reverse(seq.begin(), seq.end());
 }
+
+
 int Util::mismatch_count (string repeat)
 {
 	int _count = 0;

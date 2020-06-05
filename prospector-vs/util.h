@@ -139,7 +139,7 @@ namespace Util
 		return true;
 	}
 
-	template <typename T, typename Pred> vector<T> filter(const vector<T>& in, Pred predicate)
+	template <typename T, typename Pred> vector<T> filter(vector<T>& in, Pred predicate)
 	{
 		auto start = time();
 		vector<T> out;
@@ -214,13 +214,13 @@ namespace Util
 		// done(start, str);
 	}
 
-
 	map<string, string> parse_fasta(string);
 	string parse_fasta_single(string);
 
 	char complement(char nuc);
-	void complement(string&);
-	void reverse_complement(string&);
+	void complement(string& seq);
+	void reverse_complement(string& seq);
+
 	
 	int mismatch_count(string);
 	string seqs_to_fasta(vector<string>);

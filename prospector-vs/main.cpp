@@ -74,7 +74,7 @@ bool mutant(const char* genome, const ui* genome_encoding, const ui& k, const ui
     
 }
 
-vector<Crispr> prospector_main(const string& genome)
+vector<Crispr*> prospector_main(const string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
     uc* qmap = Prospector::get_qmap_small(encoding.encoding_d, encoding.size);
@@ -115,10 +115,10 @@ vector<Crispr> prospector_main(const string& genome)
     }
 
 
-    vector<Crispr> all_crisprs;
+    vector<Crispr*> all_crisprs;
     for ( auto const& [query, proximal] : proximal_targets)
     {
-        vector<Crispr> candidates;
+        vector<Crispr*> candidates;
         for (ui k = Prospector::k_end-1; k >= Prospector::k_start; k--)
         {
             ui allowed_mutations = k / Prospector::repeat_tolerance_ratio;
@@ -136,18 +136,18 @@ vector<Crispr> prospector_main(const string& genome)
 
             if (genome_indices.size() >= Prospector::repeats_min)
             {
-                Crispr c(k, genome_indices, genome_indices.size());
+                Crispr* c = new Crispr(k, genome_indices, genome_indices.size());
                 candidates.push_back(c);
             }
         }
    
         if (candidates.size() > 0)
         {
-            Util::sort(candidates, [](const Crispr& a, const Crispr& b) {  return a.size > b.size; } );
-            ui best_size = candidates[0].size;
-            for (const Crispr& crispr : candidates)
+            Util::sort(candidates, [](const Crispr* a, const Crispr* b) {  return a->size > b->size; } );
+            ui best_size = candidates[0]->size;
+            for (Crispr* crispr : candidates)
             {
-                if (crispr.size != best_size)
+                if (crispr->size != best_size)
                     break;
 
                 all_crisprs.push_back(crispr);
@@ -161,25 +161,20 @@ vector<Crispr> prospector_main(const string& genome)
 }
 
 
-vector<Crispr> get_crisprs(const string& genome)
+vector<Crispr*> get_crisprs(const string& genome)
 {
-    vector<Crispr> crisprs = prospector_main(genome);      
+    vector<Crispr*> crisprs = prospector_main(genome);      
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
     //CrisprUtil::print(genome, Debug::crispr_filter(crisprs, 315799 - 100, 316092 + 100));
     //exit(0);
 
-    crisprs = Util::filter(crisprs, [](const Crispr& c) { return c.overall_heuristic >= 0.5; });
+    crisprs = Util::filter(crisprs, [](Crispr* c) { return c->overall_heuristic >= 0.3; });
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
     crisprs = CrisprUtil::get_domain_best(crisprs);
-    Util::sort(crisprs, [](const Crispr& a, const Crispr&b) { return a.start < b.start; });
+    Util::sort(crisprs, [](Crispr* a, Crispr* b) { return a->start < b->start; });
     return crisprs;
 }
-
-
-
-
-
 
 
 //vector<CasProfile> read(string cas_file, string cache_file)
@@ -202,18 +197,17 @@ void prospect(const vector<const CasProfile*>& cas_profiles, map<string, string>
 
     const string& genome = genomes.at(genome_name);
 
-    vector<Crispr> crisprs = get_crisprs(genome);
-    vector<Translation> translations = Cas::crispr_proximal_translations(genome, crisprs);
-    vector<Fragment> fragments = Cas::cas(cas_profiles, translations, genome);
-    map<string, vector<Gene>> genes = Cas::assemble_genes(crisprs, fragments);
+    vector<Crispr*> crisprs = get_crisprs(genome);
+    vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
+    vector<Fragment*> fragments = Cas::cas(cas_profiles, translations, genome);
+    map<string, vector<Gene*>> genes = Cas::assemble_genes(crisprs, fragments);
     Cas::print_all(crisprs, genes, genome);
     start_run = time(start_run, genome_name.c_str());
 }
 
-string genome_dir = "T:\\crispr-impl\\crispr-genome";
-string pfam_in = "T:\\data\\Pfam-A.full";
-string pfam_filt = "T:\\data\\Pfam-A.full_filt";
-string serial_dir = "T:\\data\\serial";
+string genome_dir = "T:\\crispr\\genome";
+string pfam_filt = "T:\\crispr\\cas\\Pfam-A.filt";
+string serial_dir = "T:\\crispr\\cas\\serial";
 
 void instantiation_routine()
 {
@@ -230,8 +224,6 @@ int main()
     auto genomes = Util::load_genomes(genome_dir);
 
     auto start_main = time();
-
-
 
     prospect(profiles, genomes, "thermosaccharolyticum");
 

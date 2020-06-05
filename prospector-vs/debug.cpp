@@ -40,14 +40,14 @@
 //         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 // }
 
-vector<CasProfile> Debug::cas_filter(vector<CasProfile> profiles, string gn)
+vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string gn)
 {
-    return Util::filter(profiles, [&](CasProfile p) {return p.gn == gn; });
+    return Util::filter(profiles, [&](CasProfile* p) {return p->gn == gn; });
 }
 
-vector<Crispr>Debug::crispr_filter(vector<Crispr> crisprs, ui start, ui end)
+vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ui start, ui end)
 {
-    return Util::filter(crisprs, [&](Crispr c) { return c.start > start && c.end < end; });
+    return Util::filter(crisprs, [&](Crispr* c) { return c->start > start && c->end < end; });
 }
 
 
@@ -78,7 +78,7 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
     auto triframe = Cas::get_triframe(genome, genome_start, genome_final, pos);
     for (auto translation : triframe)
     {
-        fmt::print("{}\n", translation.pure);
+        fmt::print("{}\n", translation->pure);
     }
     //return triframe;
 }
@@ -111,13 +111,13 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
 
 
 
-void Debug::crispr_print(vector<Crispr> crisprs, const string& genome, ui start, ui end)
+void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end)
 {
     auto filtered = crispr_filter(crisprs, start, end);
     int how_many = filtered.size();
     for (ull i = filtered.size() - how_many; i < filtered.size(); i++)
     {
-        filtered[i].print(genome);
+        filtered[i]->print(genome);
     }
     fmt::print("terminating after debug\n");
     exit(0);
