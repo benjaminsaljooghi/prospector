@@ -78,8 +78,17 @@ vector<Crispr*> prospector_main(const string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
     uc* qmap = Prospector::get_qmap_small(encoding.encoding_d, encoding.size);
+    
+    
+    Debug::map
+    
+    
     vector<ui> queries = get_candidate_queries(qmap, encoding.size);
+    
     uc* qmap_big = Prospector::get_qmap_big(encoding.encoding_d, encoding.size, &queries[0], queries.size());
+
+
+
 
     // vector<vector<ui>> proximal_targets;
     auto start = time();
@@ -114,6 +123,8 @@ vector<Crispr*> prospector_main(const string& genome)
 
     }
 
+
+    //Debug::visualize_proximals(proximal_targets, Prospector::repeats_min, genome);
 
     vector<Crispr*> all_crisprs;
     for ( auto const& [query, proximal] : proximal_targets)
@@ -166,7 +177,7 @@ vector<Crispr*> get_crisprs(const string& genome)
     vector<Crispr*> crisprs = prospector_main(genome);      
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
-    //CrisprUtil::print(genome, Debug::crispr_filter(crisprs, 315799 - 100, 316092 + 100));
+    //CrisprUtil::print(genome, Debug::crispr_filter(crisprs, 266775 - 100, 269560 + 100));
     //exit(0);
 
     crisprs = Util::filter(crisprs, [](Crispr* c) { return c->overall_heuristic >= 0.3; });
@@ -192,11 +203,8 @@ vector<Crispr*> get_crisprs(const string& genome)
 
 void prospect(const vector<const CasProfile*>& cas_profiles, map<string, string>& genomes, const string& genome_name)
 {
-
     auto start_run = time();
-
     const string& genome = genomes.at(genome_name);
-
     vector<Crispr*> crisprs = get_crisprs(genome);
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
     vector<Fragment*> fragments = Cas::cas(cas_profiles, translations, genome);

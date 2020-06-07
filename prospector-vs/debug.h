@@ -6,10 +6,11 @@
 #include "cas.h"
 #include "crispr.h"
 #include "util.h"
+#include "prospector.h"
 
 namespace Debug
 {
-
+	void visualize_proximals(map<ui, vector<ui>> proximal_targets, string genome);
 	vector<CasProfile*> cas_filter(vector<CasProfile*> profiles, string gn);
 	vector<Crispr*> crispr_filter(vector<Crispr*> crisprs, ui start, ui end);
 	string translation_test(const string& genome, ui genome_start, ui genome_final, bool pos, ui debug_aminos);

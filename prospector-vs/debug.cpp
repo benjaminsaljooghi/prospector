@@ -1,38 +1,39 @@
 #include "debug.h"
 
-//void Debug::map()
-//{
-    // ui query = 1283501;
-    // ui q = genome_encoding[query];
-    // for (ui i = 0; i < 1000; i++)
-    // {
-    //     ui pos = query + Prospector::k_start + Prospector::spacer_skip + i;
-    //     ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
-
-    //     printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
-    // }
-//}
-
-
-// visualize proximals
-// for ( auto const& [query, proximal] : proximal_targets)
-// {
-//     // vector<ui> proximals = proximal_targets[q_i];
-//     if (proximal.size() >= Prospector::repeats_min)
-//     {
-//         // ui query = queries[q_i];
-//         fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query+16, 16));
-//         for (ui target : proximal)
-//         {
-//             // ui qmap_index = q_i * Prospector::map_size_big + t_i;
-//             // ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
-//             fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target+16, 16) );
-//         }
-//     }
-//     fmt::print("\n");
-// }
+void Debug::map(Prospector::Encoding genome_encoding)
+{
+     ui query = 1283501;
+     ui q = genome_encoding.encoding[query];
+     for (ui i = 0; i < 1000; i++)
+     {
+         ui pos = query + Prospector::k_start + Prospector::spacer_skip + i;
+         ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
+         printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
+     }
+     exit(0);
+}
 
 
+void Debug::visualize_proximals(map<ui, vector<ui>> proximal_targets, string genome)
+{
+    for (auto const& [query, proximal] : proximal_targets)
+    {
+        // vector<ui> proximals = proximal_targets[q_i];
+        //if (proximal.size() >= Prospector::repeats_min)
+        {
+            // ui query = queries[q_i];
+            fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query + 16, 16));
+            for (ui target : proximal)
+            {
+                // ui qmap_index = q_i * Prospector::map_size_big + t_i;
+                // ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
+                fmt::print("\t{}:{}-{}\n", target, genome.substr(target, 16), genome.substr(target + 16, 16));
+            }
+        }
+        fmt::print("\n");
+    }
+    exit(0);
+}
 
 // void Debug::debug_clusters(const vector<vector<ull>>& clusters)
 // {
