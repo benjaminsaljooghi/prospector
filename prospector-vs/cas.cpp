@@ -112,7 +112,7 @@ bool* Cas::compute_target_map(const vector<const CasProfile*>& profiles, const v
 
     ull num_translations = translations.size();
     ull num_cas = profiles.size();
-    ull per_translation = 3334; // maximum size of a amino_family is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
+    ull per_translation = (Cas::upstream_size - 1 + 3) / 3; // maximum size of a amino_family is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
     ull per_cas = per_translation * num_translations;
 
 
@@ -418,6 +418,9 @@ void Cas::print_fragment_debug(const Fragment* f, const string& genome)
     string dna_family = genome.substr(f->genome_begin, f->genome_final - f->genome_begin);
     string dna_cds = genome.substr(f->expanded_genome_begin, f->expanded_genome_final - f->expanded_genome_begin);
 
+    fmt::print("\t{}\n", f->reference_translation->reference_crispr->identifier_string());
+    //fmt::print("\t{}, \n", f->reference_crispr->end - f->reference_translation->genome_start, f->refe);
+
     fmt::print("\t{}...{}\n", f->genome_begin, f->genome_final);
     fmt::print("\t{}...{}\n", f->expanded_genome_begin, f->expanded_genome_final);
 
@@ -463,16 +466,8 @@ void Cas::print_all(const vector<Crispr*>& crisprs, const map<string, vector<Gen
         }
 
         fmt::print("{}:{}:{}\n\n", _class, _type, c_string);
-
-
     }
 }
-
-
-
-
-
-
 
 
 vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos)
@@ -538,9 +533,9 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, con
     for (const Crispr* c : crisprs)
     {
         ull genome_start = c->start - Cas::upstream_size; genome_start = genome_start < c->start ? genome_start : 0;
-        ull genome_end = c->end + Cas::upstream_size; genome_end = genome_end > c->end ? genome_end : genome.size()-1;
-
         vector<Translation*> up = get_sixframe(genome, genome_start, c->start);
+        
+        ull genome_end = c->end + Cas::upstream_size; genome_end = genome_end > c->end ? genome_end : genome.size() - 1;
         vector<Translation*> down = get_sixframe(genome, c->end, genome_end);
 
         for (Translation* t : up)

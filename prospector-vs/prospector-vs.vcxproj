@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="array_discovery.cpp" />
     <ClCompile Include="cas.cpp" />
     <ClCompile Include="crispr.cpp" />
     <ClCompile Include="debug.cpp" />
@@ -27,6 +28,7 @@
     <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="array_discovery.h" />
     <ClInclude Include="btree.h" />
     <ClInclude Include="cas.h" />
     <ClInclude Include="cas_profiles.h" />

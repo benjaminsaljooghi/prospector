@@ -6,6 +6,9 @@
 //#include "robin_set.h"
 #include "phmap.h"
 #include "phmap_dump.h"
+#include "stdafx.h"
+#include "util.h"
+#include <regex>
 
 
 struct CasProfile

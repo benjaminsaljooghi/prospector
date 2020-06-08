@@ -7,9 +7,12 @@
 #include "crispr.h"
 #include "util.h"
 #include "prospector.h"
+#include "array_discovery.h"
 
 namespace Debug
 {
+	void visualize_map(Prospector::Encoding genome_encoding, string& genome);
+
 	void visualize_proximals(map<ui, vector<ui>> proximal_targets, string genome);
 	vector<CasProfile*> cas_filter(vector<CasProfile*> profiles, string gn);
 	vector<Crispr*> crispr_filter(vector<Crispr*> crisprs, ui start, ui end);

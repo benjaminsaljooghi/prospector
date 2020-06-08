@@ -1,3 +1,5 @@
+#pragma once
+
 typedef unsigned long long ull;
 typedef unsigned int ui;
 typedef signed long int li;
@@ -14,7 +16,7 @@ namespace Prospector
     static const ui repeats_min = 3;
     static const ui size = 16;
     static const ui map_size_small = 64;
-    static const ui map_size_big = 8000;
+    static const ui map_size_big = 5000;
     static const ui bits = 2;
     static const ui repeat_tolerance_ratio = 8;
 

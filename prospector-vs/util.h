@@ -114,6 +114,8 @@ namespace Util
 	//};
 
 
+	ui difference_cpu(const ui& _a, const ui& _b);
+
 	string translate_domain(const string&);
 	string translate_genome(const string&, ui, ui, bool);
 
@@ -214,8 +216,9 @@ namespace Util
 		// done(start, str);
 	}
 
-	map<string, string> parse_fasta(string);
-	string parse_fasta_single(string);
+	string get_genome(string);
+	//map<string, string> parse_fasta(string);
+	//string parse_fasta_single(string);
 
 	char complement(char nuc);
 	void complement(string& seq);

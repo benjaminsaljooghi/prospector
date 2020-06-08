@@ -1,14 +1,14 @@
 #include "debug.h"
 
-void Debug::map(Prospector::Encoding genome_encoding)
+void Debug::visualize_map(Prospector::Encoding genome_encoding, string& genome)
 {
-     ui query = 1283501;
+     ui query = 266774;
      ui q = genome_encoding.encoding[query];
      for (ui i = 0; i < 1000; i++)
      {
-         ui pos = query + Prospector::k_start + Prospector::spacer_skip + i;
-         ui diff = difference_cpu(genome_encoding[query], genome_encoding[pos]);
-         printf("%s %d %d\n", genome.substr(pos, SIZE).c_str(), pos, diff);
+         ui target = query + Prospector::k_start + Prospector::spacer_skip + i;
+         ui diff = Util::difference_cpu(q, genome_encoding.encoding[target]);
+         printf("%s %d %d\n", genome.substr(target, 16).c_str(), target, diff);
      }
      exit(0);
 }
@@ -85,9 +85,9 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
 }
 
 
-//void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, const CasProfile* profile, ui k)
+//void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool target, const CasProfile* profile, ui k)
 //{
-//    Translation translation = Debug::translation_obj(genome, genome_start, genome_final, pos);
+//    Translation translation = Debug::translation_obj(genome, genome_start, genome_final, target);
 //    fmt::print("translation of genome: {}\n", translation.pure);
 //    for (string kmer : translation.pure_kmerized)
 //    {

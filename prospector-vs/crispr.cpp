@@ -14,6 +14,7 @@ double get_conservation_consensus(vector<string> repeats)
 	};
 
 	vector<double> similarties;
+	similarties.reserve(repeats.size());
 	for (ull i = 0; i < repeats.size(); i++)
 		similarties.push_back(same_length_similarity(consensus, repeats[i]));
 	
@@ -155,7 +156,7 @@ void Crispr::update(const string& genome)
 	this->spacer_variance = get_spacer_variance(spacers) / 100;
 	this->conservation_spacers2 = get_conservation_spacer(spacers);
 
-	double subtraction = (4 * conservation_spacers2) + (4*spacer_variance);
+	double subtraction = (50 * conservation_spacers2) + (4*spacer_variance);
 	this->overall_heuristic = conservation_repeats - subtraction;
 }
 
@@ -168,6 +169,7 @@ void Crispr::print_generic(const string& genome, function<void(string)>& print_s
 
 	// repeats
 	printf("\trepeats (%zd)\n", repeats.size());
+	printf("\tspacers (%zd)\n", spacers.size());
 
 	for (ull i = 0; i < repeats.size(); i++)
 	{
@@ -186,19 +188,26 @@ void Crispr::print_generic(const string& genome, function<void(string)>& print_s
 		printf("%d/%zd", matches, repeat.length()/2);
 		printf(" %d %s %d", start, repeat.c_str(), end);
 		printf(" %d", dist);
-		printf(" %f\n", score);
+		printf(" %f", score);
+
+
+
+		if (i < repeats.size() - 1)
+		{
+			string spacer = spacers[i];
+			printf("\t %s\n", spacer.c_str());
+		}
+
 	}
 	cout << endl;
 	
-	// spacers
-	printf("\tspacers (%zd)\n", spacers.size());
-	
-	for (string spacer : spacers)
-	{
-		printf("\t\t");
-		print_spacer(spacer);
-		printf(" %s\n", spacer.c_str());
-	}
+	// spacers	
+	//for (string spacer : spacers)
+	//{
+	//	printf("\t\t");
+	//	print_spacer(spacer);
+	//	printf(" %s\n", spacer.c_str());
+	//}
 
 	cout << endl;
 
@@ -223,7 +232,7 @@ void Crispr::print(const string& genome) const
 
 string Crispr::identifier_string() const
 {
-	return fmt::format("{}:{}\n", this->start, this->k);
+	return fmt::format("{}:{}", this->start, this->k);
 }
 
 
