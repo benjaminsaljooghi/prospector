@@ -1,6 +1,6 @@
 #include "crispr.h"
 
-double get_conservation_consensus(vector<string> repeats)
+double get_conservation_consensus(vector<string>& repeats)
 {
 	string consensus = Util::most_frequent(repeats);
 
@@ -22,65 +22,53 @@ double get_conservation_consensus(vector<string> repeats)
 }
 
 
-double left_aligned_spacer_similarity(string a, string b)
+double left_aligned_spacer_similarity(string* a, string* b)
 {
-	ull len = min(a.size(), b.size());
+	ull len = min(a->size(), b->size());
 	ull matches = 0;
 	for (ull i = 0; i < len; i++)
 	{
-		matches += a[i] == b[i] ? 1 : 0;
+		matches += a->c_str()[i] == b->c_str()[i] ? 1 : 0;
 	}
 	return (double) matches / (double) len;
 }
 
-double right_aligned_spacer_similarity(string a, string b)
+double right_aligned_spacer_similarity(string* a, string* b)
 {
-	string _big;
-	string _small;
+	string* _big = a;
+	string* _small = b;
 
-	if (a.size() > b.size())
-	{
-		_big = a;
-		_small = b;
-	}
-	else
+	if (a->size() < b->size())
 	{
 		_big = b;
 		_small = a;
 	}
 
-
-	ull len = _small.size();
-	ull offset = _big.size() - len;
+	ull len = _small->size();
+	ull offset = _big->size() - len;
 	
 	ull matches = 0;
 	for (ull i = 0; i < len; i++)
 	{
-		matches += _big[i + offset] == _small[i] ? 1 : 0;
+		matches += _big->c_str()[i + offset] == _small->c_str()[i] ? 1 : 0;
 	}
 	return (double) matches / (double) len;
 }
 
-double get_conservation_spacer(vector<string> spacers)
+double get_conservation_spacer(vector<string>& spacers)
 {
-	// perform a right aligned and a left aligned spacer mismatch score?
-	// if (spacers.size() == 1)
-	// {
-		// return 0;
-	// }
-
 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
 	double score_sum = 0;
 	int comparisons = 0;
 	for (ull i = 0; i < spacers.size(); i++)
 	{
+		string* a = &spacers[i];
 		for (ull j = 0; j < i; j++)
 		{
-			string a = spacers[i];
-			string b = spacers[j];
+			string* b = &spacers[j];
 
 			double score = left_aligned_spacer_similarity(a, b);
-			if (a.size() != b.size())
+			if (a->size() != b->size())
 			{
 				score = (score + right_aligned_spacer_similarity(a, b)) / 2.0;
 			}
@@ -88,11 +76,8 @@ double get_conservation_spacer(vector<string> spacers)
 			comparisons++;
 		}
 	}
-
 	double mean_score = score_sum / (double) comparisons;
-
-	// divide the score by the number of spacers to punish having more spacers
-	return mean_score / (double) spacers.size();
+	return mean_score / (double) spacers.size(); // divide the score by the number of spacers to punish having more spacers
 }
 
 double get_spacer_variance(vector<string> spacers)
@@ -114,9 +99,7 @@ double get_spacer_variance(vector<string> spacers)
 	}
 
 	variance = variance / (double) spacers.size();
-
 	return sqrt(variance);
-
 }
 
 
@@ -137,14 +120,14 @@ void Crispr::update(const string& genome)
 
 	for (ull i = 0; i < size; i++)
 	{
-		repeats[i] = genome.substr(genome_indices[i], k).c_str();
+		repeats[i] = genome.substr(genome_indices[i], k);
 	}
 
 	for (ull i = 0; i < size - 1; i++)
 	{
-		unsigned int current_repeat_end = genome_indices[i] + k;
-		unsigned int next_repeat_begin = genome_indices[i+1];
-		unsigned int spacer_size = next_repeat_begin - current_repeat_end;
+		ui current_repeat_end = genome_indices[i] + k;
+		ui next_repeat_begin = genome_indices[i+1];
+		ui spacer_size = next_repeat_begin - current_repeat_end;
 		spacers[i] = genome.substr(current_repeat_end, spacer_size);
 	}
 
