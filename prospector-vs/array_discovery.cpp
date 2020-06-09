@@ -5,16 +5,15 @@
 
 vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
 {
-    // how many qs in this map are containment oriented
     auto start = time();
-    // ui count = 0;
     vector<ui> query_indices;
-
+    static const ui tolerance = Prospector::size / Prospector::repeat_tolerance_ratio;
     for (ui query_index = 0; query_index < genome_encoding_size - 200; query_index++)
     {
+        ui ting = query_index * Prospector::map_size_small;
         for (ui i = 0; i < Prospector::map_size_small; i++)
         {
-            if (qmap[(query_index * Prospector::map_size_small) + i] <= (Prospector::size / Prospector::repeat_tolerance_ratio))
+            if (qmap[ting + i] <= tolerance)
             {
                 query_indices.push_back(query_index);
                 break;
@@ -22,8 +21,6 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
         }
     }
     time(start, "post qmap small candidate query genertion");
-    // printf("%d %zd\n", genome_encoding_size-200, query_indices.size());
-    // return count;
     return query_indices;
 }
 
@@ -84,8 +81,6 @@ vector<Crispr*> prospector_main(string& genome)
     // can optimize this by starting at largest k, then breaking this loop on the first time we fail to form a crispr
 
     //ui advancement = 0
-   
-
     for (ui query_index : query_indices)
     {
         if (consumed[query_index])
