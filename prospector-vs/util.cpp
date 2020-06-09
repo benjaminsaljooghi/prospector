@@ -44,7 +44,7 @@ bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
 }
 
 
-string Util::get_genome(string path)
+string Util::load_genome(string path)
 {
 	fmt::print("reading {}\n", path);
 
@@ -225,13 +225,13 @@ vector<ui> Util::encode_amino_kmers(vector<string> kmers, ui k)
 
 
 
-map<string, string> Util::load_genomes(string dir)
-{
-	auto start = time();
-    map<string, string> genomes;
-    for (const auto& entry : filesystem::directory_iterator(dir))
-        genomes[entry.path().stem().string()] = (get_genome(entry.path().string()));
-	start = time(start, "genome load");
-	return genomes;
-}
-
+//map<string, string> Util::load_genomes(string dir)
+//{
+//	auto start = time();
+//    map<string, string> genomes;
+//    for (const auto& entry : filesystem::directory_iterator(dir))
+//        genomes[entry.path().stem().string()] = (load_genome(entry.path().string()));
+//	start = time(start, "genome load");
+//	return genomes;
+//}
+//

@@ -216,7 +216,7 @@ namespace Util
 		// done(start, str);
 	}
 
-	string get_genome(string);
+	string load_genome(string);
 	//map<string, string> parse_fasta(string);
 	//string parse_fasta_single(string);
 
@@ -233,5 +233,5 @@ namespace Util
 
 	vector<ui> encode_amino_kmers(vector<string>, ui);
 
-    map<string, string> load_genomes(string dir);
+    //map<string, string> load_genomes(string dir);
 }
