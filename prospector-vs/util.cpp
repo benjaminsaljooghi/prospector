@@ -1,3 +1,4 @@
+
 #include "util.h"
 
 ui Util::difference_cpu(const ui& _a, const ui& _b)
@@ -46,7 +47,11 @@ bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
 
 string Util::load_genome(string path)
 {
+
+
 	fmt::print("reading {}\n", path);
+
+	auto start = time();
 
 	ifstream input(path);
 	if (!input.good())
@@ -69,17 +74,21 @@ string Util::load_genome(string path)
 	assert(line.starts_with('>'));
 	name = line.substr(1);
 	
-	while (getline(input, line))
+	while (true)
 	{
+		getline(input, line);
+
 		if (line.empty() || line[0] == '>')
 		{
+			start = time(start, "load genome");
 			return content;
+
 		}
 
 		check_line(line);
-
 		content += line;
 	}
+
 	assert(false);
 }
 
