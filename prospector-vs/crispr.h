@@ -28,9 +28,9 @@ class Crispr
 
         Crispr(unsigned int, vector<unsigned int>, ull);
         void update(const string& genome);
-        void print_generic(const string& genome, function<void(string)>& print_spacer) const;
-        void print(const string& genome, map<string, int>) const;
-        void print(const string& genome) const;
+        //void print_generic(const string& genome, function<void(string)>& print_spacer) const;
+        //void print(const string& genome, map<string, int>) const;
+        //void print(const string& genome) const;
         // void cache_upstream_aminos(string, ull, unsigned int);
         string identifier_string() const;
 };
@@ -39,8 +39,8 @@ class Crispr
 namespace CrisprUtil
 {
     bool any_overlap(const Crispr* a, const Crispr* b);
-    void print(string genome, vector<Crispr*> crisprs, map<string, int> spacer_scores);
-    void print(string genome, vector<Crispr*> crisprs);
+    //void print(string genome, vector<Crispr*> crisprs, map<string, int> spacer_scores);
+    //void print(string genome, vector<Crispr*> crisprs);
     bool repeat_substring(Crispr* b, unsigned int start, unsigned int end);
     bool repeat_subset(Crispr* a, Crispr* b);
     // void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const ull upstream_size);
@@ -49,7 +49,7 @@ namespace CrisprUtil
     vector<Crispr*> spacer_score_filtered(vector<Crispr*> crisprs, map<string, int> spacer_scores);
     
     void cache_crispr_information(const string& genome, vector<Crispr*>& crisprs);
-    map<string, int> get_spacer_scores(vector<Crispr*>& crisprs, string target_db_path);
+    //map<string, int> get_spacer_scores(vector<Crispr*>& crisprs, string target_db_path);
 
     bool heuristic_less(const Crispr* a, const Crispr* b);
     bool heuristic_greater(const Crispr* a, const Crispr* b);

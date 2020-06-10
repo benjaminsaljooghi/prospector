@@ -42,6 +42,6 @@ namespace CasProfileUtil
 
     void serialize(string dir, vector<const CasProfile*> profiles);
 
-    vector<const CasProfile*> deserialize(string dir);
+    vector<CasProfile*> deserialize(string dir);
 
 }

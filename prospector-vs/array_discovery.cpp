@@ -1,8 +1,6 @@
 #include "array_discovery.h"
 
 
-
-
 vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
 {
     auto start = time();
@@ -70,10 +68,7 @@ vector<Crispr*> prospector_main(string& genome)
     map<ui, bool> consumed;
 
     for (ui query_index : query_indices)
-    {
         consumed[query_index] = false;
-    }
-
 
     vector<Crispr*> all_crisprs;
 

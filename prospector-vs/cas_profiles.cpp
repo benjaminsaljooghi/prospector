@@ -620,9 +620,9 @@ void CasProfileUtil::serialize(string dir, vector<const CasProfile*> profiles)
 	}
 }
 
-vector<const CasProfile*> CasProfileUtil::deserialize(string dir)
+vector<CasProfile*> CasProfileUtil::deserialize(string dir)
 {
-	vector<const CasProfile*> profiles;
+	vector<CasProfile*> profiles;
 	auto start = time();
 	for (const auto& entry : filesystem::directory_iterator(dir))
 	{

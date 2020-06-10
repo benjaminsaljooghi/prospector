@@ -100,5 +100,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="output.txt" />
+    <Text Include="results.txt" />
   </ItemGroup>
 </Project>
