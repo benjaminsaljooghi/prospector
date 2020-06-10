@@ -92,6 +92,9 @@
     <ClInclude Include="array_discovery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="locus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="prospector.cu">

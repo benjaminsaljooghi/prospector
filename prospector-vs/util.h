@@ -3,11 +3,10 @@
 
 
 
-
-
 namespace Util
 {
-    static const string stop = "Z";
+
+	static const string stop = "Z";
     static const char stop_c = 'Z';
 
 	static const map <string, string> codon_table = {

@@ -105,7 +105,7 @@ double get_spacer_variance(vector<string> spacers)
 
 // Crispr
 
-Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, ull size)
+Crispr::Crispr(ui k, vector<ui> genome_indices, ull size)
 {
 	// printf("%d %zd\n", genome_indices[0], size);
 	this->k = k;
@@ -113,6 +113,11 @@ Crispr::Crispr(unsigned int k, vector<unsigned int> genome_indices, ull size)
 	this->size = size;;
 }
 		
+ui Crispr::get_start()
+{
+	return this->start;
+}
+
 void Crispr::update(const string& genome)
 {
 	this->repeats = vector<string>(size);
@@ -235,12 +240,12 @@ bool CrisprUtil::heuristic_greater(const Crispr* a, const Crispr* b)
 
 
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
-bool CrisprUtil::repeat_substring(Crispr* b, unsigned int start, unsigned int end)
+bool CrisprUtil::repeat_substring(Crispr* b, ui start, ui end)
 {
 	for (ull i = 0; i < b->size; i++)
 	{
-		unsigned int repeat_start = b->genome_indices[i];
-		unsigned int repeat_end = b->genome_indices[i] + b->k - 1;
+		ui repeat_start = b->genome_indices[i];
+		ui repeat_end = b->genome_indices[i] + b->k - 1;
 
 		if (start >= repeat_start && end <= repeat_end)
 		{

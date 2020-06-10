@@ -58,7 +58,6 @@ map<string, string> type_lookup
 //void print_fragment_debug(const Fragment* f, const string& genome)
 //{
 //
-
 //}
 
 //void print_gene_debug(Gene* gene, const string& genome)
@@ -73,7 +72,6 @@ map<string, string> type_lookup
 //    fmt::print("\n");
 //}
 
-
 void serialization()
 {
     CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
@@ -82,60 +80,87 @@ void serialization()
     exit(0);
 }
 
-
 void init()
 {
     Prospector::device_init();
     profiles = CasProfileUtil::deserialize("T:\\crispr\\cas\\serial");
 }
 
+string Fragment::to_string_debug()
+{
+    string amino_family = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
+    string amino_cds = Util::translate_genome(*reference_genome, expanded_genome_begin, expanded_genome_final, reference_translation->pos);
+
+    string dna_family = reference_genome->substr(genome_begin, genome_final - genome_begin);
+    string dna_cds = reference_genome->substr(expanded_genome_begin, expanded_genome_final - expanded_genome_begin);
+
+    std::ostringstream out;
+    out << fmt::format("{}\n", reference_profile->gn);
+    out << fmt::format("\t{}\n", reference_translation->reference_crispr->identifier_string());
+    out << fmt::format("\t{}...{}\n", genome_begin, genome_final);
+    out << fmt::format("\t{}...{}\n", expanded_genome_begin, expanded_genome_final);
+    out << fmt::format("\t{}\n", amino_family);
+    out << fmt::format("\t{}\n", amino_cds);
+    out << fmt::format("\t{}\n", dna_family);
+    out << fmt::format("\t{}\n", dna_cds);
+    return out.str();
+}
+
+string Fragment::to_string_summary()
+{
+    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, reference_translation->pos ? "+" : "-", reference_profile->gn);
+}
+
+string Crispr::to_string_debug()
+{
+    std::ostringstream out;
+
+    out << fmt::format("{} - {} {}\n", start, end, k);
+    out << fmt::format("{}h {}r {}s {}v\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
+    out << fmt::format("\t{} repeats\n", repeats.size());
+    out << fmt::format("\t{} spacers\n", spacers.size());
+
+    for (ull i = 0; i < repeats.size(); i++)
+    {
+        string repeat = repeats[i];
+        int mismatches = Util::mismatch_count(repeat);
+        int matches = repeat.length() / 2 - mismatches;
+        double score = (double)matches / (double)(repeat.length() / 2);
+        int start = genome_indices[i];
+        int end = start + k - 1;
+        int dist = i == 0 ? 0 : genome_indices[i] - (genome_indices[i - 1] + k);
+
+        //printf("\t\t");
+        //printf("%d/%zd", matches, repeat.length()/2);
+        //printf(" %d %s %d", start, repeat.c_str(), end);
+        //printf(" %d", dist);
+        //printf(" %f", score);
+
+        out << fmt::format("\t\t{} {} {} {}\n", start, repeat, end, i < repeats.size() - 1 ? spacers[i] : "");
+    }
+
+    out << "\n";
+
+    return out.str();
+}
+
+string Crispr::to_string_summary()
+{
+    return fmt::format("{}\t{}\t{}\t{}\n", start, end, "?", "CRISPR");
+}
+
 void print_all(const string& genome_name, const string& genome, const vector<Crispr*>& crisprs, vector<Fragment*>& fragments, std::ofstream& results)
 {
-
     results << fmt::format("===\t{}\n", genome_name);
 
-    std::sort(fragments.begin(), fragments.end(), [](Fragment* a, Fragment* b) {return a->expanded_genome_begin < b->expanded_genome_begin; });
+    vector<Locus*> loci;
+    for (Crispr* c : crisprs) loci.push_back(c);
+    for (Fragment* f : fragments) loci.push_back(f);
 
+    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
 
-    auto debug = [&genome](Fragment* f) {
-        string amino_family = Util::translate_genome(genome, f->genome_begin, f->genome_final, f->reference_translation->pos);
-        string amino_cds = Util::translate_genome(genome, f->expanded_genome_begin, f->expanded_genome_final, f->reference_translation->pos);
-
-        string dna_family = genome.substr(f->genome_begin, f->genome_final - f->genome_begin);
-        string dna_cds = genome.substr(f->expanded_genome_begin, f->expanded_genome_final - f->expanded_genome_begin);
-
-        std::ostringstream out;
-
-        out << fmt::format("{}\n", f->reference_profile->gn);
-
-        out << fmt::format("\t{}\n", f->reference_translation->reference_crispr->identifier_string());
-
-        out << fmt::format("\t{}...{}\n", f->genome_begin, f->genome_final);
-        out << fmt::format("\t{}...{}\n", f->expanded_genome_begin, f->expanded_genome_final);
-
-        out << fmt::format("\t{}\n", amino_family);
-        out << fmt::format("\t{}\n", amino_cds);
-
-        out << fmt::format("\t{}\n", dna_family);
-        out << fmt::format("\t{}\n", dna_cds);
-
-        return out.str();
-    };
-
-    auto summary = [](Fragment* f) {
-        return fmt::format("{}\t{}\t{}\t{}\n", f->expanded_genome_begin, f->expanded_genome_final, f->reference_translation->pos ? "+" : "-", f->reference_profile->gn);
-    };
-
-    auto c_summary = [](Crispr* c) {
-        return fmt::format("{}\t{}\n", c->start, c->end);
-    };
-
-    for (Crispr* c : crisprs)
-        results << c_summary(c);
-
-    for (Fragment* f : fragments)
-        results << summary(f);
-
+    for (Locus* l : loci)
+        results << l->to_string_summary();
 }
 
 void prospect_genome(string genome_path, std::ofstream& results)

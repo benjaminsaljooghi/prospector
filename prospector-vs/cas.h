@@ -9,6 +9,8 @@
 #include "util.h"
 #include "crispr.h"
 #include "cas_profiles.h"
+#include "debug.h"
+#include "locus.h"
 
 
 namespace fs = std::filesystem;
@@ -28,8 +30,10 @@ struct Translation
 
 
 
-struct Fragment
+struct Fragment : public Locus
 {
+    string* reference_genome;
+
     const Crispr* reference_crispr;
     const Translation* reference_translation;
     const CasProfile* reference_profile;
@@ -43,6 +47,10 @@ struct Fragment
 
     ull expanded_genome_begin;
     ull expanded_genome_final;
+
+    ui get_start() { return this->expanded_genome_begin; }
+    string to_string_debug();
+    string to_string_summary();
 
     //size_t quality;
 };

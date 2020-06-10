@@ -2,19 +2,20 @@
 
 #include "stdafx.h"
 #include "util.h"
+#include "locus.h"
 
-class Crispr
+class Crispr : public Locus
 {
     public:
 
         // computed by constructor
-        vector<unsigned int> genome_indices;
+        vector<ui> genome_indices;
         ull size;
-        unsigned int k;
+        ui k;
 
         // computed by update
-        unsigned int start;
-        unsigned int end;
+        ui start;
+        ui end;
         vector<string> repeats;
         vector<string> spacers;
         double conservation_repeats;
@@ -26,13 +27,17 @@ class Crispr
         // computed by cache_upstream_aminos
         // vector<string> target_kmers;
 
-        Crispr(unsigned int, vector<unsigned int>, ull);
+        Crispr(ui, vector<ui>, ull);
         void update(const string& genome);
         //void print_generic(const string& genome, function<void(string)>& print_spacer) const;
         //void print(const string& genome, map<string, int>) const;
         //void print(const string& genome) const;
-        // void cache_upstream_aminos(string, ull, unsigned int);
+        // void cache_upstream_aminos(string, ull, ui);
         string identifier_string() const;
+
+        ui get_start();
+        string to_string_debug();
+        string to_string_summary();
 };
 
 
@@ -41,9 +46,9 @@ namespace CrisprUtil
     bool any_overlap(const Crispr* a, const Crispr* b);
     //void print(string genome, vector<Crispr*> crisprs, map<string, int> spacer_scores);
     //void print(string genome, vector<Crispr*> crisprs);
-    bool repeat_substring(Crispr* b, unsigned int start, unsigned int end);
+    bool repeat_substring(Crispr* b, ui start, ui end);
     bool repeat_subset(Crispr* a, Crispr* b);
-    // void cas(string genome, vector<Crispr> crisprs, const unsigned int k, const ull upstream_size);
+    // void cas(string genome, vector<Crispr> crisprs, const ui k, const ull upstream_size);
     
     vector<Crispr*> get_domain_best(vector<Crispr*> crisprs);
     vector<Crispr*> spacer_score_filtered(vector<Crispr*> crisprs, map<string, int> spacer_scores);

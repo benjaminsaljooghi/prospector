@@ -1,5 +1,4 @@
 #include "cas.h"
-#include "debug.h"
 
 static string start_codon_pos = "ATG";
 static string start_codon_neg = "CAT";
@@ -58,8 +57,6 @@ void fragment_expansion_neg(Fragment* fragment, const string& genome)
     }
 
 }
-
-
 
 vector<vector<ull>> cluster_index(const vector<ull>& indices)
 {
@@ -191,6 +188,7 @@ vector<Fragment*> Cas::compute_target_map(vector<CasProfile*>& profiles, vector<
                 continue;
 
             Fragment* f = new Fragment;
+            f->reference_genome = &genome;
             f->reference_crispr = t->reference_crispr;
             f->reference_translation = t;
             f->reference_profile = p;

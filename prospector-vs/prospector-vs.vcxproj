@@ -34,6 +34,7 @@
     <ClInclude Include="cas_profiles.h" />
     <ClInclude Include="crispr.h" />
     <ClInclude Include="debug.h" />
+    <ClInclude Include="locus.h" />
     <ClInclude Include="meminfo.h" />
     <ClInclude Include="phmap.h" />
     <ClInclude Include="phmap_base.h" />
