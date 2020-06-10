@@ -52,14 +52,6 @@ void cudaWait()
     checkCuda ( cudaDeviceSynchronize() );
 }
 
-void Prospector::device_init()
-{
-    std::chrono::high_resolution_clock::time_point start = time();
-    cudaDeviceReset();
-    checkCudaAlways ( cudaFree(0) );
-    time(start, "device init");
-}
-
 __device__ ui scheme(const char c)
 {
     switch (c)
@@ -153,23 +145,43 @@ __global__ void compute_qmap_small(const ui* genome_encoding, const ui genome_en
     }
 }
 
-__global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, const ui* queries, const ui queries_size, uc* qmap)
+//__global__ void compute_qmap_big(const ui* encoding, const ui encoding_size, const ui* queries, const ui queries_size, uc* qmap)
+//{
+//    const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+//    const ui stride = blockDim.x * gridDim.x;
+//
+//    for (ui q_i = thread_id; q_i < queries_size; q_i += stride) // warning. May go out of bounds if there is a query less than map_size away from the end of the genome
+//    {
+//        const ui query = queries[q_i];
+//        const ui query_enc = encoding[query];
+//        for (ui t_i = 0; t_i < Prospector::map_size_big; t_i++)
+//        {
+//            const ui t_enc = encoding[query + Prospector::k_start + Prospector::spacer_skip + t_i];
+//            qmap[(q_i * Prospector::map_size_big) + t_i] = difference_gpu(query_enc, t_enc);
+//        }
+//    }
+//}
+
+
+
+uc* qmap;
+uc* qmap_d;
+
+void Prospector::device_init()
 {
-    const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    const ui stride = blockDim.x * gridDim.x;
+    std::chrono::high_resolution_clock::time_point start = time();
+    cudaDeviceReset();
+    checkCudaAlways(cudaFree(0));
+    time(start, "device init");
 
-    for (ui q_i = thread_id; q_i < queries_size; q_i += stride) // warning. May go out of bounds if there is a query less than map_size away from the end of the genome
-    {
-        const ui query = queries[q_i];
-        const ui query_enc = encoding[query];
-        for (ui t_i = 0; t_i < Prospector::map_size_big; t_i++)
-        {
-            const ui t_enc = encoding[query + Prospector::k_start + Prospector::spacer_skip + t_i];
-            qmap[(q_i * Prospector::map_size_big) + t_i] = difference_gpu(query_enc, t_enc);
-        }
-    }
+    cudaError er;
+    er = cudaMalloc(&qmap_d, 500000000 ); checkCuda(er);
+    start = time(start, "qmap small malloc");
+
+    er = cudaMallocHost(&qmap, 500000000); checkCuda(er);
+    start = time(start, "qmap small mallochost");
+
 }
-
 
 uc* Prospector::get_qmap_small(const ui* encoding_d, const ui encoding_size)
 {
@@ -178,16 +190,9 @@ uc* Prospector::get_qmap_small(const ui* encoding_d, const ui encoding_size)
     auto start = time();
 
     ui bytes_qmap = sizeof(uc) * encoding_size * Prospector::map_size_small;
+
+    printf("bytes_qmap: %d\n", bytes_qmap);
     
-    uc* qmap;
-    uc* qmap_d;
-
-    er = cudaMalloc(&qmap_d, bytes_qmap); checkCuda(er);
-    start = time(start, "qmap small malloc");
-
-    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
-    start = time(start, "qmap small mallochost");
-
     compute_qmap_small KERNEL_ARGS3(GRID, BLOCK, 0) (encoding_d, encoding_size, qmap_d);
 
     cudaWait();
@@ -196,46 +201,47 @@ uc* Prospector::get_qmap_small(const ui* encoding_d, const ui encoding_size)
     er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); 
     start = time(start, "qmap small memcpy");
 
-    cudaFree(qmap_d);
+    //cudaFree(qmap_d);
     return qmap;
 }
 
 
-uc* Prospector::get_qmap_big(const ui* encoding_d, const ui encoding_size, const ui* queries, const ui queries_size)
-{
-    auto start = time();
+//uc* Prospector::get_qmap_big(const ui* encoding_d, const ui encoding_size, const ui* queries, const ui queries_size)
+//{
+//    auto start = time();
+//
+//    cudaError er; 
+//
+//    ui bytes_queries = sizeof(ui) * queries_size;
+//    ui bytes_qmap = sizeof(uc) * queries_size * Prospector::map_size_big;
+//
+//    ui* queries_d;
+//    er = cudaMalloc(&queries_d, bytes_queries); checkCuda(er);
+//    start = time(start, "qmap big queries malloc");
+//
+//    er = cudaMemcpy(queries_d, queries, bytes_queries, cudaMemcpyHostToDevice); checkCuda(er);
+//    start = time(start, "qmap big queries memcpy");
+//
+//    uc* qmap;
+//    uc* qmap_d;
+//
+//    er = cudaMalloc(&qmap_d, bytes_qmap); checkCuda(er);
+//    start = time(start, "qmap big malloc");
+//
+//    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
+//    start = time(start, "qmap big mallochost");
+//
+//    compute_qmap_big KERNEL_ARGS3(GRID, BLOCK, 0) (encoding_d, encoding_size, queries_d, queries_size, qmap_d);
+//    
+//    cudaWait();
+//    start = time(start, "qmap big kernel");
+//
+//    er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); 
+//    start = time(start, "qmap big memcpy");
+//
+//    cudaFree(qmap_d);
+//    return qmap;
+//}
 
-    cudaError er; 
-
-    ui bytes_queries = sizeof(ui) * queries_size;
-    ui bytes_qmap = sizeof(uc) * queries_size * Prospector::map_size_big;
-
-    ui* queries_d;
-    er = cudaMalloc(&queries_d, bytes_queries); checkCuda(er);
-    start = time(start, "qmap big queries malloc");
-
-    er = cudaMemcpy(queries_d, queries, bytes_queries, cudaMemcpyHostToDevice); checkCuda(er);
-    start = time(start, "qmap big queries memcpy");
-
-    uc* qmap;
-    uc* qmap_d;
-
-    er = cudaMalloc(&qmap_d, bytes_qmap); checkCuda(er);
-    start = time(start, "qmap big malloc");
-
-    er = cudaMallocHost(&qmap, bytes_qmap); checkCuda(er);
-    start = time(start, "qmap big mallochost");
-
-    compute_qmap_big KERNEL_ARGS3(GRID, BLOCK, 0) (encoding_d, encoding_size, queries_d, queries_size, qmap_d);
-    
-    cudaWait();
-    start = time(start, "qmap big kernel");
-
-    er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); 
-    start = time(start, "qmap big memcpy");
-
-    cudaFree(qmap_d);
-    return qmap;
-}
 
 
