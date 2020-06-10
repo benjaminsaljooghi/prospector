@@ -72,6 +72,7 @@ void Debug::translation_print(const string& genome, ui genome_start, ui genome_f
 {
     string translation = Debug::translation_test(genome, genome_start, genome_final, pos, debug_aminos);
     fmt::print("debug: {}\n", translation);
+    exit(0);
 }
 
 void Debug::triframe_print(const string& genome, ui genome_start, ui genome_final, bool pos)
@@ -112,14 +113,14 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
 
 
 
-void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end)
-{
-    auto filtered = crispr_filter(crisprs, start, end);
-    int how_many = filtered.size();
-    for (ull i = filtered.size() - how_many; i < filtered.size(); i++)
-    {
-        filtered[i]->print(genome);
-    }
-    fmt::print("terminating after debug\n");
-    exit(0);
-}
+//void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end)
+//{
+//    auto filtered = crispr_filter(crisprs, start, end);
+//    int how_many = filtered.size();
+//    for (ull i = filtered.size() - how_many; i < filtered.size(); i++)
+//    {
+//        filtered[i]->print(genome);
+//    }
+//    fmt::print("terminating after debug\n");
+//    exit(0);
+//}
