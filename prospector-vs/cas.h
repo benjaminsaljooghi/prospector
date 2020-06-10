@@ -47,25 +47,16 @@ struct Fragment
     //size_t quality;
 };
 
-struct Gene
-{
-    vector<Fragment*> fragments;
-    string gn;
-};
-
-
-    //const CasProfile* reference_profile;
-
-    //ui size() const
-    //{
-    //    return fragments[fragments.size()-1].details->genome_final - fragments[0].details->genome_start;
-    //}
+//struct Gene
+//{
+//    vector<Fragment*> fragments;
+//    string gn;
 //};
 
 
 namespace Cas
 {
-    static const ui upstream_size = 10000;
+    static const ui upstream_size = 20000;
     static const ui cluster_metric_min = 20;
     static const ui max_inter_cluster_dist = 2;
 
@@ -73,12 +64,12 @@ namespace Cas
 
     vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);
 
-    vector<Translation*> crispr_proximal_translations(const string& genome, const vector<Crispr*>&);
-    bool* compute_target_map(const vector<const CasProfile*>& cas_profiles, const vector<Translation*>& translations);
-    vector<Fragment*> cas(const vector<const CasProfile*>& cas_profiles, const vector<Translation*>&, const string&);
-    map<string, vector<Gene*>> assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments);
-    void print_fragment_debug(const Fragment* fragment, const string& genome);
-    void print_all(const vector<Crispr*>& crisprs, const map<string, vector<Gene*>>& crispr_genes, const string& genome);
+    vector<Translation*> crispr_proximal_translations(const string& genome, vector<Crispr*>&);
+    vector<Fragment*> compute_target_map(vector<CasProfile*>& cas_profiles, vector<Translation*>& translations, string&);
+    vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
+    //map<string, vector<Gene*>> assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments);
+    //void print_fragment_debug(const Fragment* fragment, const string& genome);
+    //void print_all(const vector<Crispr*>& crisprs, const map<string, vector<Gene*>>& crispr_genes, const string& genome);
 
 }
 

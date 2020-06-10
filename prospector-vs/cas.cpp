@@ -1,6 +1,65 @@
 #include "cas.h"
 #include "debug.h"
 
+static string start_codon_pos = "ATG";
+static string start_codon_neg = "CAT";
+static unordered_set<string> stop_codons_pos{ "TAA", "TAG", "TGA" };
+static unordered_set<string> stop_codons_neg{ "TTA", "CTA", "TCA" };
+
+// potential performance optimization: compare amino_family acids of codons in the amino_family rather than codons in the genome.
+// should be faster to compare single chars rather than strings.
+void fragment_expansion_pos(Fragment* fragment, const string& genome)
+{
+    fragment->expanded_genome_begin = fragment->genome_begin;
+    fragment->expanded_genome_final = fragment->genome_final;
+    for (ull i = 0; i < 500; i += 3)
+    {
+        ull new_begin = fragment->genome_begin - i;
+        if (genome.substr(new_begin, 3) == start_codon_pos)
+        {
+            fragment->expanded_genome_begin = new_begin;
+            break;
+        }
+    }
+
+    for (ull i = 0; i < 500; i += 3)
+    {
+        ull new_final = fragment->genome_final + i;
+        if (stop_codons_pos.contains(genome.substr(new_final - 3, 3)))
+        {
+            fragment->expanded_genome_final = new_final;
+            break;
+        }
+    }
+}
+
+void fragment_expansion_neg(Fragment* fragment, const string& genome)
+{
+    fragment->expanded_genome_begin = fragment->genome_begin;
+    fragment->expanded_genome_final = fragment->genome_final;
+    for (ull i = 0; i < 500; i += 3)
+    {
+        ull new_begin = fragment->genome_begin - i;
+        if (stop_codons_neg.contains(genome.substr(new_begin, 3)))
+        {
+            fragment->expanded_genome_begin = new_begin;
+            break;
+        }
+    }
+
+    for (ull i = 0; i < 500; i += 3)
+    {
+        ull new_final = fragment->genome_final + i;
+        if (start_codon_neg == genome.substr(new_final - 3, 3))
+        {
+            fragment->expanded_genome_final = new_final;
+            break;
+        }
+    }
+
+}
+
+
 
 vector<vector<ull>> cluster_index(const vector<ull>& indices)
 {
@@ -59,8 +118,6 @@ void compute_demarc(Fragment* frag)
     frag->clust_final = demarc_final_clusters(frag->clusters);
 }
 
-
-
 void compute_details(Fragment* fragment, const string& genome)
 {    
     ull index_kmer_start = fragment->clust_begin;
@@ -106,182 +163,80 @@ bool fragment_contains(const Fragment* a, const Fragment* b)
     return a->clust_begin > b->clust_begin && a->clust_final < b->clust_final;
 }
 
-bool* Cas::compute_target_map(const vector<const CasProfile*>& profiles, const vector<Translation*>& translations )
+vector<Fragment*> Cas::compute_target_map(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome )
 {
-    auto start = time();
-
-    ull num_translations = translations.size();
-    ull num_cas = profiles.size();
-    ull per_translation = (Cas::upstream_size - 1 + 3) / 3; // maximum size of a amino_family is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
-    ull per_cas = per_translation * num_translations;
-
-
-    ull target_map_size = num_cas * per_cas; 
-    bool* target_map = (bool*) malloc(sizeof(bool) * target_map_size);
-
-    #pragma omp parallel for
-    for (signed long cas_i = 0; cas_i < num_cas; cas_i++)
-    {  
-        const CasProfile* cas_profile = profiles[cas_i];
-        for (ull translation_i = 0; translation_i < num_translations; translation_i++)
-        {
-            for (ui i = 0; i < translations[translation_i]->pure_kmerized_encoded.size(); i++)
-            {
-                ui query = translations[translation_i]->pure_kmerized_encoded[i];
-                string query_kmer = translations[translation_i]->pure_kmerized[i];
-
-                ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i;
-
-                // A
-                //auto at_index = cas_profile.hash_table[query % cas_profile.N]; 
-                //bool contains = at_index == query;
-
-                // B
-                bool contains = cas_profile->hash_table.contains(query);
-
-                //fmt::print("{}:{}:{}:{}:{}:{}\n", target_map_index, cas_i, translation_i, i, contains, query_kmer, query);
-
-                target_map[target_map_index] = contains;
-            }
-        }
-    }
-
-    start = time(start, "target map construction");
-
-    return target_map;
-}
-
-
-
-static string start_codon_pos = "ATG";
-static string start_codon_neg = "CAT";
-static unordered_set<string> stop_codons_pos {"TAA", "TAG", "TGA"};
-static unordered_set<string> stop_codons_neg {"TTA", "CTA", "TCA"};
-
-// potential performance optimization: compare amino_family acids of codons in the amino_family rather than codons in the genome.
-// should be faster to compare single chars rather than strings.
-void fragment_expansion_pos(Fragment* fragment, const string& genome)
-{
-    fragment->expanded_genome_begin = fragment->genome_begin;
-    fragment->expanded_genome_final = fragment->genome_final;
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_begin = fragment->genome_begin - i;
-        if (genome.substr(new_begin, 3) == start_codon_pos)
-        {
-            fragment->expanded_genome_begin = new_begin;
-            break;
-        }
-    }
-
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_final = fragment->genome_final + i;
-        if (stop_codons_pos.contains(genome.substr(new_final - 3, 3)))
-        {
-            fragment->expanded_genome_final = new_final;
-            break;
-        }
-    }
-}
-
-void fragment_expansion_neg(Fragment* fragment, const string& genome)
-{
-    fragment->expanded_genome_begin = fragment->genome_begin;
-    fragment->expanded_genome_final = fragment->genome_final;
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_begin = fragment->genome_begin - i;
-        if (stop_codons_neg.contains(genome.substr(new_begin, 3)))
-        {
-            fragment->expanded_genome_begin = new_begin;
-            break;
-        }
-    }
-
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_final = fragment->genome_final + i;
-        if (start_codon_neg == genome.substr(new_final - 3, 3))
-        {
-            fragment->expanded_genome_final = new_final;
-            break;
-        }
-    }
-
-}
-
-
-vector<Fragment*> Cas::cas(const vector<const CasProfile*>& profiles, const vector<Translation*>& translations, const string& genome)
-{
-
-    fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
-    auto start = time();  
-
-    bool* target_map = compute_target_map(profiles, translations);
-
-    ull num_translations = translations.size();
-    ull num_cas = profiles.size();
-    ull per_translation = 3334; // maximum size of a amino_family is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
-    ull per_cas = per_translation * num_translations;
+    auto start = time();    
 
     vector<Fragment*> fragments;
-    for (ull cas_i = 0; cas_i < num_cas; cas_i++)
+
+    for (CasProfile* p : profiles)
     {
-        for (ull translation_i = 0; translation_i < num_translations; translation_i++)
+        for (Translation* t : translations)
         {
             vector<ull> index;
-            for (ull i = 0; i < translations[translation_i]->pure_kmerized_encoded.size(); i++)
-            {
-                ull target_map_index = (cas_i * per_cas) + (translation_i * per_translation) + i;
-                if (target_map[target_map_index])
-                {
-                    index.push_back(i);
-                }
-            }
 
+            for (ull i = 0; i < t->pure_kmerized_encoded.size(); i++)
+            {
+                bool contains = p->hash_table.contains(t->pure_kmerized_encoded[i]);
+                if (contains)
+                    index.push_back(i);
+            }
 
             if (index.size() == 0)
                 continue;
 
             vector<vector<ull>> clusters = cluster_index(index);
 
-
-            // fmt::print("{}:{}\n", cas_i, translation_i);
-            // debug_clusters(clusters);
-
             if (!good_clusters(clusters))
                 continue;
 
             Fragment* f = new Fragment;
-            f->reference_crispr = translations[translation_i]->reference_crispr;
-            f->reference_translation = translations[translation_i];
-            f->reference_profile = profiles[cas_i];
+            f->reference_crispr = t->reference_crispr;
+            f->reference_translation = t;
+            f->reference_profile = p;
             f->clusters = clusters;
 
             compute_demarc(f);
 
             if (f->clust_final - f->clust_begin <= 15)
-            {
                 continue;
-            }
 
             compute_details(f, genome);
 
-            if (f->reference_translation->pos)
-            {
-                fragment_expansion_pos(f, genome);
-            }
-            else
-            {
-                fragment_expansion_neg(f, genome);
-            }
-
+            auto expansion = f->reference_translation->pos ? fragment_expansion_pos : fragment_expansion_neg;
+            expansion(f, genome);
             fragments.push_back(f);
-           
         }
     }
-    start = time(start, "target map parse");
+
+    start = time(start, "target map construction");
+
+    return fragments;
+}
+
+vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome)
+{
+
+    //fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
+    auto start = time();  
+
+    vector<Fragment*> fragments = compute_target_map(profiles, translations, genome);
+
+    //ull num_translations = translations.size();
+    //ull num_cas = profiles.size();
+    //ull per_translation = 3334; // maximum size of a amino_family is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
+    //ull per_cas = per_translation * num_translations;
+
+    //vector<Fragment*> fragments;
+    //for (ull cas_i = 0; cas_i < num_cas; cas_i++)
+    //{
+    //    for (ull translation_i = 0; translation_i < num_translations; translation_i++)
+    //    {
+
+    //       
+    //    }
+    //}
+    //start = time(start, "target map parse");
 
 
     //for (Fragment& a : fragments) compute_demarc(a);
@@ -293,15 +248,15 @@ vector<Fragment*> Cas::cas(const vector<const CasProfile*>& profiles, const vect
     return fragments;
 }
 
-Gene* gene_from_fragments(vector<Fragment*>& fragments)
-{
-    sort(fragments.begin(), fragments.end(), [](const Fragment* a, const Fragment* b) { return a->genome_begin < b->genome_begin;  });
-
-    Gene* g = new Gene;
-    g->gn = fragments[0]->reference_profile->gn;
-    g->fragments = fragments;
-    return g;
-}
+//Gene* gene_from_fragments(vector<Fragment*>& fragments)
+//{
+//    sort(fragments.begin(), fragments.end(), [](const Fragment* a, const Fragment* b) { return a->genome_begin < b->genome_begin;  });
+//
+//    Gene* g = new Gene;
+//    g->gn = fragments[0]->reference_profile->gn;
+//    g->fragments = fragments;
+//    return g;
+//}
 
 //vector<Gene> best_genes(vector<Gene> genes)
 //{
@@ -320,154 +275,53 @@ Gene* gene_from_fragments(vector<Fragment*>& fragments)
 //    return __genes;
 //}
 
-vector<Gene*> genes_from_fragments(vector<Fragment*>& fragments)
-{
-    map<string, vector<Fragment*>> gene_fragments;
-    for (Fragment* a : fragments)
-        gene_fragments[a->reference_profile->gn].push_back(a);
-
-    vector<Gene*> genes;
-    for (auto gene : gene_fragments)
-    {
-        genes.push_back(gene_from_fragments(gene.second));
-    }
-
-    //genes = best_genes(genes);
-    sort(genes.begin(), genes.end(), [](Gene* a, Gene* b) { return a->fragments[0]->genome_begin < b->fragments[0]->genome_begin; } );
-
-    return genes;
-}
-
-map<string, string> class_lookup
-{
-    {"I",   "1"},
-    {"III", "1"},
-    {"IV",  "1"},
-    {"II",  "2"},
-    {"V",   "2"},
-    {"VI",  "2"},
-    {"?",   "?"},
-};
-
-map<string, string> type_lookup
-{
-    {"cas3",  "I"},
-    {"cas10", "III"},
-    {"cas8",  "IV"},
-    {"cas9",  "II"},
-    {"cas12", "V"},
-    {"cas13", "VI"},
-};
-
-string crispr_type(vector<Gene*>& genes)
-{
-    for (Gene* gene : genes)
-    {
-        if (type_lookup.contains(gene->gn))
-        {
-            return type_lookup.at(gene->gn);
-        }
-    }
-    return "?";
-}
-
-map<string, vector<Gene*>> Cas::assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments)
-{
-    //map<string, Crispr> crispr_map;
-
-    map<string, vector<Fragment*>> crispr_fragments;
-    map<string, vector<Gene*>> crispr_genes;
-
-
-    for (const Crispr* c : crisprs)
-    {
-        string c_string = c->identifier_string();
-        for (Fragment* f : fragments)
-        {
-            if (f->reference_crispr->start == c->start && f->reference_crispr->k == c->k)
-            {
-                crispr_fragments[c_string].push_back(f); 
-            }
-        }
-    }
-
-    for (auto [c_string, fragments] : crispr_fragments)
-    {
-        crispr_genes[c_string] = genes_from_fragments(fragments);
-    }
-
-    return crispr_genes;
-}
-
-//void print_gene_summary(Gene& gene)
+//vector<Gene*> genes_from_fragments(vector<Fragment*>& fragments)
 //{
-//    fmt::print("\t{}\n", gene.reference_profile->gn);
-//    for (const Fragment& f : gene.fragments)
+//    map<string, vector<Fragment*>> gene_fragments;
+//    for (Fragment* a : fragments)
+//        gene_fragments[a->reference_profile->gn].push_back(a);
+//
+//    vector<Gene*> genes;
+//    for (auto gene : gene_fragments)
 //    {
-//        fmt::print("\t\t{}...{}\n", f.details->genome_start, f.details->genome_final);
+//        genes.push_back(gene_from_fragments(gene.second));
 //    }
-//    fmt::print("\n");
+//
+//    //genes = best_genes(genes);
+//    sort(genes.begin(), genes.end(), [](Gene* a, Gene* b) { return a->fragments[0]->genome_begin < b->fragments[0]->genome_begin; } );
+//
+//    return genes;
 //}
 
-void Cas::print_fragment_debug(const Fragment* f, const string& genome)
-{
 
-    string amino_family = Util::translate_genome(genome, f->genome_begin, f->genome_final, f->reference_translation->pos);
-    string amino_cds = Util::translate_genome(genome, f->expanded_genome_begin, f->expanded_genome_final, f->reference_translation->pos);
+//map<string, vector<Gene*>> Cas::assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments)
+//{
+//    //map<string, Crispr> crispr_map;
+//
+//    map<string, vector<Fragment*>> crispr_fragments;
+//    map<string, vector<Gene*>> crispr_genes;
+//
+//
+//    for (const Crispr* c : crisprs)
+//    {
+//        string c_string = c->identifier_string();
+//        for (Fragment* f : fragments)
+//        {
+//            if (f->reference_crispr->start == c->start && f->reference_crispr->k == c->k)
+//            {
+//                crispr_fragments[c_string].push_back(f); 
+//            }
+//        }
+//    }
+//
+//    for (auto [c_string, fragments] : crispr_fragments)
+//    {
+//        crispr_genes[c_string] = genes_from_fragments(fragments);
+//    }
+//
+//    return crispr_genes;
+//}
 
-    string dna_family = genome.substr(f->genome_begin, f->genome_final - f->genome_begin);
-    string dna_cds = genome.substr(f->expanded_genome_begin, f->expanded_genome_final - f->expanded_genome_begin);
-
-    fmt::print("\t{}\n", f->reference_translation->reference_crispr->identifier_string());
-    //fmt::print("\t{}, \n", f->reference_crispr->end - f->reference_translation->genome_start, f->refe);
-
-    fmt::print("\t{}...{}\n", f->genome_begin, f->genome_final);
-    fmt::print("\t{}...{}\n", f->expanded_genome_begin, f->expanded_genome_final);
-
-    fmt::print("\t{}\n", amino_family);
-    fmt::print("\t{}\n", amino_cds);
-
-    fmt::print("\t{}\n", dna_family);
-    fmt::print("\t{}\n", dna_cds);
-}
-
-void print_gene_debug(Gene* gene, const string& genome)
-{
-    //ui size = gene->size();
-    fmt::print("\t{}:{}\n", gene->gn, gene->fragments[0]->reference_translation->pos);
-    for (const Fragment* fragment : gene->fragments)
-    {
-        Cas::print_fragment_debug(fragment, genome);
-    }
-
-    fmt::print("\n");
-}
-
-
-void Cas::print_all(const vector<Crispr*>& crisprs, const map<string, vector<Gene*>>& crispr_genes, const string& genome)
-{
-    for (const Crispr* c : crisprs)
-    {
-        c->print(genome);
-        string c_string = c->identifier_string();
-        if (!crispr_genes.contains(c_string))
-        {
-            continue;
-        }
-
-        vector<Gene*> genes = crispr_genes.at(c_string);
-        string _type = crispr_type(genes);
-        string _class = class_lookup.at(_type);
-
-        for (Gene* gene : genes)
-        {
-            print_gene_debug(gene, genome);
-            //print_gene_summary(gene);
-        }
-
-        fmt::print("{}:{}:{}\n\n", _class, _type, c_string);
-    }
-}
 
 
 vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos)
@@ -526,29 +380,50 @@ vector <Translation*> Cas::get_sixframe(const string& genome, ull genome_start, 
 }
 
 
-vector<Translation*> Cas::crispr_proximal_translations(const string& genome, const vector<Crispr*>& crisprs)
+vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vector<Crispr*>& crisprs)
 {
     auto start = time();
     vector<Translation*> translations;
+
+
+
+    ull max = 0;
+
+    std::sort(crisprs.begin(), crisprs.end(), [](Crispr* a, Crispr* b) { return a->start < b->start; });
+
     for (const Crispr* c : crisprs)
     {
-        ull genome_start = c->start - Cas::upstream_size; genome_start = genome_start < c->start ? genome_start : 0;
-        vector<Translation*> up = get_sixframe(genome, genome_start, c->start);
-        
-        ull genome_end = c->end + Cas::upstream_size; genome_end = genome_end > c->end ? genome_end : genome.size() - 1;
-        vector<Translation*> down = get_sixframe(genome, c->end, genome_end);
+        ull l_begin = c->start - Cas::upstream_size; l_begin = l_begin < c->start ? l_begin : 0;;
+        ull l_final = c->start;
 
-        for (Translation* t : up)
-        {
-            t->reference_crispr = c;
-            translations.push_back(t);
-        }
+        ull r_begin = c->end;
+        ull r_final = c->end + Cas::upstream_size; r_final = r_final > c->end ? r_final : genome.size() - 1;
 
-        for (Translation* t : down)
-        {
-            t->reference_crispr = c;
-            translations.push_back(t);
-        }
+        l_begin = std::max(max, l_begin);
+        r_begin = std::max(max, r_begin);
+
+        bool can_l = l_begin < l_final;
+        bool can_r = r_begin < r_final;
+
+        max = std::max(max, r_final);
+
+        vector<Translation*> l;
+        vector<Translation*> r;
+
+        if (can_l)
+            l = get_sixframe(genome, l_begin, l_final);
+
+        if (can_r)
+            r = get_sixframe(genome, r_begin, r_final);
+
+        vector<Translation*> local;
+        local.insert(local.end(), l.begin(), l.end());
+        local.insert(local.end(), r.begin(), r.end());
+        for (Translation* t : local) t->reference_crispr = c;
+        translations.insert(translations.end(), local.begin(), local.end());
+
+
+
     }
     time(start, "get translations");
     return translations;
