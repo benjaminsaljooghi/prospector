@@ -68,10 +68,11 @@ string Debug::translation_test(const string& genome, ui genome_start, ui genome_
     return fmt::format("{}--{}--{}", a, b, c);
 }
 
-void Debug::translation_print(const string& genome, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
+void Debug::translation_print(const string& genome_path, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
 {
+    string genome = Util::load_genome(genome_path);
     string translation = Debug::translation_test(genome, genome_start, genome_final, pos, debug_aminos);
-    fmt::print("debug: {}\n", translation);
+    fmt::print("debug: {}..{} {}\n", genome_start, genome_final, translation);
     exit(0);
 }
 
