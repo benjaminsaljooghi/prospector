@@ -43,6 +43,31 @@
 
 static vector<CasProfile*> profiles;
 
+static const map<string, string> domain_to_gn
+{
+    {"Cas_Cas1", "cas1"},
+    {"Cas_Cas4", "cas4"},
+    {"Cas_Cas6", "cas6"},
+    {"CRISPR_Cas6", "cas6"},
+    {"DevR", "cas7"},
+    {"Cas_Csa4", "cas8a2"},
+    {"CRISPR_Cas2", "cas2"},
+    {"Csa1", "cas4"},
+    {"Cas_Cmr5", "cmr5"},
+    {"Cas_DxTHG", "csx1"},
+    {"Cas_APE2256", "csm6"},
+    {"MarR_2", "casR"},
+};
+
+string domain_to_gn_failsafe(const string& lookup)
+{
+    if (domain_to_gn.contains(lookup))
+    {
+        return domain_to_gn.at(lookup);
+    }
+    return lookup;
+}
+
 string Fragment::to_string_debug()
 {
     string amino_family = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
@@ -66,7 +91,7 @@ string Fragment::to_string_debug()
 
 string Fragment::to_string_summary()
 {
-    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin + 1, expanded_genome_final, reference_translation->pos ? "+" : "-", reference_profile->gn);
+    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin + 1, expanded_genome_final, reference_translation->pos ? "+" : "-", domain_to_gn_failsafe(reference_profile->gn));
 }
 
 string Crispr::to_string_debug()
@@ -172,6 +197,7 @@ int main()
 
     // ----------- results --------------
     std::ofstream results("results.txt");
+    //prospect_genome_dir("T:\\crispr\\genome", results);
     prospect_genome_dir("T:\\crispr\\supp\\genomes", results);
     //prospect_genome("T:\\crispr\\supp\\genomes\\GCA_000011125.1_ASM1112v1_genomic.fna", results);
     results.close();
