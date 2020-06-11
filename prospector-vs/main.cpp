@@ -8,31 +8,29 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 
-vector<CasProfile*> profiles;
-
-map<string, string> class_lookup
-{
-    {"I",   "1"},
-    {"III", "1"},
-    {"IV",  "1"},
-    {"II",  "2"},
-    {"V",   "2"},
-    {"VI",  "2"},
-    {"?",   "?"},
-};
-
-map<string, string> type_lookup
-{
-    {"cas3",  "I"},
-    {"cas10", "III"},
-    {"cas8",  "IV"},
-    {"cas9",  "II"},
-    {"cas12", "V"},
-    {"cas13", "VI"},
-};
-
 //string crispr_type(vector<Gene*>& genes)
 //{
+//    static const map<string, string> class_lookup
+//    {
+//        {"I",   "1"},
+//        {"III", "1"},
+//        {"IV",  "1"},
+//        {"II",  "2"},
+//        {"V",   "2"},
+//        {"VI",  "2"},
+//        {"?",   "?"},
+//    };
+//
+//    static const map<string, string> type_lookup
+//    {
+//        {"cas3",  "I"},
+//        {"cas10", "III"},
+//        {"cas8",  "IV"},
+//        {"cas9",  "II"},
+//        {"cas12", "V"},
+//        {"cas13", "VI"},
+//    };
+//
 //    for (Gene* gene : genes)
 //    {
 //        if (type_lookup.contains(gene->gn))
@@ -43,46 +41,7 @@ map<string, string> type_lookup
 //    return "?";
 //}
 
-//void print_gene_summary(Gene& gene)
-//{
-//    fmt::print("\t{}\n", gene.reference_profile->gn);
-//    for (const Fragment& f : gene.fragments)
-//    {
-//        fmt::print("\t\t{}...{}\n", f.details->genome_start, f.details->genome_final);
-//    }
-//    fmt::print("\n");
-//}
-
-//void print_fragment_debug(const Fragment* f, const string& genome)
-//{
-//
-//}
-
-//void print_gene_debug(Gene* gene, const string& genome)
-//{
-//    //ui size = gene->size();
-//    fmt::print("\t{}:{}\n", gene->gn, gene->fragments[0]->reference_translation->pos);
-//    for (const Fragment* fragment : gene->fragments)
-//    {
-//        print_fragment_debug(fragment, genome);
-//    }
-//
-//    fmt::print("\n");
-//}
-
-void serialization()
-{
-    //CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
-    vector<const CasProfile*> profiles = CasProfileUtil::pfam("T:\\crispr\\cas\\Pfam-A.full_filt");
-    CasProfileUtil::serialize("T:\\crispr\\cas\\serial_staging", profiles);
-    exit(0);
-}
-
-void init()
-{
-    Prospector::device_init();
-    profiles = CasProfileUtil::deserialize("T:\\crispr\\cas\\serial");
-}
+static vector<CasProfile*> profiles;
 
 string Fragment::to_string_debug()
 {
@@ -107,7 +66,7 @@ string Fragment::to_string_debug()
 
 string Fragment::to_string_summary()
 {
-    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, reference_translation->pos ? "+" : "-", reference_profile->gn);
+    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin + 1, expanded_genome_final, reference_translation->pos ? "+" : "-", reference_profile->gn);
 }
 
 string Crispr::to_string_debug()
@@ -145,10 +104,10 @@ string Crispr::to_string_debug()
 
 string Crispr::to_string_summary()
 {
-    return fmt::format("{}\t{}\t{}\t{}\n", start, end, "?", "CRISPR");
+    return fmt::format("{}\t{}\t{}\t{}\t{}h\n", start + 1, end + 1, "?", "CRISPR", overall_heuristic);
 }
 
-void print_all(const string& genome_name, const string& genome, const vector<Crispr*>& crisprs, vector<Fragment*>& fragments, std::ofstream& results)
+void write_all(const string& genome_name, const string& genome, const vector<Crispr*>& crisprs, vector<Fragment*>& fragments, std::ofstream& results)
 {
     results << fmt::format("===\t{}\n", genome_name);
 
@@ -159,7 +118,7 @@ void print_all(const string& genome_name, const string& genome, const vector<Cri
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
 
     for (Locus* l : loci)
-        results << l->to_string_debug();
+        results << l->to_string_summary();
 }
 
 void prospect_genome(string genome_path, std::ofstream& results)
@@ -173,7 +132,7 @@ void prospect_genome(string genome_path, std::ofstream& results)
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
-    print_all(genome_path, genome, crisprs, fragments, results);
+    write_all(genome_path, genome, crisprs, fragments, results);
 
     start = time(start, genome_path.c_str());
 }
@@ -189,15 +148,27 @@ void prospect_genome_dir(string genome_dir, std::ofstream& results)
     }
 }
 
+
 int main()
 {
-    // -------- init -----------
-    init();
+    // ------ start -----------
     auto start_main = time();
+
+
+    // ---- serialziation ------
+    //CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
+    //vector<const CasProfile*> profiles = CasProfileUtil::pfam("T:\\crispr\\cas\\Pfam-A.full_filt");
+    //CasProfileUtil::serialize("T:\\crispr\\cas\\serial_staging", profiles);
+    //exit(0);
+
+    // -------- init -----------
+    Prospector::device_init();
+    profiles = CasProfileUtil::deserialize("T:\\crispr\\cas\\serial");
 
     // ----------- debug --------
     //serialization();
     //Debug::translation_print("T:\\crispr\\supp\\genomes\\GCA_000011125.1_ASM1112v1_genomic.fna", 784236, 784515, false, 10);
+    //exit(0);
 
     // ----------- results --------------
     std::ofstream results("results.txt");
@@ -205,10 +176,8 @@ int main()
     //prospect_genome("T:\\crispr\\supp\\genomes\\GCA_000011125.1_ASM1112v1_genomic.fna", results);
     results.close();
 
-
     // --------- close -----------
-    start_main = time(start_main, "main");
-    return 0;                                                                                                           
+    start_main = time(start_main, "main"); return 0;                                                                                                           
 }
 
 

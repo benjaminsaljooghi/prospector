@@ -77,7 +77,7 @@ namespace Cas
     vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
     //map<string, vector<Gene*>> assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments);
     //void print_fragment_debug(const Fragment* fragment, const string& genome);
-    //void print_all(const vector<Crispr*>& crisprs, const map<string, vector<Gene*>>& crispr_genes, const string& genome);
+    //void write_all(const vector<Crispr*>& crisprs, const map<string, vector<Gene*>>& crispr_genes, const string& genome);
 
 }
 
