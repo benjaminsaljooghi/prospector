@@ -285,8 +285,6 @@ bool CrisprUtil::any_overlap(const Crispr* a, const Crispr* b)
 	return Util::any_overlap(a_start, a_final, b_start, b_final);
 }
 
-
-
 vector<Crispr*> CrisprUtil::get_domain_best(vector<Crispr*> crisprs)
 {
 	// this function expects the crisprs to be sorted
@@ -350,3 +348,42 @@ void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr*>&
     time(start, "cache crisprs");
 }
 
+
+
+string Crispr::to_string_debug()
+{
+	std::ostringstream out;
+
+	out << fmt::format("{} - {} {}\n", start, end, k);
+	out << fmt::format("{}h {}r {}s {}v\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
+	out << fmt::format("\t{} repeats\n", repeats.size());
+	out << fmt::format("\t{} spacers\n", spacers.size());
+
+	for (ull i = 0; i < repeats.size(); i++)
+	{
+		string repeat = repeats[i];
+		int mismatches = Util::mismatch_count(repeat);
+		int matches = repeat.length() / 2 - mismatches;
+		double score = (double)matches / (double)(repeat.length() / 2);
+		int start = genome_indices[i];
+		int end = start + k - 1;
+		int dist = i == 0 ? 0 : genome_indices[i] - (genome_indices[i - 1] + k);
+
+		//printf("\t\t");
+		//printf("%d/%zd", matches, repeat.length()/2);
+		//printf(" %d %s %d", start, repeat.c_str(), end);
+		//printf(" %d", dist);
+		//printf(" %f", score);
+
+		out << fmt::format("\t\t{} {} {} {}\n", start, repeat, end, i < repeats.size() - 1 ? spacers[i] : "");
+	}
+
+	out << "\n";
+
+	return out.str();
+}
+
+string Crispr::to_string_summary()
+{
+	return fmt::format("{}\t{}\t{}\t{}\t{}h\n", start, end, "?", "CRISPR", overall_heuristic);
+}
