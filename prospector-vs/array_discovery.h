@@ -8,7 +8,7 @@
 
 namespace Array
 {
+	bool mutant(const char* genome, ui* h, ui k, ui i, ui j);
 	vector<Crispr*> get_crisprs(string& genome);
-	
 
 }
