@@ -8,6 +8,8 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 
+#define DEBUG 1
+
 //string crispr_type(vector<Gene*>& genes)
 //{
 //    static const map<string, string> class_lookup
@@ -43,95 +45,6 @@
 
 static vector<CasProfile*> profiles;
 
-static const map<string, string> domain_to_gn
-{
-    {"Cas_Cas1", "cas1"},
-    {"Cas_Cas4", "cas4"},
-    {"Cas_Cas6", "cas6"},
-    {"CRISPR_Cas6", "cas6"},
-    {"DevR", "cas7"},
-    {"Cas_Csa4", "cas8a2"},
-    {"CRISPR_Cas2", "cas2"},
-    {"Csa1", "cas4"},
-    {"Cas_Cmr5", "cmr5"},
-    {"Cas_DxTHG", "csx1"},
-    {"Cas_APE2256", "csm6"},
-    {"MarR_2", "casR"},
-};
-
-string domain_to_gn_failsafe(const string& lookup)
-{
-    if (domain_to_gn.contains(lookup))
-    {
-        return domain_to_gn.at(lookup);
-    }
-    return lookup;
-}
-
-string Fragment::to_string_debug()
-{
-    string amino_family = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
-    string amino_cds = Util::translate_genome(*reference_genome, expanded_genome_begin, expanded_genome_final, reference_translation->pos);
-
-    string dna_family = reference_genome->substr(genome_begin, genome_final - genome_begin);
-    string dna_cds = reference_genome->substr(expanded_genome_begin, expanded_genome_final - expanded_genome_begin);
-
-    std::ostringstream out;
-    out << fmt::format("{}\n", reference_profile->gn);
-    out << fmt::format("\t{}\n", reference_translation->pos ? "+" : "-");
-    out << fmt::format("\t{}\n", reference_translation->reference_crispr->identifier_string());
-    out << fmt::format("\t{}...{}\n", genome_begin, genome_final);
-    out << fmt::format("\t{}...{}\n", expanded_genome_begin, expanded_genome_final);
-    out << fmt::format("\t{}\n", amino_family);
-    out << fmt::format("\t{}\n", amino_cds);
-    out << fmt::format("\t{}\n", dna_family);
-    out << fmt::format("\t{}\n", dna_cds);
-    return out.str();
-}
-
-string Fragment::to_string_summary()
-{
-    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin + 1, expanded_genome_final, reference_translation->pos ? "+" : "-", domain_to_gn_failsafe(reference_profile->gn));
-}
-
-string Crispr::to_string_debug()
-{
-    std::ostringstream out;
-
-    out << fmt::format("{} - {} {}\n", start, end, k);
-    out << fmt::format("{}h {}r {}s {}v\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
-    out << fmt::format("\t{} repeats\n", repeats.size());
-    out << fmt::format("\t{} spacers\n", spacers.size());
-
-    for (ull i = 0; i < repeats.size(); i++)
-    {
-        string repeat = repeats[i];
-        int mismatches = Util::mismatch_count(repeat);
-        int matches = repeat.length() / 2 - mismatches;
-        double score = (double)matches / (double)(repeat.length() / 2);
-        int start = genome_indices[i];
-        int end = start + k - 1;
-        int dist = i == 0 ? 0 : genome_indices[i] - (genome_indices[i - 1] + k);
-
-        //printf("\t\t");
-        //printf("%d/%zd", matches, repeat.length()/2);
-        //printf(" %d %s %d", start, repeat.c_str(), end);
-        //printf(" %d", dist);
-        //printf(" %f", score);
-
-        out << fmt::format("\t\t{} {} {} {}\n", start, repeat, end, i < repeats.size() - 1 ? spacers[i] : "");
-    }
-
-    out << "\n";
-
-    return out.str();
-}
-
-string Crispr::to_string_summary()
-{
-    return fmt::format("{}\t{}\t{}\t{}\t{}h\n", start + 1, end + 1, "?", "CRISPR", overall_heuristic);
-}
-
 void write_all(const string& genome_name, const string& genome, const vector<Crispr*>& crisprs, vector<Fragment*>& fragments, std::ofstream& results)
 {
     results << fmt::format("===\t{}\n", genome_name);
@@ -142,8 +55,14 @@ void write_all(const string& genome_name, const string& genome, const vector<Cri
 
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
 
+
     for (Locus* l : loci)
+#if DEBUG == 1
+        results << l->to_string_debug();
+#else
         results << l->to_string_summary();
+#endif
+
 }
 
 void prospect_genome(string genome_path, std::ofstream& results)
@@ -155,6 +74,7 @@ void prospect_genome(string genome_path, std::ofstream& results)
     string genome = Util::load_genome(genome_path);
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
+
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
     write_all(genome_path, genome, crisprs, fragments, results);
@@ -167,12 +87,11 @@ void prospect_genome_dir(string genome_dir, std::ofstream& results)
     ui i = 0;
     for (const auto& entry : filesystem::directory_iterator(genome_dir))
     {
-        if (i++ > 10) break;
+        if (i++ > 3) break;
         string genome_path = entry.path().string();
         prospect_genome(genome_path, results);
     }
 }
-
 
 int main()
 {
@@ -189,20 +108,19 @@ int main()
     // -------- init -----------
     Prospector::device_init();
     profiles = CasProfileUtil::deserialize("T:\\crispr\\cas\\serial");
+    std::ofstream results("results.txt");
 
     // ----------- debug --------
-    //serialization();
-    //Debug::translation_print("T:\\crispr\\supp\\genomes\\GCA_000011125.1_ASM1112v1_genomic.fna", 784236, 784515, false, 10);
-    //exit(0);
+    string debug_path = "T:\\crispr\\supp\\genomes\\GCA_000730285.1_ASM73028v1_genomic.fna";
+    
+    //Debug::visualize_map(debug_path);
+    //prospect_genome(debug_path, results);
 
-    // ----------- results --------------
-    std::ofstream results("results.txt");
-    //prospect_genome_dir("T:\\crispr\\genome", results);
+    // ----------- prospect --------------
     prospect_genome_dir("T:\\crispr\\supp\\genomes", results);
-    //prospect_genome("T:\\crispr\\supp\\genomes\\GCA_000011125.1_ASM1112v1_genomic.fna", results);
-    results.close();
 
     // --------- close -----------
+    results.close();
     start_main = time(start_main, "main"); return 0;                                                                                                           
 }
 
