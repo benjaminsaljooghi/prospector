@@ -1,16 +1,27 @@
 #include "debug.h"
 
-void Debug::visualize_map(Prospector::Encoding genome_encoding, string& genome)
+void Debug::visualize_map(string& genome_path)
 {
-     ui query = 266774;
-     ui q = genome_encoding.encoding[query];
-     for (ui i = 0; i < 1000; i++)
-     {
-         ui target = query + Prospector::k_start + Prospector::spacer_skip + i;
-         ui diff = Util::difference_cpu(q, genome_encoding.encoding[target]);
-         printf("%s %d %d\n", genome.substr(target, 16).c_str(), target, diff);
-     }
-     exit(0);
+    string genome = Util::load_genome(genome_path);
+    Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
+
+    ui query = 2110970;
+    auto k = 32; 
+    for (ui i = 0; i < 50000; i++)
+    {
+        ui target = query + i;
+        
+        auto diff = Util::difference_cpu(encoding.h[query], encoding.h[target]);
+        auto query_str = genome.substr(query, k);
+        auto target_str = genome.substr(target, k);
+        auto mutant = Array::mutant(genome.c_str(), encoding.h, k, query, target);
+
+        if (mutant)
+            fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);
+
+
+    }
+    exit(0);
 }
 
 
@@ -51,7 +62,11 @@ vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ui start, ui end)
     return Util::filter(crisprs, [&](Crispr* c) { return c->start > start && c->end < end; });
 }
 
-
+void Debug::genome_substr(const string& genome_path, ui genome_start, ui genome_final)
+{
+    fmt::print("{}\n", Util::load_genome(genome_path).substr(genome_start, genome_final - genome_start));
+    exit(0); 
+}
 
 string Debug::translation_test(const string& genome, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
 {
@@ -114,14 +129,11 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
 
 
 
-//void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end)
-//{
-//    auto filtered = crispr_filter(crisprs, start, end);
-//    int how_many = filtered.size();
-//    for (ull i = filtered.size() - how_many; i < filtered.size(); i++)
-//    {
-//        filtered[i]->print(genome);
-//    }
-//    fmt::print("terminating after debug\n");
-//    exit(0);
-//}
+void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end)
+{
+    auto filtered = Debug::crispr_filter(crisprs, start, end);
+    Util::sort(filtered, CrisprUtil::heuristic_greater);
+    for (ull i = 0; i < filtered.size(); i++)
+        fmt::print("{}\n", filtered[i]->to_string_debug());
+    exit(0);
+}

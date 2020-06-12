@@ -11,7 +11,7 @@
 
 namespace Debug
 {
-	void visualize_map(Prospector::Encoding genome_encoding, string& genome);
+	void visualize_map(string& genome_path);
 
 	void visualize_proximals(map<ui, vector<ui>> proximal_targets, string genome);
 	vector<CasProfile*> cas_filter(vector<CasProfile*> profiles, string gn);
@@ -21,5 +21,6 @@ namespace Debug
 	void triframe_print(const string& genome, ui genome_start, ui genome_final, bool pos);
 	void cas_detect(const string& genome, ui genome_start, ui genome_final, bool pos, const CasProfile*, ui k);
 	void crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end);
+	void genome_substr(const string& genome_path, ui genome_start, ui genome_final);
 }
 
