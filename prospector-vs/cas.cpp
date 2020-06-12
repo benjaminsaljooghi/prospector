@@ -1,7 +1,10 @@
 #include "cas.h"
 
-static string start_codon_pos = "ATG";
-static string start_codon_neg = "CAT";
+static unordered_set<string> alternate_starts_pos { "GTG", "TTG" };
+static unordered_set<string> alternate_starts_neg { "CAC", "CAA" };
+
+static unordered_set<string> start_codons_pos{ "ATG" };
+static unordered_set<string> start_codons_neg{ "CAT" };
 static unordered_set<string> stop_codons_pos{ "TAA", "TAG", "TGA" };
 static unordered_set<string> stop_codons_neg{ "TTA", "CTA", "TCA" };
 
@@ -11,13 +14,40 @@ void fragment_expansion_pos(Fragment* fragment, const string& genome)
 {
     fragment->expanded_genome_begin = fragment->genome_begin;
     fragment->expanded_genome_final = fragment->genome_final;
+    
     for (ull i = 0; i < 500; i += 3)
     {
         ull new_begin = fragment->genome_begin - i;
-        if (genome.substr(new_begin, 3) == start_codon_pos)
+
+        //if (stop_codons_pos.contains(genome.substr(new_begin, 3)))
+        //{
+            //break;
+        //}
+        if (start_codons_pos.contains(genome.substr(new_begin, 3)))
         {
             fragment->expanded_genome_begin = new_begin;
             break;
+        }
+        
+    }
+
+    if (fragment->expanded_genome_begin == fragment->genome_begin)
+    {
+        for (ull i = 0; i < 500; i += 3)
+        {
+            ull new_begin = fragment->genome_begin - i;
+            
+            //if (stop_codons_pos.contains(genome.substr(new_begin, 3)))
+            //{
+            //    break;
+            //}
+            
+            if (alternate_starts_pos.contains(genome.substr(new_begin, 3)))
+            {
+                fragment->expanded_genome_begin = new_begin;
+                break;
+            }
+            
         }
     }
 
@@ -49,12 +79,37 @@ void fragment_expansion_neg(Fragment* fragment, const string& genome)
     for (ull i = 0; i < 500; i += 3)
     {
         ull new_final = fragment->genome_final + i;
-        if (start_codon_neg == genome.substr(new_final - 3, 3))
+        
+        /*if (stop_codons_neg.contains(genome.substr(new_final - 3, 3)))
+        {
+            break;
+        }*/
+        if (start_codons_neg.contains(genome.substr(new_final - 3, 3)))
         {
             fragment->expanded_genome_final = new_final;
             break;
         }
     }
+
+    if (fragment->expanded_genome_final == fragment->genome_final)
+    {
+        for (ull i = 0; i < 500; i += 3)
+        {
+            ull new_final = fragment->genome_final + i;
+            //if (stop_codons_neg.contains(genome.substr(new_final - 3, 3)))
+            //{
+            //    break;
+            //}
+            if (alternate_starts_neg.contains(genome.substr(new_final - 3, 3)))
+            {
+                fragment->expanded_genome_final = new_final;
+                break;
+            }
+            
+        }
+    }
+
+
 
 }
 
@@ -420,9 +475,71 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
         for (Translation* t : local) t->reference_crispr = c;
         translations.insert(translations.end(), local.begin(), local.end());
 
-
-
     }
     time(start, "get translations");
     return translations;
 }
+
+string Fragment::to_string_debug()
+{
+    string amino_domain = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
+    string amino_gene = Util::translate_genome(*reference_genome, expanded_genome_begin, expanded_genome_final, reference_translation->pos);
+
+    string dna_domain = reference_genome->substr(genome_begin, genome_final - genome_begin);
+    string dna_gene = reference_genome->substr(expanded_genome_begin, expanded_genome_final - expanded_genome_begin);
+
+    string amino_buffer;
+
+    ui begin_discrepant = (genome_begin - expanded_genome_begin);
+    ui final_discpreant = (expanded_genome_final - genome_final);
+
+    dna_gene.insert(begin_discrepant, "-");
+    amino_gene.insert(begin_discrepant / 3, "-");
+
+    dna_gene.insert(dna_gene.size() - final_discpreant, "-");
+    amino_gene.insert(amino_gene.size() - (final_discpreant/3), "-");
+
+
+    std::ostringstream out;
+    out << fmt::format("{}\t{}\n", reference_translation->pos ? "+" : "-", reference_profile->gn);
+    //out << fmt::format("\t{}\n", reference_translation->reference_crispr->identifier_string());
+    out << fmt::format("\t{}...{}\n", genome_begin, genome_final);
+    out << fmt::format("\t{}...{}\n", expanded_genome_begin, expanded_genome_final);
+    //out << fmt::format("\t{}\n", amino_domain);
+    out << fmt::format("\t{}\n", amino_gene);
+    //out << fmt::format("\t{}\n", dna_domain);
+    out << fmt::format("\t{}\n", dna_gene);
+    return out.str();
+}
+
+
+static const map<string, string> domain_to_gn
+{
+    {"Cas_Cas1", "cas1"},
+    {"Cas_Cas4", "cas4"},
+    {"Cas_Cas6", "cas6"},
+    {"CRISPR_Cas6", "cas6"},
+    {"DevR", "cas7"},
+    {"Cas_Csa4", "cas8a2"},
+    {"CRISPR_Cas2", "cas2"},
+    {"Csa1", "cas4"},
+    {"Cas_Cmr5", "cmr5gr11"},
+    {"Cas_DxTHG", "csx1"},
+    {"Cas_APE2256", "csm6"},
+    {"MarR_2", "casR"},
+    {"TrmB", "casR"},
+    {"Cas_Cas5d", "cas5"},
+    {"Cas_Cas7", "cas7b"},
+};
+
+string domain_to_gn_failsafe(const string& lookup)
+{
+    return domain_to_gn.contains(lookup) ? domain_to_gn.at(lookup) : lookup;
+}
+
+
+string Fragment::to_string_summary()
+{
+    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, reference_translation->pos ? "+" : "-", domain_to_gn_failsafe(reference_profile->gn));
+}
+
