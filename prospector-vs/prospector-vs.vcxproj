@@ -53,7 +53,8 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="output.txt" />
-    <Text Include="results.txt" />
+    <Text Include="out_debug.txt" />
+    <Text Include="out_results.txt" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

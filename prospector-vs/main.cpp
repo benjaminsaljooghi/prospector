@@ -44,28 +44,10 @@
 //}
 
 static vector<CasProfile*> profiles;
+std::ofstream out_debug("out_debug.txt");
+std::ofstream out_results("out_results.txt");
 
-void write_all(const string& genome_name, const string& genome, const vector<Crispr*>& crisprs, vector<Fragment*>& fragments, std::ofstream& results)
-{
-    results << fmt::format("===\t{}\n", genome_name);
-
-    vector<Locus*> loci;
-    for (Crispr* c : crisprs) loci.push_back(c);
-    for (Fragment* f : fragments) loci.push_back(f);
-
-    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
-
-
-    for (Locus* l : loci)
-#if DEBUG == 1
-        results << l->to_string_debug();
-#else
-        results << l->to_string_summary();
-#endif
-
-}
-
-void prospect_genome(string genome_path, std::ofstream& results)
+void prospect_genome(string genome_path)
 {
     fmt::print("\n\n\n");
 
@@ -77,20 +59,33 @@ void prospect_genome(string genome_path, std::ofstream& results)
 
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
-    write_all(genome_path, genome, crisprs, fragments, results);
-
+    
     start = time(start, genome_path.c_str());
+
+    vector<Locus*> loci;
+    for (Crispr* c : crisprs) loci.push_back(c);
+    for (Fragment* f : fragments) loci.push_back(f);
+
+    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
+
+    out_results << fmt::format("===\t{}\n", genome_path);
+    for (Locus* l : loci) out_results << l->to_string_summary();
+    
+    out_debug << fmt::format("===\t{}\n", genome_path);
+    for (Locus* l : loci) out_debug << l->to_string_debug();
+    
 }
 
-void prospect_genome_dir(string genome_dir, std::ofstream& results)
+void prospect_genome_dir(string genome_dir)
 {
     ui i = 0;
     for (const auto& entry : filesystem::directory_iterator(genome_dir))
     {
         if (i++ > 3) break;
         string genome_path = entry.path().string();
-        prospect_genome(genome_path, results);
+        prospect_genome(genome_path);
     }
+    //return results;
 }
 
 int main()
@@ -108,7 +103,7 @@ int main()
     // -------- init -----------
     Prospector::device_init();
     profiles = CasProfileUtil::deserialize("T:\\crispr\\cas\\serial");
-    std::ofstream results("results.txt");
+    
 
     // ----------- debug --------
     string debug_path = "T:\\crispr\\supp\\genomes\\GCA_000730285.1_ASM73028v1_genomic.fna";
@@ -117,10 +112,12 @@ int main()
     //prospect_genome(debug_path, results);
 
     // ----------- prospect --------------
-    prospect_genome_dir("T:\\crispr\\supp\\genomes", results);
+    prospect_genome_dir("T:\\crispr\\supp\\genomes");
+    
 
     // --------- close -----------
-    results.close();
+    out_debug.close();
+    out_results.close();
     start_main = time(start_main, "main"); return 0;                                                                                                           
 }
 
