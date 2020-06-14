@@ -34,7 +34,6 @@ cudaError_t checkCudaAlways(cudaError_t result)
     if (result != cudaSuccess)
     {
         fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
-        assert(result == cudaSuccess);
     }
     return result;
 }
@@ -167,7 +166,12 @@ void Prospector::device_init()
 {
     std::chrono::high_resolution_clock::time_point start = time();
     cudaDeviceReset();
-    checkCudaAlways(cudaFree(0));
+    cudaError_t error = checkCudaAlways(cudaFree(0));
+    if (error != cudaSuccess)
+    {
+        printf("device initialization error\n");
+        abort();
+    }
     time(start, "device init");
 
     cudaError er;
