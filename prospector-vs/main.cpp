@@ -47,6 +47,21 @@ static vector<CasProfile*> profiles;
 std::ofstream out_debug("out_debug.txt");
 std::ofstream out_results("out_results.txt");
 
+string get_accession(string genome_path)
+{
+    static const std::regex accession_pattern("GC[AF]_[0-9]+\.[0-9]+", regex_constants::icase);
+    std::filesystem::path my_path(genome_path);
+    string stem = my_path.stem().string();
+    std::cmatch match;
+    bool result = std::regex_search(stem.c_str(), match, accession_pattern);
+    return match.str();
+}
+
+string get_header(string genome_path)
+{
+    return fmt::format("===\t{}\t\t{}\n", genome_path, get_accession(genome_path));
+}
+
 void prospect_genome(string genome_path)
 {
     fmt::print("\n\n\n");
@@ -68,10 +83,10 @@ void prospect_genome(string genome_path)
 
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
 
-    out_results << fmt::format("===\t{}\n", genome_path);
+    out_results << get_header(genome_path);
     for (Locus* l : loci) out_results << l->to_string_summary();
     
-    out_debug << fmt::format("===\t{}\n", genome_path);
+    out_debug << get_header(genome_path);
     for (Locus* l : loci) out_debug << l->to_string_debug();
     
 }

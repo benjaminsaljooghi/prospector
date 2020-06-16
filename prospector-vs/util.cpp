@@ -48,7 +48,6 @@ bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
 string Util::load_genome(string path)
 {
 
-
 	fmt::print("reading {}\n", path);
 
 	auto start = time();
