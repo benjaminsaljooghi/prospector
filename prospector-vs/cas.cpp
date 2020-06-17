@@ -530,6 +530,7 @@ static const map<string, string> domain_to_gn
     {"TrmB", "casR"},
     {"Cas_Cas5d", "cas5"},
     {"Cas_Cas7", "cas7b"},
+    {"Cas_Cmr3", "cmr3gr5"},
 };
 
 string domain_to_gn_failsafe(const string& lookup)
