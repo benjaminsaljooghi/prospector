@@ -378,6 +378,8 @@ string Crispr::to_string_debug()
 		out << fmt::format("\t\t{} {} {} {}\n", start, repeat, end, i < repeats.size() - 1 ? spacers[i] : "");
 	}
 
+	//- 781524	782358	DevR	781329	782373	cas7
+
 	out << "\n";
 
 	return out.str();
@@ -385,5 +387,6 @@ string Crispr::to_string_debug()
 
 string Crispr::to_string_summary()
 {
-	return fmt::format("{}\t{}\t{}\t{}\t{}h\n", start, end, "?", "CRISPR", overall_heuristic);
+	//return fmt::format("{}\t{}\t{}\t{}\t{}h\n", start, end, "?", "CRISPR", overall_heuristic);
+	return fmt::format("{}\t{}\t{}\t{}\n", "?", start, end, "CRISPR", overall_heuristic);
 }

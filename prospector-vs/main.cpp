@@ -206,10 +206,12 @@ void prospect_genome(string genome_path)
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
 
     out_results << get_header(genome_path);
-    for (Locus* l : loci) out_results << l->to_string_summary();
-    
     out_debug << get_header(genome_path);
-    for (Locus* l : loci) out_debug << l->to_string_debug();
+    for (Locus* l : loci)
+    {
+        out_results << l->to_string_summary();
+        out_debug << l->to_string_debug();
+    }
     
 }
 
@@ -242,17 +244,16 @@ int main()
     Prospector::device_init();
     profiles = CasProfileUtil::deserialize("T:\\crispr\\cas\\serial");
     
-
     // ----------- debug --------
     //string debug_path = "T:\\crispr\\supp\\genomes\\GCA_000730285.1_ASM73028v1_genomic.fna";
     
     //Debug::visualize_map(debug_path);
     //prospect_genome(debug_path, results);
 
-    sage_interpreter("T:\\crispr\\supp\\stats.tsv", genome_dir);
+    //sage_interpreter("T:\\crispr\\supp\\stats.tsv", genome_dir);
 
     // ----------- prospect --------------
-    //prospect_genome_dir(genome_dir);
+    prospect_genome_dir(genome_dir);
     
 
     // --------- close -----------

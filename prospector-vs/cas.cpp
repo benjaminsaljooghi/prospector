@@ -541,6 +541,6 @@ string domain_to_gn_failsafe(const string& lookup)
 
 string Fragment::to_string_summary()
 {
-    return fmt::format("{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, reference_translation->pos ? "+" : "-", domain_to_gn_failsafe(reference_profile->gn));
+    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}\n", reference_translation->pos ? "+" : "-", genome_begin, genome_final, reference_profile->gn, expanded_genome_begin, expanded_genome_final, domain_to_gn_failsafe(reference_profile->gn));
 }
 
