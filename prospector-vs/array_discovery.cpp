@@ -119,7 +119,7 @@ vector<Crispr*> Array::get_crisprs(string& genome)
 
     //Debug::crispr_print(crisprs, genome, 2111914 - 5000, 2112599 + 5000);
 
-    crisprs = Util::filter(crisprs, [](Crispr* c) { return c->overall_heuristic >= -1.5; });
+    crisprs = Util::filter(crisprs, [](Crispr* c) { return c->overall_heuristic >= -3; });
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
 
     //Debug::crispr_print(crisprs, genome, 2643367 - 100, 2661244 + 100);

@@ -84,8 +84,6 @@ bool Fragment::is_gene()
 }
 
 
-
-
 void sage_interpreter(string path, string genome_dir)
 {
     std::ifstream in(path);
@@ -208,7 +206,6 @@ void write_loci(string genome_path, vector<Locus*> loci)
 {
     string header = get_header(genome_path);
 
-
     out_gene << header;
     out_debug << header;
     out_domain << header;
@@ -267,7 +264,7 @@ void prospect_genome_dir(string genome_dir)
     ui i = 0;
     for (const auto& entry : filesystem::directory_iterator(genome_dir))
     {
-        if (i++ > 3) break;
+        if (i++ > 20) break;
         string genome_path = entry.path().string();
         prospect_genome(genome_path);
     }
@@ -306,7 +303,7 @@ string Fragment::to_string_summary()
     string domain = reference_profile->gn;
     string strand = reference_translation->pos ? "+" : "-";
     string gn = domain_to_gn.contains(domain) ? domain_to_gn.at(domain) : domain;
-    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}\n", strand, genome_begin, genome_final, domain, expanded_genome_begin, expanded_genome_final, gn);
+    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, strand, gn, genome_begin, genome_final, domain);
 }
 
 void debug()
