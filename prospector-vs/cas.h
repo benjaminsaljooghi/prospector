@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "stdafx.h"
@@ -52,14 +53,11 @@ struct Fragment : public Locus
     string to_string_debug();
     string to_string_summary();
 
-    //size_t quality;
+    bool is_crispr() { return false;  }
+    bool is_domain();
+    bool is_gene();
 };
 
-//struct Gene
-//{
-//    vector<Fragment*> fragments;
-//    string gn;
-//};
 
 
 namespace Cas

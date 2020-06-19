@@ -38,6 +38,9 @@ class Crispr : public Locus
         ui get_start();
         string to_string_debug();
         string to_string_summary();
+        bool is_crispr() { return true; }
+        bool is_gene() { return false; }
+        bool is_domain() { return false; }
 };
 
 

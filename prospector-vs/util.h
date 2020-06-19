@@ -9,6 +9,8 @@ namespace Util
 	static const string stop = "Z";
     static const char stop_c = 'Z';
 
+	std::vector<std::string> parse(std::string str, std::string delim);
+	
 	static const map <string, string> codon_table = {
 		{"TTT", "F"},
 		{"TTC", "F"},

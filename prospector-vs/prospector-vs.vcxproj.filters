@@ -101,9 +101,4 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="output.txt" />
-    <Text Include="out_debug.txt" />
-    <Text Include="out_results.txt" />
-  </ItemGroup>
 </Project>

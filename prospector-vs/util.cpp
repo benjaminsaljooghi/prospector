@@ -1,6 +1,27 @@
 
 #include "util.h"
 
+std::vector<std::string> Util::parse(std::string str, std::string delim)
+{
+	//std::string s = "scott>=tiger>=mushroom";
+	//std::string delimiter = ">=";
+
+	std::vector < std::string> tokens;
+
+	size_t pos = 0;
+	std::string token;
+	while ((pos = str.find(delim)) != std::string::npos) {
+		token = str.substr(0, pos);
+		//std::cout << token << std::endl;
+		str.erase(0, pos + delim.length());
+		tokens.push_back(token);
+	}
+	tokens.push_back(str);
+	return tokens;
+	//std::cout << s << std::endl;
+}
+
+
 ui Util::difference_cpu(const ui& _a, const ui& _b)
 {
 	ui _xor = (_a ^ _b);

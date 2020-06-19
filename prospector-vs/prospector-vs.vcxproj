@@ -51,11 +51,6 @@
   <ItemGroup>
     <CudaCompile Include="prospector.cu" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="output.txt" />
-    <Text Include="out_debug.txt" />
-    <Text Include="out_results.txt" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{5AA0F6DA-B4E2-4642-A130-DC315B7C05E3}</ProjectGuid>
