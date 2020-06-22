@@ -18,7 +18,7 @@ void Debug::visualize_map(string& genome_path)
 
         if (mutant)
             fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);
-
+        
 
     }
     exit(0);
@@ -102,30 +102,32 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
 }
 
 
-//void Debug::cas_detect(const string& genome, ui genome_start, ui genome_final, bool target, const CasProfile* profile, ui k)
-//{
-//    Translation translation = Debug::translation_obj(genome, genome_start, genome_final, target);
-//    fmt::print("translation of genome: {}\n", translation.pure);
-//    for (string kmer : translation.pure_kmerized)
-//    {
-//        bool contains = profile->kmer_set.contains(kmer);
-//        fmt::print("{} : {}\n", contains, kmer);
-//    }
-//
-//    vector<const CasProfile*> profiles;
-//    profiles.push_back(profile);
-//
-//    vector<Translation> translations;
-//    translations.push_back(translation);
-//
-//    
-//    auto fragments = Cas::cas(profiles, translations, genome);
-//    fmt::print("fragment debug info:\n");
-//
-//    for (Fragment& fragment : fragments)
-//        Cas::print_fragment_debug(fragment);
-//
-//}
+void Debug::cas_detect(const string& genome_path, ui genome_start, ui genome_final, bool pos, CasProfile* profile)
+{
+    string genome = Util::load_genome(genome_path);
+    Translation* translation = Cas::get_triframe(genome, genome_start, genome_final, pos)[0];
+    
+    fmt::print("translation raw: {}\n", translation->raw);
+    
+    fmt::print("containment info:\n");
+    for (auto kmer : translation->pure_kmerized)
+    {
+        auto enco = Util::encode_amino_kmer(kmer);
+        bool contains = profile->hash_table.contains(enco);
+        fmt::print("{} : {}\n", kmer, contains);
+    }
+
+    vector<CasProfile*> profiles;
+    vector<Translation*> translations;
+    
+    profiles.push_back(profile);
+    translations.push_back(translation);
+    
+    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
+    fmt::print("fragment info:\n");
+    for (int i = 0; i < fragments.size(); i++)
+        fmt::print("{}\n", fragments[i]->to_string_debug());
+}
 
 
 

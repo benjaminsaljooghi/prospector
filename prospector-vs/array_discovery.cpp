@@ -3,7 +3,6 @@
 
 vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
 {
-    auto start = time();
     vector<ui> query_indices;
     static const ui tolerance = Prospector::size / Prospector::repeat_tolerance_ratio;
     for (ui query_index = 0; query_index < genome_encoding_size - 200; query_index++)
@@ -18,7 +17,6 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
             }
         }
     }
-    time(start, "post qmap small candidate query genertion");
     return query_indices;
 }
 
@@ -61,33 +59,27 @@ vector<Crispr*> prospector_main(string& genome)
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
     uc* qmap = Prospector::get_qmap_small(encoding.d, encoding.size);
     vector<ui> query_indices = get_candidate_queries(qmap, encoding.size);
-
     map<ui, bool> consumed; for (ui query : query_indices) consumed[query] = false;
-
     vector<Crispr*> all_crisprs;
     for (ui query : query_indices)
     {
         if (consumed[query])
             continue;
 
-        //if (query != 2110970)
-            //continue;
-
         for (ui k = Prospector::k_start; k < Prospector::k_end; k++) 
         {
             vector<ui> proximals{ query };
             ui target = query + k + Prospector::spacer_min;
 
-            while (target - ( proximals[proximals.size()-1] + k) <= Prospector::spacer_max)
+            while (target - ( proximals[proximals.size()-1] + k) <= Prospector::spacer_max && target + k < genome.size())
             {
                 target++;
 
                 auto diff = Util::difference_cpu(encoding.h[query], encoding.h[target]);
-                auto query_str = genome.substr(query, k);
-                auto target_str = genome.substr(target, k);
-                auto mutant = Array::mutant(genome.c_str(), encoding.h, k, query, target);
 
-
+                //auto query_str = genome.substr(query, k);
+                //auto target_str = genome.substr(target, k);
+                //auto mutant = Array::mutant(genome.c_str(), encoding.h, k, query, target);
                 //if (mutant)
                     //fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);
 
@@ -99,15 +91,16 @@ vector<Crispr*> prospector_main(string& genome)
                 }
             }
 
-            //break;
-
-            if (proximals.size() >= Prospector::repeats_min)
+            if (proximals.size() >= Prospector::repeats_min && proximals.size() < 500 && proximals[proximals.size()-1] > proximals[0])
             {
                 Crispr* crispr = new Crispr(k, proximals, proximals.size());
                 all_crisprs.push_back(crispr);
             }
         }
     }
+
+    Prospector::free_encoding(encoding);
+
     return all_crisprs;
 }
 
@@ -117,12 +110,9 @@ vector<Crispr*> Array::get_crisprs(string& genome)
     vector<Crispr*> crisprs = prospector_main(genome);
     CrisprUtil::cache_crispr_information(genome, crisprs);
 
-    //Debug::crispr_print(crisprs, genome, 2111914 - 5000, 2112599 + 5000);
 
     crisprs = Util::filter(crisprs, [](Crispr* c) { return c->overall_heuristic >= -3; });
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
-
-    //Debug::crispr_print(crisprs, genome, 2643367 - 100, 2661244 + 100);
 
     crisprs = CrisprUtil::get_domain_best(crisprs);
     Util::sort(crisprs, [](Crispr* a, Crispr* b) { return a->start < b->start; });

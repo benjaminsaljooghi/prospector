@@ -29,8 +29,6 @@ struct Translation
     vector<ull> pure_mapping;
 };
 
-
-
 struct Fragment : public Locus
 {
     string* reference_genome;
@@ -63,7 +61,7 @@ struct Fragment : public Locus
 namespace Cas
 {
     static const ui upstream_size = 20000;
-    static const ui cluster_metric_min = 20;
+    static const ui cluster_metric_min = 8;
     static const ui max_inter_cluster_dist = 2;
 
     vector<Translation*> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);
@@ -71,11 +69,10 @@ namespace Cas
     vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);
 
     vector<Translation*> crispr_proximal_translations(const string& genome, vector<Crispr*>&);
-    vector<Fragment*> compute_target_map(vector<CasProfile*>& cas_profiles, vector<Translation*>& translations, string&);
     vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
-    //map<string, vector<Gene*>> assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments);
-    //void print_fragment_debug(const Fragment* fragment, const string& genome);
-    //void write_all(const vector<Crispr*>& crisprs, const map<string, vector<Gene*>>& crispr_genes, const string& genome);
+
+    //map<string, string> domain_to_gn;
+
 
 }
 

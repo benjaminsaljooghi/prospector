@@ -10,44 +10,12 @@
 
 #define DEBUG 1
 
-//string crispr_type(vector<Gene*>& genes)
-//{
-//    static const map<string, string> class_lookup
-//    {
-//        {"I",   "1"},
-//        {"III", "1"},
-//        {"IV",  "1"},
-//        {"II",  "2"},
-//        {"V",   "2"},
-//        {"VI",  "2"},
-//        {"?",   "?"},
-//    };
-//
-//    static const map<string, string> type_lookup
-//    {
-//        {"cas3",  "I"},
-//        {"cas10", "III"},
-//        {"cas8",  "IV"},
-//        {"cas9",  "II"},
-//        {"cas12", "V"},
-//        {"cas13", "VI"},
-//    };
-//
-//    for (Gene* gene : genes)
-//    {
-//        if (type_lookup.contains(gene->gn))
-//        {
-//            return type_lookup.at(gene->gn);
-//        }
-//    }
-//    return "?";
-//}
-
 static map<string, string> domain_to_gn;
-string genome_dir = "T:\\crispr\\supp\\genomes";
-string gn_path = "T:\\crispr\\supp\\gn.tsv";
+string genome_dir = "T:\\crispr\\genome";
+string gn_path = "T:\\crispr\\groundtruth\\gn.tsv";
 string serial = "T:\\crispr\\cas\\serial";
 static vector<CasProfile*> profiles;
+static map<string, CasProfile*> profiles_organized;
 std::ofstream out_debug("out_debug.txt");
 std::ofstream out_gene("out_gene.txt");
 std::ofstream out_domain("out_domain.txt");
@@ -57,6 +25,11 @@ void init()
     Prospector::device_init();
     profiles = CasProfileUtil::deserialize(serial);
 
+    for (CasProfile* profile : profiles)
+    {
+        profiles_organized[profile->gn] = profile;
+    }
+
     std::ifstream a(gn_path);
     string line;
     while (getline(a, line))
@@ -65,13 +38,8 @@ void init()
         domain_to_gn[split[0]] = split[1];
     }
 
-    // ---- serialziation ------
-    //CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
-    //vector<const CasProfile*> profiles = CasProfileUtil::pfam("T:\\crispr\\cas\\Pfam-A.full_filt");
-    //CasProfileUtil::serialize("T:\\crispr\\cas\\serial_staging", profiles);
-    //exit(0);
-}
 
+}
 
 bool Fragment::is_domain()
 {
@@ -83,26 +51,12 @@ bool Fragment::is_gene()
     return !this->is_domain();
 }
 
-
 void sage_interpreter(string path, string genome_dir)
 {
     std::ifstream in(path);
-
     string line;
-    
-    while (std::getline(in, line))
-    {
-        if (line[0] == '-')
-        {
-            break;
-        }
-    }
-    
-    
     string genome_accession = "";
-    bool invalidate = false;
     string genome = "";
-
     std::ofstream sage_interpretation("sage_interpretation.txt");
 
     while (std::getline(in, line))
@@ -116,7 +70,6 @@ void sage_interpreter(string path, string genome_dir)
 
         if (split[0] == "===")
         {
-            bool invalidate = true;
             genome_accession = split[1];
 
             for (const auto& entry : filesystem::directory_iterator(genome_dir))
@@ -134,8 +87,7 @@ void sage_interpreter(string path, string genome_dir)
         }
         
 
-
-        auto get_debug_str = [&genome](string kind, ui begin, ui final, string strand) {
+        auto gen_debug_str = [&genome](string kind, ui begin, ui final, string strand) {
             auto a = genome.substr(begin, final - begin);
 
             auto b = kind == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
@@ -148,17 +100,15 @@ void sage_interpreter(string path, string genome_dir)
 
             return stream.str();
         };
+     
 
-        //std::ostringstream stream;
-
-        
-
-        if (split[2] != "")
+        if (split[0] != "")
         {
-            ui g_begin = stoi(split[2]);
-            ui g_final = stoi(split[3]);
-            string g_strand = split[4];
-            string str = get_debug_str(split[0], g_begin, g_final, g_strand);
+            ui g_begin = stoi(split[0]);
+            ui g_final = stoi(split[1]);
+            string g_strand = split[2];
+            string kind = split[3];
+            string str = gen_debug_str(kind, g_begin, g_final, g_strand);
             sage_interpretation << fmt::format("ground:\n{}\n", str);
         }
         else
@@ -171,7 +121,8 @@ void sage_interpreter(string path, string genome_dir)
             ui t_begin = stoi(split[5]);
             ui t_final = stoi(split[6]);
             string t_strand = split[7];
-            auto str = get_debug_str(split[0], t_begin, t_final, t_strand);
+            string kind = split[8];
+            auto str = gen_debug_str(kind, t_begin, t_final, t_strand);
             sage_interpretation << fmt::format("target:\n{}\n", str);
         }
         else
@@ -180,8 +131,6 @@ void sage_interpreter(string path, string genome_dir)
         }
 
         sage_interpretation << "\n\n";
-
-
     }
 
     sage_interpretation.close();
@@ -240,13 +189,18 @@ void prospect_genome(string genome_path)
     fmt::print("\n\n\n");
 
     auto start = time();
-
+    
     string genome = Util::load_genome(genome_path);
+    start = time(start, "load genome");
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
+    start = time(start, "get crisprs");
 
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
+    start = time(start, "get translations");
+
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
+    start = time(start, "get fragments");
     
     start = time(start, genome_path.c_str());
 
@@ -264,7 +218,7 @@ void prospect_genome_dir(string genome_dir)
     ui i = 0;
     for (const auto& entry : filesystem::directory_iterator(genome_dir))
     {
-        if (i++ > 20) break;
+        if (i++ > 10) break;
         string genome_path = entry.path().string();
         prospect_genome(genome_path);
     }
@@ -308,24 +262,33 @@ string Fragment::to_string_summary()
 
 void debug()
 {
-    //string debug_path = "T:\\crispr\\supp\\genomes\\GCA_000730285.1_ASM73028v1_genomic.fna";
-    //Debug::visualize_map(debug_path);
-    //prospect_genome(debug_path, results);
-    //sage_interpreter("T:\\crispr\\supp\\stats.tsv", genome_dir);
+    sage_interpreter("T:\\crispr\\groundtruth\\report_align.tsv", genome_dir);
+    //string a = genome_dir + "\\GCA_000189575.1_ASM18957v1_genomic.fna";
+    //prospect_genome(a);
     exit(0);
+}
+
+void close()
+{
+    out_debug.close();
+    out_gene.close();
+    out_domain.close();
 }
 
 int main()
 {
-    init();
     auto start_main = time();
+
+    init();
+
     //debug();
+
     prospect_genome_dir(genome_dir);
     
-    out_debug.close();
-    out_gene.close();
-    out_domain.close();
-    start_main = time(start_main, "main"); return 0;                                                                                                           
+    close();
+    
+    start_main = time(start_main, "main");
+    return 0;                                                                                                           
 }
 
 

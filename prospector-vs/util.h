@@ -144,12 +144,10 @@ namespace Util
 
 	template <typename T, typename Pred> vector<T> filter(vector<T>& in, Pred predicate)
 	{
-		auto start = time();
 		vector<T> out;
 		for (T el : in)
 			if (predicate(el))
 				out.push_back(el);
-		time(start, "filter");
 		return out;
 	}
 
@@ -165,10 +163,8 @@ namespace Util
 
 	template <typename T> vector<T> flatten(vector<vector<T>> vecs)
 	{
-		auto start = time();
 		vector<T> flattened;
 		for (vector<T> v : vecs) flattened.insert(flattened.end(), v.begin(), v.end());
-		time(start, "flatten");
 		return flattened;
 	}
 
@@ -211,10 +207,8 @@ namespace Util
 
 	template <typename Iterable, typename Comp> void sort(Iterable& iterable, Comp comp)
 	{
-		// auto start = time();
 		sort(iterable.begin(), iterable.end(), comp);
 		string str = fmt::format("sort {} items", iterable.size());
-		// done(start, str);
 	}
 
 	string load_genome(string);

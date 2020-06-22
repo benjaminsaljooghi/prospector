@@ -1,3 +1,4 @@
+
 #pragma once
 
 typedef unsigned long long ull;
@@ -17,7 +18,7 @@ namespace Prospector
     static const ui size = 16;
     static const ui map_size_small = 64;
     static const ui bits = 2;
-    static const ui repeat_tolerance_ratio = 15;
+    static const ui repeat_tolerance_ratio = 4; // lower is more sensitive
 
     struct Encoding {
         ui* h;
@@ -29,6 +30,8 @@ namespace Prospector
     void device_init();
     Encoding get_genome_encoding(const char*, const ui);
     uc* get_qmap_small(const ui*, const ui);
+
+    void free_encoding(Encoding);
 }
 
 

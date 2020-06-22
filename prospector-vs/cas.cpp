@@ -10,106 +10,50 @@ static unordered_set<string> stop_codons_neg{ "TTA", "CTA", "TCA" };
 
 // potential performance optimization: compare amino_family acids of codons in the amino_family rather than codons in the genome.
 // should be faster to compare single chars rather than strings.
+
+ull generic_expand(const string& genome, unordered_set<string>& sinks, ull begin, ull increment, ull increments)
+{
+    ull offset = 0;
+    try
+    {
+        for (ull i = 0; i < increments; i++)
+        {
+            if (sinks.contains(genome.substr(begin + offset, 3)))
+            {
+                return begin + offset;
+            }
+            offset += increment;
+        }
+    }
+    catch (exception& e)
+    {
+        return begin;
+    }
+    return begin;
+}
+
+ull steps = 200;
+
 void fragment_expansion_pos(Fragment* fragment, const string& genome)
 {
-    fragment->expanded_genome_begin = fragment->genome_begin;
-    fragment->expanded_genome_final = fragment->genome_final;
-    
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_begin = fragment->genome_begin - i;
-
-        //if (stop_codons_pos.contains(genome.substr(new_begin, 3)))
-        //{
-            //break;
-        //}
-        if (start_codons_pos.contains(genome.substr(new_begin, 3)))
-        {
-            fragment->expanded_genome_begin = new_begin;
-            break;
-        }
-        
-    }
+    fragment->expanded_genome_begin = generic_expand(genome, start_codons_pos, fragment->genome_begin, -3, steps);
+    fragment->expanded_genome_final = generic_expand(genome, stop_codons_pos, fragment->genome_final - 3, 3, steps) + 3;
 
     if (fragment->expanded_genome_begin == fragment->genome_begin)
     {
-        for (ull i = 0; i < 500; i += 3)
-        {
-            ull new_begin = fragment->genome_begin - i;
-            
-            //if (stop_codons_pos.contains(genome.substr(new_begin, 3)))
-            //{
-            //    break;
-            //}
-            
-            if (alternate_starts_pos.contains(genome.substr(new_begin, 3)))
-            {
-                fragment->expanded_genome_begin = new_begin;
-                break;
-            }
-            
-        }
-    }
-
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_final = fragment->genome_final + i;
-        if (stop_codons_pos.contains(genome.substr(new_final - 3, 3)))
-        {
-            fragment->expanded_genome_final = new_final;
-            break;
-        }
+        fragment->expanded_genome_begin = generic_expand(genome, alternate_starts_pos, fragment->genome_begin, -3, steps);
     }
 }
 
 void fragment_expansion_neg(Fragment* fragment, const string& genome)
 {
-    fragment->expanded_genome_begin = fragment->genome_begin;
-    fragment->expanded_genome_final = fragment->genome_final;
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_begin = fragment->genome_begin - i;
-        if (stop_codons_neg.contains(genome.substr(new_begin, 3)))
-        {
-            fragment->expanded_genome_begin = new_begin;
-            break;
-        }
-    }
-
-    for (ull i = 0; i < 500; i += 3)
-    {
-        ull new_final = fragment->genome_final + i;
-        
-        /*if (stop_codons_neg.contains(genome.substr(new_final - 3, 3)))
-        {
-            break;
-        }*/
-        if (start_codons_neg.contains(genome.substr(new_final - 3, 3)))
-        {
-            fragment->expanded_genome_final = new_final;
-            break;
-        }
-    }
+    fragment->expanded_genome_begin = generic_expand(genome, stop_codons_neg, fragment->genome_begin, -3, steps);
+    fragment->expanded_genome_final = generic_expand(genome, start_codons_neg, fragment->genome_final - 3, 3, steps) + 3;
 
     if (fragment->expanded_genome_final == fragment->genome_final)
     {
-        for (ull i = 0; i < 500; i += 3)
-        {
-            ull new_final = fragment->genome_final + i;
-            //if (stop_codons_neg.contains(genome.substr(new_final - 3, 3)))
-            //{
-            //    break;
-            //}
-            if (alternate_starts_neg.contains(genome.substr(new_final - 3, 3)))
-            {
-                fragment->expanded_genome_final = new_final;
-                break;
-            }
-            
-        }
+        fragment->expanded_genome_final = generic_expand(genome, alternate_starts_neg, fragment->genome_final - 3, 3, steps) + 3;
     }
-
-
 
 }
 
@@ -215,9 +159,8 @@ bool fragment_contains(const Fragment* a, const Fragment* b)
     return a->clust_begin > b->clust_begin && a->clust_final < b->clust_final;
 }
 
-vector<Fragment*> Cas::compute_target_map(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome )
+vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome)
 {
-    auto start = time();    
 
     vector<Fragment*> fragments;
 
@@ -262,41 +205,6 @@ vector<Fragment*> Cas::compute_target_map(vector<CasProfile*>& profiles, vector<
         }
     }
 
-    start = time(start, "target map construction");
-
-    return fragments;
-}
-
-vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome)
-{
-
-    //fmt::print("\tidentifying cas genes in {} translations...\n", translations.size());
-    auto start = time();  
-
-    vector<Fragment*> fragments = compute_target_map(profiles, translations, genome);
-
-    //ull num_translations = translations.size();
-    //ull num_cas = profiles.size();
-    //ull per_translation = 3334; // maximum size of a amino_family is CasUtil::upstream_size / 3 = 3333.33 (3334), but they are a bit smaller because of stop codons
-    //ull per_cas = per_translation * num_translations;
-
-    //vector<Fragment*> fragments;
-    //for (ull cas_i = 0; cas_i < num_cas; cas_i++)
-    //{
-    //    for (ull translation_i = 0; translation_i < num_translations; translation_i++)
-    //    {
-
-    //       
-    //    }
-    //}
-    //start = time(start, "target map parse");
-
-
-    //for (Fragment& a : fragments) compute_demarc(a);
-    //genome_start = time(genome_start, "f demarcs");
-
-    //for (Fragment& a : fragments) compute_details(a, genome);
-    //genome_start = time(genome_start, "f details");
 
     return fragments;
 }
@@ -435,10 +343,7 @@ vector <Translation*> Cas::get_sixframe(const string& genome, ull genome_start, 
 
 vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vector<Crispr*>& crisprs)
 {
-    auto start = time();
     vector<Translation*> translations;
-
-
 
     ull max = 0;
 
@@ -446,20 +351,29 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 
     for (const Crispr* c : crisprs)
     {
-        ull l_begin = c->start - Cas::upstream_size; l_begin = l_begin < c->start ? l_begin : 0;;
+        ull l_begin = c->start - (ull) Cas::upstream_size; 
         ull l_final = c->start;
 
         ull r_begin = c->end;
-        ull r_final = c->end + Cas::upstream_size; r_final = r_final > c->end ? r_final : genome.size() - 1;
+        ull r_final = c->end + (ull) Cas::upstream_size;
+
+        if (l_begin > c->start) // overflow
+            l_begin = 0;
+
+        if (r_final >= genome.size())
+            r_final = genome.size() - 1;
 
         l_begin = std::max(max, l_begin);
         r_begin = std::max(max, r_begin);
 
         bool can_l = l_begin < l_final;
-        bool can_r = r_begin < r_final;
+        bool can_r = r_begin < genome.size() && r_begin < r_final;
 
-        max = std::max(max, r_final);
-
+        if (can_r)
+        {
+            max = std::max(max, r_final);
+        }
+        
         vector<Translation*> l;
         vector<Translation*> r;
 
@@ -476,7 +390,6 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
         translations.insert(translations.end(), local.begin(), local.end());
 
     }
-    time(start, "get translations");
     return translations;
 }
 

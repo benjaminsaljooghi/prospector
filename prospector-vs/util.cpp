@@ -71,7 +71,6 @@ string Util::load_genome(string path)
 
 	fmt::print("reading {}\n", path);
 
-	auto start = time();
 
 	ifstream input(path);
 	if (!input.good())
@@ -100,7 +99,8 @@ string Util::load_genome(string path)
 
 		if (line.empty() || line[0] == '>')
 		{
-			start = time(start, "load genome");
+
+			content.erase(std::remove(content.begin(), content.end(), 'N'), content.end());
 			return content;
 
 		}

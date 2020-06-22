@@ -291,7 +291,6 @@ vector<Crispr*> CrisprUtil::get_domain_best(vector<Crispr*> crisprs)
 	// this function expects the crisprs to be sorted
 
     // printf("generating domain best from %zd crisprs... ", crisprs.size());
-    auto start = time();
 
     // get the best of each domain
     vector<Crispr*> crisprs_domain_best;
@@ -315,13 +314,11 @@ vector<Crispr*> CrisprUtil::get_domain_best(vector<Crispr*> crisprs)
             crisprs_domain_best.push_back(crispr);
         }
     }
-	time(start, "domain best");
     return crisprs_domain_best;
 }
 
 vector<Crispr*> CrisprUtil::spacer_score_filtered(vector<Crispr*> crisprs, map<string, int> spacer_scores)
 {
-    auto start_time = time();
     vector<Crispr*> crisprs_filtered;
     for (Crispr* crispr : crisprs)
     {
@@ -334,19 +331,16 @@ vector<Crispr*> CrisprUtil::spacer_score_filtered(vector<Crispr*> crisprs, map<s
 
         crisprs_filtered.push_back(crispr);
     }
-    time(start_time, "final filtering");
     return crisprs_filtered;
 }
 
 void CrisprUtil::cache_crispr_information(const string& genome, vector<Crispr*>& crisprs)
 {
-    auto start = time();
     #pragma omp parallel for
     for (signed long i = 0; i < crisprs.size(); i++)
     {
         crisprs[i]->update(genome);
 	}
-    time(start, "cache crisprs");
 }
 
 

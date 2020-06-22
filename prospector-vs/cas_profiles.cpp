@@ -623,7 +623,6 @@ void CasProfileUtil::serialize(string dir, vector<const CasProfile*> profiles)
 vector<CasProfile*> CasProfileUtil::deserialize(string dir)
 {
 	vector<CasProfile*> profiles;
-	auto start = time();
 	for (const auto& entry : filesystem::directory_iterator(dir))
 	{
 		string file_path = entry.path().string();
@@ -633,7 +632,14 @@ vector<CasProfile*> CasProfileUtil::deserialize(string dir)
 		profile->gn = entry.path().stem().string();
 		profiles.push_back(profile);
 	}
-	start = time(start, "profile deserialization");
 	return profiles;
 }
 
+
+void CasProfileUtil::serialize()
+{
+	CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
+	vector<const CasProfile*> profiles = CasProfileUtil::pfam("T:\\crispr\\cas\\Pfam-A.full_filt");
+	CasProfileUtil::serialize("T:\\crispr\\cas\\serial_staging", profiles);
+	exit(0);
+}

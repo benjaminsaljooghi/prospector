@@ -1,3 +1,5 @@
+
+
 #include "prospector.h"
 
 #include "cuda.h"
@@ -64,7 +66,10 @@ __device__ ui scheme(const char c)
         case 'T':
             return 3;
     }
+    
+    printf("have invalid char: %c\n", c);
     assert(0);
+    //abort();
     return 0;
 }
 
@@ -86,7 +91,6 @@ __global__ void compute_encoding(const char* genome, ui* encoding, ui genome_siz
 
 Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui genome_size)
 {
-    auto start = time();
 
     Prospector::Encoding encoding;
 
@@ -109,7 +113,6 @@ Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui geno
 
     er = cudaMemcpy(encoding.h, encoding.d, encoding.bytes, cudaMemcpyDeviceToHost); checkCuda(er);
 
-    time(start, "genome encoding total");
 
     return encoding;
 }
@@ -164,7 +167,6 @@ uc* qmap_d;
 
 void Prospector::device_init()
 {
-    std::chrono::high_resolution_clock::time_point start = time();
     cudaDeviceReset();
     cudaError_t error = checkCudaAlways(cudaFree(0));
     if (error != cudaSuccess)
@@ -172,14 +174,11 @@ void Prospector::device_init()
         printf("device initialization error\n");
         abort();
     }
-    time(start, "device init");
 
     cudaError er;
-    er = cudaMalloc(&qmap_d, 500000000 ); checkCuda(er);
-    start = time(start, "qmap small malloc");
+    er = cudaMalloc(&qmap_d, 2000000000 ); checkCuda(er);
 
-    er = cudaMallocHost(&qmap, 500000000); checkCuda(er);
-    start = time(start, "qmap small mallochost");
+    er = cudaMallocHost(&qmap, 2000000000); checkCuda(er);
 
 }
 
@@ -187,7 +186,6 @@ uc* Prospector::get_qmap_small(const ui* encoding, const ui encoding_size)
 {
     assert(Prospector::k_start >= Prospector::size);
     cudaError er; 
-    auto start = time();
 
     ui bytes_qmap = sizeof(uc) * encoding_size * Prospector::map_size_small;
 
@@ -196,10 +194,8 @@ uc* Prospector::get_qmap_small(const ui* encoding, const ui encoding_size)
     compute_qmap_small KERNEL_ARGS3(GRID, BLOCK, 0) (encoding, encoding_size, qmap_d);
 
     cudaWait();
-    start = time(start, "qmap small kernel");
 
     er = cudaMemcpy(qmap, qmap_d, bytes_qmap, cudaMemcpyDeviceToHost); checkCuda(er); 
-    start = time(start, "qmap small memcpy");
 
     //cudaFree(qmap_d);
     return qmap;
@@ -242,6 +238,12 @@ uc* Prospector::get_qmap_small(const ui* encoding, const ui encoding_size)
 //    cudaFree(qmap_d);
 //    return qmap;
 //}
+
+void Prospector::free_encoding(Encoding encoding)
+{
+    cudaFree(encoding.d);
+    cudaFreeHost(encoding.h);
+}
 
 
 
