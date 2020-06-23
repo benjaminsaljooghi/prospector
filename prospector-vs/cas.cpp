@@ -164,15 +164,17 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
     vector<Fragment*> fragments;
 
-    for (CasProfile* p : profiles)
+    #pragma omp parallel for
+    for (signed long p = 0; p < profiles.size(); p++)
     {
+        CasProfile* profile = profiles[p];
         for (Translation* t : translations)
         {
             vector<ull> index;
 
             for (ull i = 0; i < t->pure_kmerized_encoded.size(); i++)
             {
-                bool contains = p->hash_table.contains(t->pure_kmerized_encoded[i]);
+                bool contains = profile->hash_table.contains(t->pure_kmerized_encoded[i]);
                 if (contains)
                     index.push_back(i);
             }
@@ -189,7 +191,7 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
             f->reference_genome = &genome;
             f->reference_crispr = t->reference_crispr;
             f->reference_translation = t;
-            f->reference_profile = p;
+            f->reference_profile = profile;
             f->clusters = clusters;
 
             compute_demarc(f);
@@ -201,7 +203,11 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
             auto expansion = f->reference_translation->pos ? fragment_expansion_pos : fragment_expansion_neg;
             expansion(f, genome);
-            fragments.push_back(f);
+
+            #pragma omp critical
+            {
+                fragments.push_back(f);
+            }
         }
     }
 
@@ -349,8 +355,10 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 
     std::sort(crisprs.begin(), crisprs.end(), [](Crispr* a, Crispr* b) { return a->start < b->start; });
 
-    for (const Crispr* c : crisprs)
+    for (signed long c_index = 0; c_index < crisprs.size(); c_index++)
     {
+        Crispr* c = crisprs[c_index];
+
         ull l_begin = c->start - (ull) Cas::upstream_size; 
         ull l_final = c->start;
 
@@ -387,8 +395,9 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
         local.insert(local.end(), l.begin(), l.end());
         local.insert(local.end(), r.begin(), r.end());
         for (Translation* t : local) t->reference_crispr = c;
-        translations.insert(translations.end(), local.begin(), local.end());
 
+        translations.insert(translations.end(), local.begin(), local.end());
+        
     }
     return translations;
 }
