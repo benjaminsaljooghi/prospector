@@ -61,7 +61,7 @@ struct Fragment : public Locus
 namespace Cas
 {
     static const ui upstream_size = 20000;
-    static const ui cluster_metric_min = 8;
+    static const ui cluster_metric_min = 14;
     static const ui max_inter_cluster_dist = 2;
 
     vector<Translation*> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);

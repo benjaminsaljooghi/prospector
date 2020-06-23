@@ -18,7 +18,8 @@ namespace Prospector
     static const ui size = 16;
     static const ui map_size_small = 64;
     static const ui bits = 2;
-    static const ui repeat_tolerance_ratio = 4; // lower is more sensitive
+    static const ui repeat_tolerance_ratio = 10; // lower is more sensitive
+    static const ui repeat_tolerance_ratio_sensitive = 4; // lower is more sensitive
 
     struct Encoding {
         ui* h;

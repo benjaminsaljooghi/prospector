@@ -14,7 +14,7 @@ void Debug::visualize_map(string& genome_path)
         auto diff = Util::difference_cpu(encoding.h[query], encoding.h[target]);
         auto query_str = genome.substr(query, k);
         auto target_str = genome.substr(target, k);
-        auto mutant = Array::mutant(genome.c_str(), encoding.h, k, query, target);
+        auto mutant = Array::mutant(genome.c_str(), encoding.h, k, query, target, Prospector::repeat_tolerance_ratio_sensitive);
 
         if (mutant)
             fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);

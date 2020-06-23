@@ -194,6 +194,7 @@ void prospect_genome(string genome_path)
     start = time(start, "load genome");
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
+    fmt::print("returned {} crisprs\n", crisprs.size());
     start = time(start, "get crisprs");
 
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
@@ -201,16 +202,15 @@ void prospect_genome(string genome_path)
 
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
     start = time(start, "get fragments");
-    
-    start = time(start, genome_path.c_str());
-
+   
     vector<Locus*> loci;
     for (Crispr* c : crisprs) loci.push_back(c);
     for (Fragment* f : fragments) loci.push_back(f);
 
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
-
     write_loci(genome_path, loci);
+
+    start = time(start, "write loci");
 }
 
 void prospect_genome_dir(string genome_dir)
@@ -218,9 +218,11 @@ void prospect_genome_dir(string genome_dir)
     ui i = 0;
     for (const auto& entry : filesystem::directory_iterator(genome_dir))
     {
-        if (i++ > 10) break;
+        auto start = time();
+        if (i++ > 100) break;
         string genome_path = entry.path().string();
         prospect_genome(genome_path);
+        start = time(start, genome_path.c_str());
     }
 }
 
@@ -290,5 +292,3 @@ int main()
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }
-
-
