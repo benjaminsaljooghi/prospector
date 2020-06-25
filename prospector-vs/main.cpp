@@ -25,16 +25,6 @@ void init()
     CasProfileUtil::load_domain_table(domain_table_path);
 }
 
-//string get_accession(string genome_path)
-//{
-//    static const std::regex accession_pattern("GC[AF]_[0-9]+\.[0-9]+", regex_constants::icase);
-//    std::filesystem::path my_path(genome_path);
-//    string stem = my_path.stem().string();
-//    std::cmatch match;
-//    bool result = std::regex_search(stem.c_str(), match, accession_pattern);
-//    return match.str();
-//}
-
 void write_loci(string genome_path, vector<Locus*> loci)
 {
     string header = fmt::format("===\t{}\t\t{}\n", genome_path, filesystem::path(genome_path).stem().string());
@@ -138,7 +128,6 @@ void prospect_genome_dir(string genome_dir)
         prospect_genome(genome_path);
     }
 }
-
 
 int main()
 {
