@@ -10,7 +10,7 @@ class Crispr : public Locus
 
         // computed by constructor
         vector<ui> genome_indices;
-        ull size;
+        ll size;
         ui k;
 
         // computed by update
@@ -27,12 +27,13 @@ class Crispr : public Locus
         // computed by cache_upstream_aminos
         // vector<string> target_kmers;
 
-        Crispr(ui, vector<ui>, ull);
+        Crispr(ui, vector<ui>, ll);
+        ~Crispr() { genome_indices.clear();  };
         void update(const string& genome);
         //void print_generic(const string& genome, function<void(string)>& print_spacer) const;
         //void print(const string& genome, map<string, int>) const;
         //void print(const string& genome) const;
-        // void cache_upstream_aminos(string, ull, ui);
+        // void cache_upstream_aminos(string, ll, ui);
         string identifier_string() const;
 
         ui get_start();
@@ -51,7 +52,7 @@ namespace CrisprUtil
     //void print(string genome, vector<Crispr*> crisprs);
     bool repeat_substring(Crispr* b, ui start, ui end);
     bool repeat_subset(Crispr* a, Crispr* b);
-    // void cas(string genome, vector<Crispr> crisprs, const ui k, const ull upstream_size);
+    // void cas(string genome, vector<Crispr> crisprs, const ui k, const ll upstream_size);
     
     vector<Crispr*> get_domain_best(vector<Crispr*> crisprs);
     vector<Crispr*> spacer_score_filtered(vector<Crispr*> crisprs, map<string, int> spacer_scores);

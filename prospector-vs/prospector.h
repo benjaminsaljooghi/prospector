@@ -1,9 +1,9 @@
 
 #pragma once
 
-typedef unsigned long long ull;
+typedef long long ll;
 typedef unsigned int ui;
-typedef signed long int li;
+//typedef signed long int li;
 typedef unsigned char uc;
 
 namespace Prospector

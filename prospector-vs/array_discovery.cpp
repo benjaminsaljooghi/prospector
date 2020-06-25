@@ -29,8 +29,8 @@ bool Array::mutant(const char* genome, ui* genome_encoding, ui k, ui i, ui j, ui
     const ui chunks = k / Prospector::size;
     // may generate a lot of crisprs that are filtered later (expensive) given that SIZE is large (16) here.
     // option is to do a more accurate mutation calculation either using per-char post the chunk division
-    // or to encode entire kmers up to MAP_SIZ into ull's to compute the difference efficiently.
-    // post k=MAP_SIZ we can use the MAP_SIZ-long ull initially, and then compute a per-char difference afterwards.
+    // or to encode entire kmers up to MAP_SIZ into ll's to compute the difference efficiently.
+    // post k=MAP_SIZ we can use the MAP_SIZ-long ll initially, and then compute a per-char difference afterwards.
 
     for (ui chunk = 0; chunk < chunks; chunk++)
     {

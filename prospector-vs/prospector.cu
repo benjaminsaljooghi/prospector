@@ -113,6 +113,7 @@ Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui geno
 
     er = cudaMemcpy(encoding.h, encoding.d, encoding.bytes, cudaMemcpyDeviceToHost); checkCuda(er);
 
+    cudaFree(d_genome);
 
     return encoding;
 }

@@ -33,9 +33,9 @@ ui Util::difference_cpu(const ui& _a, const ui& _b)
 
 string Util::translate_domain(const string& domain)
 {
-	ull codon_size = 3;
+	ll codon_size = 3;
 	string raw = "";
-	for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
+	for (ll i = 0; i + codon_size < domain.size(); i += codon_size)
 	{
 		string codon = domain.substr(i, codon_size);
 		string amino_acid = codon_table.at(codon);
@@ -100,7 +100,19 @@ string Util::load_genome(string path)
 		if (line.empty() || line[0] == '>')
 		{
 
-			content.erase(std::remove(content.begin(), content.end(), 'N'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'N'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'R'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'Y'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'K'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'W'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'M'), content.end());
+			//content.erase(std::remove(content.begin(), content.end(), 'S'), content.end());
+
+			content.erase(std::remove_if(content.begin(), content.end(),
+				[](char c) {
+					return !(c == 'A' || c == 'C' || c == 'G' || c == 'T');
+				}));
+
 			return content;
 
 		}
@@ -201,11 +213,11 @@ int Util::mismatch_count (string repeat)
 {
 	int _count = 0;
 
-	ull k = repeat.size();
+	ll k = repeat.size();
     unsigned int start_index = 0;
 	unsigned int end_index = start_index + repeat.size() - 1;
 
-	for (ull i = 0; i < k/2; i++)
+	for (ll i = 0; i < k/2; i++)
 	{
 		char upstream = repeat[start_index + i];
 		char downstream = repeat[end_index - i];
@@ -217,7 +229,7 @@ int Util::mismatch_count (string repeat)
 string Util::seqs_to_fasta (vector <string> seqs)
 {
     ostringstream string_stream;
-    for (ull i = 0; i < seqs.size(); i++)
+    for (ll i = 0; i < seqs.size(); i++)
     {
         string_stream << ">" << i << endl;
         string_stream << seqs[i] << endl;  
@@ -235,7 +247,7 @@ vector <string> Util::kmerize (string seq, ui k)
 
 ui Util::encode_amino_kmer(const string& kmer)
 {
-	ull k = kmer.size();
+	ll k = kmer.size();
 	ui encoded = 0;
 	for (ui i = 0; i < k; i++)
 		encoded += Util::amino_encoding.at(kmer[i]) << k * i;

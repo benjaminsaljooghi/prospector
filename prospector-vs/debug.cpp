@@ -46,15 +46,15 @@ void Debug::visualize_proximals(map<ui, vector<ui>> proximal_targets, string gen
     exit(0);
 }
 
-// void Debug::debug_clusters(const vector<vector<ull>>& clusters)
+// void Debug::debug_clusters(const vector<vector<ll>>& clusters)
 // {
-//     for (vector<ull> cluster : clusters) 
+//     for (vector<ll> cluster : clusters) 
 //         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 // }
 
-vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string gn)
+vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string identifier)
 {
-    return Util::filter(profiles, [&](CasProfile* p) {return p->gn == gn; });
+    return Util::filter(profiles, [&](CasProfile* p) {return p->identifier == identifier; });
 }
 
 vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ui start, ui end)
@@ -135,7 +135,94 @@ void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start
 {
     auto filtered = Debug::crispr_filter(crisprs, start, end);
     Util::sort(filtered, CrisprUtil::heuristic_greater);
-    for (ull i = 0; i < filtered.size(); i++)
+    for (ll i = 0; i < filtered.size(); i++)
         fmt::print("{}\n", filtered[i]->to_string_debug());
     exit(0);
+}
+
+
+
+void Debug::sage_interpreter(string path, string genome_dir)
+{
+    std::ifstream in(path);
+    string line;
+    string genome_accession = "";
+    string genome = "";
+    std::ofstream sage_interpretation("sage_interpretation.txt");
+
+    while (std::getline(in, line))
+    {
+        if (line[0] == '-')
+        {
+            continue;
+        }
+
+        auto split = Util::parse(line, "\t");
+
+        if (split[0] == "===")
+        {
+            genome_accession = split[1];
+
+            for (const auto& entry : filesystem::directory_iterator(genome_dir))
+            {
+                string genome_path = entry.path().string();
+
+                if (genome_path.find(genome_accession) != string::npos)
+                {
+                    genome = Util::load_genome(genome_path);
+                    break;
+                }
+            }
+
+            continue;
+        }
+
+
+        auto gen_debug_str = [&genome](string kind, ui begin, ui final, string strand) {
+            auto a = genome.substr(begin, final - begin);
+
+            auto b = kind == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
+
+            std::ostringstream stream;
+
+            stream << fmt::format("\t{}\t{}..{}\t{}\n", kind, begin, final, strand);
+            stream << "\t" << a << "\n";
+            stream << "\t" << b << "\n";
+
+            return stream.str();
+        };
+
+
+        if (split[0] != "")
+        {
+            ui g_begin = stoi(split[0]);
+            ui g_final = stoi(split[1]);
+            string g_strand = split[2];
+            string kind = split[3];
+            string str = gen_debug_str(kind, g_begin, g_final, g_strand);
+            sage_interpretation << fmt::format("ground:\n{}\n", str);
+        }
+        else
+        {
+            sage_interpretation << "ground:\nno data\n";
+        }
+
+        if (split[5] != "")
+        {
+            ui t_begin = stoi(split[5]);
+            ui t_final = stoi(split[6]);
+            string t_strand = split[7];
+            string kind = split[8];
+            auto str = gen_debug_str(kind, t_begin, t_final, t_strand);
+            sage_interpretation << fmt::format("target:\n{}\n", str);
+        }
+        else
+        {
+            sage_interpretation << "target:\nno data\n";
+        }
+
+        sage_interpretation << "\n\n";
+    }
+
+    sage_interpretation.close();
 }

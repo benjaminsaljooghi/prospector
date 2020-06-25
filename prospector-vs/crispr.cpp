@@ -9,14 +9,14 @@ double get_conservation_consensus(vector<string>& repeats)
 	{
 		assert (a.size() == b.size());
 		int matches = 0;
-		for (ull i = 0; i < a.size(); i++)
+		for (ll i = 0; i < a.size(); i++)
 			matches += a[i] == b[i] ? 1 : 0;
 		return (double) matches / (double) a.length();
 	};
 
 	vector<double> similarties;
 	similarties.reserve(repeats.size());
-	for (ull i = 0; i < repeats.size(); i++)
+	for (ll i = 0; i < repeats.size(); i++)
 		similarties.push_back(same_length_similarity(consensus, repeats[i]));
 	
 	return Util::mean(similarties);
@@ -25,9 +25,9 @@ double get_conservation_consensus(vector<string>& repeats)
 
 double left_aligned_spacer_similarity(string* a, string* b)
 {
-	ull len = min(a->size(), b->size());
-	ull matches = 0;
-	for (ull i = 0; i < len; i++)
+	ll len = min(a->size(), b->size());
+	ll matches = 0;
+	for (ll i = 0; i < len; i++)
 	{
 		matches += a->c_str()[i] == b->c_str()[i] ? 1 : 0;
 	}
@@ -45,11 +45,11 @@ double right_aligned_spacer_similarity(string* a, string* b)
 		_small = a;
 	}
 
-	ull len = _small->size();
-	ull offset = _big->size() - len;
+	ll len = _small->size();
+	ll offset = _big->size() - len;
 	
-	ull matches = 0;
-	for (ull i = 0; i < len; i++)
+	ll matches = 0;
+	for (ll i = 0; i < len; i++)
 	{
 		matches += _big->c_str()[i + offset] == _small->c_str()[i] ? 1 : 0;
 	}
@@ -61,10 +61,10 @@ double get_conservation_spacer(vector<string>& spacers)
 	// compare each spacer against every other space but do not repeat comparisons and do not compare a spacer against itself	
 	double score_sum = 0;
 	int comparisons = 0;
-	for (ull i = 0; i < spacers.size(); i++)
+	for (ll i = 0; i < spacers.size(); i++)
 	{
 		string* a = &spacers[i];
-		for (ull j = 0; j < i; j++)
+		for (ll j = 0; j < i; j++)
 		{
 			string* b = &spacers[j];
 
@@ -87,14 +87,14 @@ double get_spacer_variance(vector<string> spacers)
 	double mean = 0;
 	double variance = 0;
 
-	for (ull i = 0; i < spacers.size(); i++)
+	for (ll i = 0; i < spacers.size(); i++)
 	{
 		sum += (double) spacers[i].length();
 	}
 
 	mean = sum / (double) spacers.size();
 
-	for (ull i = 0; i < spacers.size(); i++)
+	for (ll i = 0; i < spacers.size(); i++)
 	{
 		variance += pow((double) spacers[i].length()    - mean, 2);
 	}
@@ -106,7 +106,7 @@ double get_spacer_variance(vector<string> spacers)
 
 // Crispr
 
-Crispr::Crispr(ui k, vector<ui> genome_indices, ull size)
+Crispr::Crispr(ui k, vector<ui> genome_indices, ll size)
 {
 	// printf("%d %zd\n", genome_indices[0], size);
 	this->k = k;
@@ -124,12 +124,12 @@ void Crispr::update(const string& genome)
 	this->repeats = vector<string>(size);
 	this->spacers = vector<string>(size-1);
 
-	for (ull i = 0; i < size; i++)
+	for (ll i = 0; i < size; i++)
 	{
 		repeats[i] = genome.substr(genome_indices[i], k);
 	}
 
-	for (ull i = 0; i < size - 1; i++)
+	for (ll i = 0; i < size - 1; i++)
 	{
 		ui current_repeat_end = genome_indices[i] + k;
 		ui next_repeat_begin = genome_indices[i+1];
@@ -160,7 +160,7 @@ void Crispr::update(const string& genome)
 //	printf("\trepeats (%zd)\n", repeats.size());
 //	printf("\tspacers (%zd)\n", spacers.size());
 //
-//	for (ull i = 0; i < repeats.size(); i++)
+//	for (ll i = 0; i < repeats.size(); i++)
 //	{
 //		string repeat = repeats[i];
 //
@@ -243,7 +243,7 @@ bool CrisprUtil::heuristic_greater(const Crispr* a, const Crispr* b)
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
 bool CrisprUtil::repeat_substring(Crispr* b, ui start, ui end)
 {
-	for (ull i = 0; i < b->size; i++)
+	for (ll i = 0; i < b->size; i++)
 	{
 		ui repeat_start = b->genome_indices[i];
 		ui repeat_end = b->genome_indices[i] + b->k - 1;
@@ -265,7 +265,7 @@ bool CrisprUtil::repeat_subset(Crispr* a, Crispr* b)
 		return false;
 	}
 
-	for (ull i = 0; i < a->size; i++)
+	for (ll i = 0; i < a->size; i++)
 	{
 		if (!repeat_substring(b, a->genome_indices[i], a->genome_indices[i] + a->k - 1))
 		{
@@ -294,12 +294,12 @@ vector<Crispr*> CrisprUtil::get_domain_best(vector<Crispr*> crisprs)
 
     // get the best of each domain
     vector<Crispr*> crisprs_domain_best;
-    for (ull i = 0; i < crisprs.size(); i++)
+    for (ll i = 0; i < crisprs.size(); i++)
     {        
         Crispr* crispr = crisprs[i];
 
         bool best_already_exists = false;
-        for (ull j = 0; j < crisprs_domain_best.size(); j++)
+        for (ll j = 0; j < crisprs_domain_best.size(); j++)
         {
             Crispr* other = crisprs_domain_best[j];
             if (CrisprUtil::any_overlap(crispr, other))
@@ -354,7 +354,7 @@ string Crispr::to_string_debug()
 	out << fmt::format("\t{} repeats\n", repeats.size());
 	out << fmt::format("\t{} spacers\n", spacers.size());
 
-	for (ull i = 0; i < repeats.size(); i++)
+	for (ll i = 0; i < repeats.size(); i++)
 	{
 		string repeat = repeats[i];
 		int mismatches = Util::mismatch_count(repeat);

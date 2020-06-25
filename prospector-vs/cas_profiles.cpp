@@ -1,241 +1,47 @@
 #include "cas_profiles.h"
 
+static map<string, string> domain_table;
+static vector<CasProfile*> profiles;
 
-//void CasUtil::write_cache(string file, vector<CasProfile> profiles)
-//{
-//    ofstream myfile;
-//    myfile.open(file);
-//    for (auto p : profiles)
-//    {
-//        myfile << ">" + p.name << endl << p.N << endl;
-//    }
-//    myfile.close();
-//}
+void CasProfileUtil::load_profiles(string path)
+{
+	for (const auto& entry : filesystem::directory_iterator(path))
+	{
+		string file_path = entry.path().string();
+		phmap::BinaryInputArchive archive(file_path.c_str());
+		CasProfile* profile = new CasProfile;
+		profile->hash_table.load(archive);
+		profile->identifier = entry.path().stem().string();
+		profiles.push_back(profile);
+	}
+}
 
-//map<string, string> loaded_cache;
-//
-//void CasUtil::load_cache(string file)
-//{
-//    loaded_cache = Util::parse_fasta(file);
-//}
+vector<CasProfile*>& CasProfileUtil::get_profiles()
+{
+	return profiles;
+}
 
-//ui CasUtil::get_n(CasProfile& profile)
-//{
-//    return atoi(loaded_cache.at(profile.name).c_str());
-//}
+void CasProfileUtil::load_domain_table(string path)
+{
+	std::ifstream file(path);
+	string line;
+	while (getline(file, line))
+	{
+		auto split = Util::parse(line, "\t");
+		domain_table[split[0]] = split[1];
+	}
+}
 
-//ui gen_n(const unordered_set<ui>& encoded_kmer_set)
-//{
-//    ui N = 1;
-//    fmt::print("generating N from set size {}... ", encoded_kmer_set.size());
-//    for (;; N++)
-//    {
-//        bool* bools = (bool*)malloc(sizeof(bool) * N);
-//        memset(bools, 0, sizeof(bool) * N);
-//
-//        bool succeed = true;
-//        for (ui kmer : encoded_kmer_set)
-//        {
-//            if (bools[kmer % N])
-//            {
-//                succeed = false;
-//                break;
-//            }
-//            bools[kmer % N] = true;
-//        }
-//        free(bools);
-//        if (succeed)
-//            break;
-//    }
-//    fmt::print("{}\n", N);
-//    return N;
-//}
+bool CasProfileUtil::domain_table_contains(string domain)
+{
+	return domain_table.contains(domain);
+}
 
-//ui* gen_perfect_hash_table(ui N, unordered_set<ui> encoded_kmer_set)
-//{
-//    ui* hash_table = (ui*)malloc(sizeof(ui) * N);
-//    memset(hash_table, 0, sizeof(ui) * N);
-//    for (ui kmer : encoded_kmer_set)
-//        hash_table[kmer % N] = kmer;
-//    hash_table = hash_table;
-//    return hash_table;
-//}
+string CasProfileUtil::domain_table_fetch(string domain)
+{
+	return domain_table.at(domain);
+}
 
-//string gn_from_name(const string& name)
-//{
-//    regex re("cas[0-9]+|csm[0-9]+|csn[0-9]+", regex_constants::icase);
-//
-//    map<string, string> gn_resolution
-//    {
-//        {"csn1", "cas9"},
-//    };
-//
-//    cmatch m;
-//    bool result = regex_search(name.c_str(), m, re);
-//
-//    if (!result)
-//    {
-//        //fmt::print("gn failure on {}\n", name);
-//        return "failure";
-//    }
-//    else
-//    {
-//        auto final_val = string(m[0]);
-//        std::transform(final_val.begin(), final_val.end(), final_val.begin(), ::tolower);
-//
-//        if (gn_resolution.contains(final_val))
-//        {
-//            return gn_resolution.at(final_val);
-//        }
-//        return final_val;
-//    }
-//}
-
-//void serialize_profile(CasProfile profile)
-//{
-//    FILE* write_ptr;
-//
-//    string ting = profile.gn + ".bin";
-//    write_ptr = fopen(ting.c_str(), "wb");
-//
-//    // write first N, then write the entire hashtable
-//    ui* n_buffer = (ui*)malloc(1 * sizeof(ui));
-//    n_buffer[0] = profile.N;
-//    fwrite(n_buffer, sizeof(ui), 1, write_ptr);
-//
-//    fwrite(profile.hash_table, sizeof(ui), profile.N, write_ptr);
-//}
-
-//vector<CasProfile> CasProfileUtil::cas_profiles_from_uniprot_download(string file_path)
-//{
-//    map<string, string> parsed_fasta = Util::parse_fasta(file_path);
-//
-//    map<string, unordered_set<ui>> gn_to_encoded_kmers;
-//    for (auto const& [name, seq] : parsed_fasta)
-//    {
-//        string gn = gn_from_name(name);
-//
-//        if (gn == "failure")
-//            continue;
-//
-//        vector<string> kmers = Util::kmerize(seq, CasProfileUtil::k);
-//        for (ui kmer : Util::encode_amino_kmers(kmers, CasProfileUtil::k))
-//            gn_to_encoded_kmers[gn].insert(kmer);
-//    }
-//
-//    fmt::print("have gn's:\n");
-//    for (auto const& [gn, encoded_kmer_set] : gn_to_encoded_kmers)
-//    {
-//        fmt::print("{}\n", gn);
-//    }
-//
-//
-//    vector<CasProfile> profiles;
-//    for (auto const& [gn, encoded_kmer_set] : gn_to_encoded_kmers)
-//    {
-//        ui N = gen_n(encoded_kmer_set);
-//        ui* hash_table = gen_perfect_hash_table(N, encoded_kmer_set);
-//        
-//        CasProfile profile;
-//        profile.gn = gn;
-//        profile.N = N;
-//        profile.hash_table = hash_table;
-//        //profile.hash_table = encoded_kmer_set;
-//
-//        profiles.push_back(profile);
-//    }
-//    return profiles;
-//}
-
-//vector<CasProfile> CasUtil::load(string uniprot, function<ui(CasProfile&)> get_n)
-//{
-//    auto start = time();
-//
-//    auto profiles = prelim_load(uniprot);
-//
-//    start = time(start, "prelim load");
-//
-//    for (auto& p : profiles)
-//    {
-//        p.N = get_n(p);
-//        ui* hash_table = (ui*)malloc(sizeof(ui) * p.N);
-//        memset(hash_table, 0, sizeof(ui) * p.N);
-//        for (ui kmer : p.encoded_kmer_set)
-//        {
-//            hash_table[kmer % p.N] = kmer;
-//        }
-//        p.hash_table = hash_table;
-//    }
-//
-//    start = time(start, "postlim load");
-//
-//    return profiles;
-//}
-
-//vector<CasProfile> prelim_load(string uniprot)
-//{
-//    auto fasta = Util::parse_fasta(uniprot);
-//
-//    vector<CasProfile> profiles;
-//    for (auto pairing : fasta)
-//    {
-//        string name = pairing.first;
-//        string raw = pairing.second;
-//        vector<string> kmers = Util::kmerize(raw, k);
-//        vector<ui> encoded_kmers = encode_amino_kmers(kmers);
-//        set<ui> encoded_kmer_set;
-//
-//        for (ui kmer : encoded_kmers)
-//        {
-//            encoded_kmer_set.insert(kmer);
-//        }
-//
-//        string gn = gn_from_name(name);
-//
-//        if (gn == "failure")
-//            continue;
-//
-//        CasProfile cas_profile
-//        {
-//            name,
-//            gn,
-//            raw,
-//            kmers,
-//            encoded_kmer_set,
-//            nullptr,
-//            0
-//        };
-//        profiles.push_back(cas_profile);
-//    }
-//    return profiles;
-//}
-
-//unordered_set<ui> encode_kmer_set(unordered_set<string> kmer_set, ull k)
-//{
-//	unordered_set<ui> kmer_set_encoded;
-//	for (string& kmer : kmer_set)
-//	{
-//		if (kmer.find('O') != string::npos || kmer.find('X') != string::npos || kmer.find('B') != string::npos || kmer.find('Z') != string::npos)
-//			continue;
-//
-//		kmer_set_encoded.insert(Util::encode_amino_kmer(kmer, k));
-//	}
-//	return kmer_set_encoded;
-//}
-//
-//unordered_set<string> kmer_set_from_seqs(vector<string> seq_buffer, ull k)
-//{
-//	unordered_set<string> kmer_set;
-//	for (const string& seq : seq_buffer)
-//	{
-//		for (ull i = 0; i < seq.size() - k + 1; i++)
-//		{
-//			auto substr = seq.substr(i, k);
-//			kmer_set.insert(substr);
-//		}
-//	}
-//	return kmer_set;
-//}
 
 void clean_seq(string& seq)
 {
@@ -244,13 +50,13 @@ void clean_seq(string& seq)
 	transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 }
 
-CasProfile* profile_factory(string id, vector<string> seq_buffer, ull k)
+CasProfile* profile_factory(string id, vector<string> seq_buffer, ll k)
 {
 	CasProfile* profile = new CasProfile;
-	profile->gn = id;
+	profile->identifier = id;
 	for (string& seq : seq_buffer)
 	{	
-		for (ull i = 0; i < seq.size() - k + 1; i++)
+		for (ll i = 0; i < seq.size() - k + 1; i++)
 		{
 			string kmer = seq.substr(i, k);
 
@@ -258,63 +64,11 @@ CasProfile* profile_factory(string id, vector<string> seq_buffer, ull k)
 				continue;
 
 			ui kmer_enc = Util::encode_amino_kmer(kmer);
-			//profile->kmer_set.insert(kmer);
 			profile->hash_table.insert(kmer_enc);
 		}
 	}
 	return profile;
 }
-
-//vector<string> seqs_from_tigrfam_file(string path)
-//{
-//    ifstream input(path);
-//
-//    if (!input.good())
-//        throw runtime_error(strerror(errno));
-//
-//    vector<string> seq_buffer;
-//
-//    string line;
-//    while (getline(input, line))
-//    {
-//        if (line == "" || line.starts_with('#') || line.starts_with('//'))
-//            continue;
-//
-//        auto result = line.find(' ');
-//        auto line_without_id = line.substr(result);
-//        auto first_not_of = line_without_id.find_first_not_of(' ');
-//        auto seq = line_without_id.substr(first_not_of);
-//        seq_buffer.push_back(seq);
-//    }
-//    return seq_buffer;
-//}
-
-//vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(string dir)
-//{
-//    map<string, string> map_id_gn
-//    {
-//		//{"TIGR00287", "cas1"},
-//		//{"TIGR03639", "cas1_a"},
-//        //{"TIGR01865", "cas9"},
-//        //{"TIGR01573", "cas2"},
-//        {"TIGR00372", "cas4"},
-//    };
-//
-//    vector<const CasProfile*> profiles;
-//    for (const auto& entry : filesystem::directory_iterator(dir))
-//    {
-//        string id = entry.path().stem().string();
-//        if (!map_id_gn.contains(id)) continue;
-//		
-//		auto seq_buffer = seqs_from_tigrfam_file(entry.path().string());
-//
-//		auto profile = profile_factory(map_id_gn.at(id), seq_buffer, CasProfileUtil::k);
-//
-//        profiles.push_back(profile);
-//    }
-//    return profiles;
-//}
-
 
 bool non_seq(string& line)
 {
@@ -329,7 +83,7 @@ bool non_seq(string& line)
 		line == "";
 }
 
-void CasProfileUtil::pfam_filter(string in, string out)
+void pfam_filter(string in, string out)
 {
 	unordered_set<string> known
 	{
@@ -505,14 +259,13 @@ void CasProfileUtil::pfam_filter(string in, string out)
 		"PF00005",
 	};
 	
-	
 	ifstream input(in);
 	ofstream output(out);
 	if (!input.good())
 		throw runtime_error(strerror(errno));
 
 	vector<string> seq_buffer;
-	string id;
+	//string id;
 	string ac;
 	string line;
 	ui line_count = 0;
@@ -520,12 +273,6 @@ void CasProfileUtil::pfam_filter(string in, string out)
 	while (getline(input, line))
 	{
 		if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
-
-		if (line.starts_with("#=GF ID"))
-		{
-			id = line.substr(10);
-			continue;
-		}
 
 		if (line.starts_with("#=GF AC"))
 		{
@@ -548,7 +295,7 @@ void CasProfileUtil::pfam_filter(string in, string out)
 
 		if (line.starts_with("//"))
 		{
-			output << id << endl;
+			output << ac << endl;
 
 			for (string& line : seq_buffer)
 			{
@@ -578,9 +325,7 @@ void CasProfileUtil::pfam_filter(string in, string out)
 }
 
 
-
-
-vector<const CasProfile*> CasProfileUtil::pfam(string path)
+vector<const CasProfile*> profiles_from_processed_pfam(string path)
 {
 	ifstream input(path);
 
@@ -600,8 +345,6 @@ vector<const CasProfile*> CasProfileUtil::pfam(string path)
 		}
 
 		profiles.push_back(profile_factory(id, seq_buffer, CasProfileUtil::k));
-
-		//break;
 		fmt::print("{} profiles built\n", profiles.size());
 	}
 	return profiles;
@@ -610,36 +353,19 @@ vector<const CasProfile*> CasProfileUtil::pfam(string path)
 
 
 
-void CasProfileUtil::serialize(string dir, vector<const CasProfile*> profiles)
-{	
+void CasProfileUtil::serialize()
+{
+	string in = "T:\\crispr\\cas\\Pfam-A.full";
+	string out = "T:\\crispr\\cas\\Pfam-A.filt";
+	pfam_filter(in, out);
+	vector<const CasProfile*> profiles = profiles_from_processed_pfam(out);
+	
 	for (auto profile : profiles)
 	{
-		string file_name = dir + "\\" + profile->gn;
+		string file_name = "T:\\crispr\\cas\\serial_staging\\" + profile->identifier;
 		phmap::BinaryOutputArchive archive(file_name.c_str());
 		profile->hash_table.dump(archive);
 	}
-}
-
-vector<CasProfile*> CasProfileUtil::deserialize(string dir)
-{
-	vector<CasProfile*> profiles;
-	for (const auto& entry : filesystem::directory_iterator(dir))
-	{
-		string file_path = entry.path().string();
-		phmap::BinaryInputArchive archive(file_path.c_str());
-		CasProfile* profile = new CasProfile;
-		profile->hash_table.load(archive);
-		profile->gn = entry.path().stem().string();
-		profiles.push_back(profile);
-	}
-	return profiles;
-}
-
-
-void CasProfileUtil::serialize()
-{
-	CasProfileUtil::pfam_filter("T:\\data\\Pfam-A.seed", "T:\\data\\Pfam-A.filt");
-	vector<const CasProfile*> profiles = CasProfileUtil::pfam("T:\\crispr\\cas\\Pfam-A.full_filt");
-	CasProfileUtil::serialize("T:\\crispr\\cas\\serial_staging", profiles);
+	
 	exit(0);
 }

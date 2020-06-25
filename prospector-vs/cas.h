@@ -26,7 +26,7 @@ struct Translation
     string pure;
     vector<string> pure_kmerized;
     vector<ui> pure_kmerized_encoded;
-    vector<ull> pure_mapping;
+    vector<ll> pure_mapping;
 };
 
 struct Fragment : public Locus
@@ -37,15 +37,15 @@ struct Fragment : public Locus
     const Translation* reference_translation;
     const CasProfile* reference_profile;
 
-    vector<vector<ull>> clusters;
-    ull clust_begin;
-    ull clust_final;
+    vector<vector<ll>> clusters;
+    ll clust_begin;
+    ll clust_final;
 
-    ull genome_begin;
-    ull genome_final;
+    ll genome_begin;
+    ll genome_final;
 
-    ull expanded_genome_begin;
-    ull expanded_genome_final;
+    ll expanded_genome_begin;
+    ll expanded_genome_final;
 
     ui get_start() { return this->expanded_genome_begin; }
     string to_string_debug();
@@ -61,18 +61,16 @@ struct Fragment : public Locus
 namespace Cas
 {
     static const ui upstream_size = 20000;
-    static const ui cluster_metric_min = 14;
+    static const ui cluster_metric_min = 15;
     static const ui max_inter_cluster_dist = 2;
 
-    vector<Translation*> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);
+    vector<Translation*> get_triframe(const string& genome, ll genome_start, ll genome_final, bool pos);
 
-    vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);
+    vector<Translation*> get_sixframe(const string& genome, ll genome_start, ll genome_final);
 
     vector<Translation*> crispr_proximal_translations(const string& genome, vector<Crispr*>&);
+    
     vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
-
-    //map<string, string> domain_to_gn;
-
 
 }
 

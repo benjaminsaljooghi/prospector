@@ -11,12 +11,12 @@ static unordered_set<string> stop_codons_neg{ "TTA", "CTA", "TCA" };
 // potential performance optimization: compare amino_family acids of codons in the amino_family rather than codons in the genome.
 // should be faster to compare single chars rather than strings.
 
-ull generic_expand(const string& genome, unordered_set<string>& sinks, ull begin, ull increment, ull increments)
+ll generic_expand(const string& genome, unordered_set<string>& sinks, ll begin, ll increment, ll increments)
 {
-    ull offset = 0;
+    ll offset = 0;
     try
     {
-        for (ull i = 0; i < increments; i++)
+        for (ll i = 0; i < increments; i++)
         {
             if (sinks.contains(genome.substr(begin + offset, 3)))
             {
@@ -32,7 +32,7 @@ ull generic_expand(const string& genome, unordered_set<string>& sinks, ull begin
     return begin;
 }
 
-ull steps = 200;
+ll steps = 200;
 
 void fragment_expansion_pos(Fragment* fragment, const string& genome)
 {
@@ -57,16 +57,16 @@ void fragment_expansion_neg(Fragment* fragment, const string& genome)
 
 }
 
-vector<vector<ull>> cluster_index(const vector<ull>& indices)
+vector<vector<ll>> cluster_index(const vector<ll>& indices)
 {
-    vector<vector<ull>> clusters;
-    vector<ull> cluster;
-    ull prev = indices[0];
-    for (ull index : indices)
+    vector<vector<ll>> clusters;
+    vector<ll> cluster;
+    ll prev = indices[0];
+    for (ll index : indices)
     {
         if (index - prev > Cas::max_inter_cluster_dist)
         {
-            vector<ull> cluster_cp = cluster; 
+            vector<ll> cluster_cp = cluster; 
             if (cluster_cp.size() > 1)
             {
                 clusters.push_back(cluster_cp);
@@ -80,9 +80,9 @@ vector<vector<ull>> cluster_index(const vector<ull>& indices)
     return clusters;
 }
 
-bool good_clusters(const vector<vector<ull>>& clusters)
+bool good_clusters(const vector<vector<ll>>& clusters)
 {
-    for (vector<ull> cluster : clusters)
+    for (vector<ll> cluster : clusters)
     {   
         if (cluster.size() > Cas::cluster_metric_min)
         {
@@ -92,17 +92,17 @@ bool good_clusters(const vector<vector<ull>>& clusters)
     return false;
 }
 
-ull demarc_start_clusters(const vector<vector<ull>>& clusters)
+ll demarc_start_clusters(const vector<vector<ll>>& clusters)
 {
-    for (const vector<ull>& cluster : clusters)
+    for (const vector<ll>& cluster : clusters)
         if (cluster.size() > Cas::cluster_metric_min)
             return cluster[0];
     assert(false); return -1;
 }
 
-ull demarc_final_clusters(const vector<vector<ull>>& clusters)
+ll demarc_final_clusters(const vector<vector<ll>>& clusters)
 {
-    for (ull i = clusters.size()-1; i >= 0; i--)
+    for (ll i = clusters.size()-1; i >= 0; i--)
         if (clusters[i].size() > Cas::cluster_metric_min)
             return clusters[i][clusters[i].size()-1];
     assert(false); return -1;
@@ -116,26 +116,28 @@ void compute_demarc(Fragment* frag)
 
 void compute_details(Fragment* fragment, const string& genome)
 {    
-    ull index_kmer_start = fragment->clust_begin;
-    ull index_kmer_final = fragment->clust_final;
+    ll index_kmer_start = fragment->clust_begin;
+    ll index_kmer_final = fragment->clust_final;
 
     // string protein = f.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + CasUtil::k);
 
-    ull raw_pos_start = fragment->reference_translation->pure_mapping[index_kmer_start];
-    ull raw_pos_end = fragment->reference_translation->pure_mapping[index_kmer_final];
+    ll raw_pos_start = fragment->reference_translation->pure_mapping[index_kmer_start];
+    ll raw_pos_end = fragment->reference_translation->pure_mapping[index_kmer_final];
 
-    ull genome_begin;
-    ull genome_final;
+    ll genome_begin;
+    ll genome_final;
     if (fragment->reference_translation->pos)
     {
-        genome_begin = fragment->reference_translation->genome_start + (raw_pos_start * 3);
-        genome_final = fragment->reference_translation->genome_start + ((raw_pos_end + CasProfileUtil::k) * 3) + 3;
+        genome_begin = fragment->reference_translation->genome_start + (raw_pos_start * 3); // inclusive begin
+        genome_final = fragment->reference_translation->genome_start + ((raw_pos_end + CasProfileUtil::k) * 3); // exclusive final
     }
     else
     {
-        genome_final = fragment->reference_translation->genome_final - (raw_pos_start * 3);
-        genome_begin = fragment->reference_translation->genome_final - ( ((raw_pos_end + CasProfileUtil::k) * 3) + 3 );
+        genome_final = fragment->reference_translation->genome_final - (raw_pos_start * 3); // exclusive final
+        genome_begin = fragment->reference_translation->genome_final - ( ((raw_pos_end + CasProfileUtil::k) * 3)); // inclusive begin
     }
+
+    genome_final += 1; // to be exclusive.
 
     //string genome_translation = Debug::translation_test(genome, genome_start, genome_final, f.reference_translation->pos, 6);
     //string amino_family = Util::translate_genome(genome, genome_start, genome_final, f.reference_translation->pos);
@@ -170,9 +172,9 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
         CasProfile* profile = profiles[p];
         for (Translation* t : translations)
         {
-            vector<ull> index;
+            vector<ll> index;
 
-            for (ull i = 0; i < t->pure_kmerized_encoded.size(); i++)
+            for (ll i = 0; i < t->pure_kmerized_encoded.size(); i++)
             {
                 bool contains = profile->hash_table.contains(t->pure_kmerized_encoded[i]);
                 if (contains)
@@ -182,7 +184,7 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
             if (index.size() == 0)
                 continue;
 
-            vector<vector<ull>> clusters = cluster_index(index);
+            vector<vector<ll>> clusters = cluster_index(index);
 
             if (!good_clusters(clusters))
                 continue;
@@ -203,6 +205,11 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
             auto expansion = f->reference_translation->pos ? fragment_expansion_pos : fragment_expansion_neg;
             expansion(f, genome);
+
+            if (f->genome_begin < 0)
+            {
+                printf("break\n");
+            }
 
             #pragma omp critical
             {
@@ -291,7 +298,7 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
 
 
-vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos)
+vector<Translation*> Cas::get_triframe(const string& genome, ll genome_start, ll genome_final, bool pos)
 {
     string domain = genome.substr(genome_start, genome_final - genome_start);
     //domain = pos ? domain : Util::reverse_complement(domain);
@@ -302,7 +309,7 @@ vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, u
     }
 
     vector<Translation*> translations;
-    for (ull frame = 0; frame < 3; frame++)
+    for (ll frame = 0; frame < 3; frame++)
 	{
         Translation* translation = new Translation;
         translation->pos = pos;
@@ -313,8 +320,8 @@ vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, u
 
 		translation->pure = "";
 
-		ull stop_count = 0;
-		ull index = 0;
+		ll stop_count = 0;
+		ll index = 0;
 		for (char elem : translation->raw )
 		{
 			if (elem == Util::stop_c)
@@ -333,7 +340,7 @@ vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, u
     return translations;
 }
 
-vector <Translation*> Cas::get_sixframe(const string& genome, ull genome_start, ull genome_final)
+vector <Translation*> Cas::get_sixframe(const string& genome, ll genome_start, ll genome_final)
 {
     vector<Translation*> sixframe;
 
@@ -351,7 +358,7 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 {
     vector<Translation*> translations;
 
-    ull max = 0;
+    ll max = 0;
 
     std::sort(crisprs.begin(), crisprs.end(), [](Crispr* a, Crispr* b) { return a->start < b->start; });
 
@@ -359,11 +366,11 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
     {
         Crispr* c = crisprs[c_index];
 
-        ull l_begin = c->start - (ull) Cas::upstream_size; 
-        ull l_final = c->start;
+        ll l_begin = c->start - (ll) Cas::upstream_size; 
+        ll l_final = c->start;
 
-        ull r_begin = c->end;
-        ull r_final = c->end + (ull) Cas::upstream_size;
+        ll r_begin = c->end;
+        ll r_final = c->end + (ll) Cas::upstream_size;
 
         if (l_begin > c->start) // overflow
             l_begin = 0;
@@ -374,8 +381,8 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
         l_begin = std::max(max, l_begin);
         r_begin = std::max(max, r_begin);
 
-        bool can_l = l_begin < l_final;
-        bool can_r = r_begin < genome.size() && r_begin < r_final;
+        bool can_l = l_begin < l_final && c->start >= 100;
+        bool can_r = r_begin < genome.size() - 100 && r_begin < r_final;
 
         if (can_r)
         {
@@ -403,3 +410,51 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 }
 
 
+bool Fragment::is_domain()
+{
+    bool is_domain = !CasProfileUtil::domain_table_contains(this->reference_profile->identifier);
+    //fmt::print("is domain {} {}\n", this->reference_profile->identifier, is_domain);
+    return is_domain;
+}
+
+bool Fragment::is_gene()
+{
+    return !this->is_domain();
+}
+
+
+string Fragment::to_string_debug()
+{
+    string amino_domain = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
+    string amino_gene = Util::translate_genome(*reference_genome, expanded_genome_begin, expanded_genome_final, reference_translation->pos);
+
+    string dna_domain = reference_genome->substr(genome_begin, genome_final - genome_begin);
+    string dna_gene = reference_genome->substr(expanded_genome_begin, expanded_genome_final - expanded_genome_begin);
+
+    string amino_buffer;
+
+    ui begin_discrepant = (genome_begin - expanded_genome_begin);
+    ui final_discpreant = (expanded_genome_final - genome_final);
+
+    dna_gene.insert(begin_discrepant, "-");
+    amino_gene.insert(begin_discrepant / 3, "-");
+
+    dna_gene.insert(dna_gene.size() - final_discpreant, "-");
+    amino_gene.insert(amino_gene.size() - (final_discpreant / 3), "-");
+
+    std::ostringstream out;
+    out << fmt::format("{}\t{}\n", reference_translation->pos ? "+" : "-", reference_profile->identifier);
+    out << fmt::format("\t{}...{}\n", genome_begin, genome_final);
+    out << fmt::format("\t{}...{}\n", expanded_genome_begin, expanded_genome_final);
+    out << fmt::format("\t{}\n", amino_gene);
+    out << fmt::format("\t{}\n", dna_gene);
+    return out.str();
+}
+
+string Fragment::to_string_summary()
+{
+    string domain = reference_profile->identifier;
+    string strand = reference_translation->pos ? "+" : "-";
+    string identifier = CasProfileUtil::domain_table_contains(domain) ? CasProfileUtil::domain_table_fetch(domain) : domain;
+    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, strand, identifier, genome_begin, genome_final, domain);
+}
