@@ -66,11 +66,10 @@ bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
 }
 
 
-string Util::load_genome(string path)
+string Util::load_genome(std::filesystem::path path)
 {
 
-	fmt::print("reading {}\n", path);
-
+	fmt::print("reading {}\n", path.string());
 
 	ifstream input(path);
 	if (!input.good())

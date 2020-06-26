@@ -59,7 +59,7 @@ vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string ident
 
 vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ui start, ui end)
 {
-    return Util::filter(crisprs, [&](Crispr* c) { return c->start > start && c->end < end; });
+    return Util::filter(crisprs, [&](Crispr* c) { return c->genome_start > start && c->genome_final < end; });
 }
 
 void Debug::genome_substr(const string& genome_path, ui genome_start, ui genome_final)

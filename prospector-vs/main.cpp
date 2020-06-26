@@ -10,10 +10,10 @@
 
 #define DEBUG 0
 
-string genome_dir = "T:\\genome";
-string domain_table_path = "T:\\prospector-truth\\table_domain.tsv";
-string serial = "T:\\prospector\\cas\\serial";
-string results_dir = "T:\\results";
+std::filesystem::path domain_table_path = "T:/prospector-truth/table_domain.tsv";
+std::filesystem::path serial = "T:/prospector/cas/serial";
+std::filesystem::path genome_dir = "T:/genome";
+std::filesystem::path results_dir = "T:/results";
 
 void init()
 {
@@ -22,14 +22,14 @@ void init()
     CasProfileUtil::load_domain_table(domain_table_path);
 }
 
-void prospect_genome(string genome_path)
+void prospect_genome(std::filesystem::path genome_path)
 {
-    string file_name = filesystem::path(genome_path).stem().string();
-    std::filesystem::path results_path = std::filesystem::path(results_dir) / file_name;
+    std::filesystem::path file_name = genome_path.stem();
+    std::filesystem::path results_path = results_dir / file_name;
 
     if (std::filesystem::exists(results_path))
     {
-        fmt::print("skipping {} because results dir exists\n", genome_path);
+        fmt::print("skipping {} because results dir exists\n", genome_path.string());
         return;
     }
 
@@ -87,14 +87,12 @@ void prospect_genome(string genome_path)
     for (Locus* l : loci)
     {
 
-
 #if DEBUG 1
     string debug_info = l->to_string_debug();
     out_debug << debug_info;
 #endif
 
         string summary_info = l->to_string_summary();
-
 
         if (l->is_crispr())
         {
@@ -133,17 +131,7 @@ void prospect_genome(string genome_path)
     for (Crispr* c : crisprs) delete c;
     for (Translation* t : translations) delete t;
     for (Fragment* f : fragments) delete f;
-}
-
-void prospect_genome_dir(string genome_dir)
-{
-    ui i = 0;
-    for (const auto& entry : filesystem::directory_iterator(genome_dir))
-    {
-        if (i++ > 2000) break;
-        string genome_path = entry.path().string();
-        prospect_genome(genome_path);
-    }
+    //for (Locus* l : loci) delete l;
 }
 
 int main()
@@ -152,8 +140,11 @@ int main()
 
     init();
 
-    prospect_genome_dir(genome_dir);
-    
+    for (const auto& entry : std::filesystem::directory_iterator(genome_dir))
+    {
+        prospect_genome(entry);
+    }
+
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }

@@ -147,7 +147,7 @@ vector<Crispr*> Array::get_crisprs(string& genome)
     crisprs = Util::filter(crisprs, [](Crispr* c) { return c->overall_heuristic >= -3; });
     Util::sort(crisprs, CrisprUtil::heuristic_greater);
     crisprs = CrisprUtil::get_domain_best(crisprs);
-    Util::sort(crisprs, [](Crispr* a, Crispr* b) { return a->start < b->start; });
+    Util::sort(crisprs, [](Crispr* a, Crispr* b) { return a->genome_start < b->genome_start; });
     start = time(start, "remain");
 
     return crisprs;

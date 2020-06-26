@@ -21,11 +21,11 @@ namespace CasProfileUtil
 {
     static const ui k = 6; // k * encoding size cannot exceed word size.
 
-    void load_profiles(string);
+    void load_profiles(std::filesystem::path);
 
     vector<CasProfile*>& get_profiles();
 
-    void load_domain_table(string);
+    void load_domain_table(std::filesystem::path);
 
     bool domain_table_contains(string);
 

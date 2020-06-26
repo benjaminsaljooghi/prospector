@@ -3,9 +3,9 @@
 static map<string, string> domain_table;
 static vector<CasProfile*> profiles;
 
-void CasProfileUtil::load_profiles(string path)
+void CasProfileUtil::load_profiles(std::filesystem::path path)
 {
-	for (const auto& entry : filesystem::directory_iterator(path))
+	for (const auto& entry : std::filesystem::directory_iterator(path))
 	{
 		string file_path = entry.path().string();
 		phmap::BinaryInputArchive archive(file_path.c_str());
@@ -22,14 +22,13 @@ vector<CasProfile*>& CasProfileUtil::get_profiles()
 	return profiles;
 }
 
-void CasProfileUtil::load_domain_table(string path)
+void CasProfileUtil::load_domain_table(std::filesystem::path path)
 {
 	std::ifstream file(path);
 	if (!file)
 	{
 		throw std::runtime_error("failed to open domain table");
 	}
-
 
 	string line;
 	while (getline(file, line))

@@ -14,8 +14,8 @@ class Crispr : public Locus
         ui k;
 
         // computed by update
-        ui start;
-        ui end;
+        ui genome_start;
+        ui genome_final;
         vector<string> repeats;
         vector<string> spacers;
         double conservation_repeats;
@@ -28,7 +28,7 @@ class Crispr : public Locus
         // vector<string> target_kmers;
 
         Crispr(ui, vector<ui>, ll);
-        ~Crispr() { genome_indices.clear();  };
+        ~Crispr();
         void update(const string& genome);
         //void print_generic(const string& genome, function<void(string)>& print_spacer) const;
         //void print(const string& genome, map<string, int>) const;

@@ -113,10 +113,15 @@ Crispr::Crispr(ui k, vector<ui> genome_indices, ll size)
 	this->genome_indices = genome_indices;
 	this->size = size;;
 }
+
+Crispr::~Crispr()
+{
+	
+}
 		
 ui Crispr::get_start()
 {
-	return this->start;
+	return this->genome_start;
 }
 
 void Crispr::update(const string& genome)
@@ -137,8 +142,8 @@ void Crispr::update(const string& genome)
 		spacers[i] = genome.substr(current_repeat_end, spacer_size);
 	}
 
-	this->start = genome_indices[0];
-	this->end = (genome_indices[size-1]) + k - 1;
+	this->genome_start = genome_indices[0];
+	this->genome_final = (genome_indices[size-1]) + k - 1;
 
 	this->conservation_repeats = get_conservation_consensus(repeats);
 	// this->conservation_spacers = get_conservation_spacer(spacers); 
@@ -211,7 +216,7 @@ void Crispr::update(const string& genome)
 
 string Crispr::identifier_string() const
 {
-	return fmt::format("{}:{}", this->start, this->k);
+	return fmt::format("{}:{}", this->genome_start, this->k);
 }
 
 
@@ -349,7 +354,7 @@ string Crispr::to_string_debug()
 {
 	std::ostringstream out;
 
-	out << fmt::format("{} - {} {}\n", start, end, k);
+	out << fmt::format("{} - {} {}\n", genome_start, genome_final, k);
 	out << fmt::format("{}h {}r {}s {}v\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
 	out << fmt::format("\t{} repeats\n", repeats.size());
 	out << fmt::format("\t{} spacers\n", spacers.size());
@@ -383,5 +388,5 @@ string Crispr::to_string_debug()
 string Crispr::to_string_summary()
 {
 	//return fmt::format("{}\t{}\t{}\t{}\t{}h\n", start, end, "?", "CRISPR", overall_heuristic);
-	return fmt::format("{}\t{}\t{}\t{}\t{}\n", start, end, "?", "CRISPR", overall_heuristic);
+	return fmt::format("{}\t{}\t{}\t{}\t{}\n", genome_start, genome_final, "?", "CRISPR", overall_heuristic);
 }
