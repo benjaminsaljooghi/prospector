@@ -14,6 +14,7 @@ void CasProfileUtil::load_profiles(string path)
 		profile->identifier = entry.path().stem().string();
 		profiles.push_back(profile);
 	}
+	fmt::print("loaded {} profiles\n", profiles.size());
 }
 
 vector<CasProfile*>& CasProfileUtil::get_profiles()
@@ -24,6 +25,12 @@ vector<CasProfile*>& CasProfileUtil::get_profiles()
 void CasProfileUtil::load_domain_table(string path)
 {
 	std::ifstream file(path);
+	if (!file)
+	{
+		throw std::runtime_error("failed to open domain table");
+	}
+
+
 	string line;
 	while (getline(file, line))
 	{
