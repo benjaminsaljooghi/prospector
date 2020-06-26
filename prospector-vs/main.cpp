@@ -8,15 +8,12 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 string genome_dir = "T:\\genome";
-string domain_table_path = "T:\\truth\\table_domain.tsv";
+string domain_table_path = "T:\\prospector-truth\\table_domain.tsv";
 string serial = "T:\\prospector\\cas\\serial";
-
-std::ofstream out_debug("out_debug.txt");
-std::ofstream out_gene("out_gene.txt");
-std::ofstream out_domain("out_domain.txt");
+string results_dir = "T:\\results";
 
 void init()
 {
@@ -25,42 +22,18 @@ void init()
     CasProfileUtil::load_domain_table(domain_table_path);
 }
 
-void write_loci(string genome_path, vector<Locus*> loci)
-{
-    string header = fmt::format("===\t{}\t\t{}\n", genome_path, filesystem::path(genome_path).stem().string());
-
-    out_gene << header;
-    out_debug << header;
-    out_domain << header;
-
-    for (Locus* l : loci)
-    {
-        string debug_info = l->to_string_debug();
-        string summary_info = l->to_string_summary();
-
-        out_debug << debug_info;
-
-        if (l->is_crispr())
-        {
-            out_domain << summary_info;
-            out_gene << summary_info;
-        }
-
-        if (l->is_domain())
-        {
-            out_domain << summary_info;
-        }
-        
-        if (l->is_gene())
-        {
-            out_gene << summary_info;
-        }
-    }
-}
-
 void prospect_genome(string genome_path)
 {
-    fmt::print("\n\n\n");
+    string file_name = filesystem::path(genome_path).stem().string();
+    std::filesystem::path results_path = std::filesystem::path(results_dir) / file_name;
+
+    if (std::filesystem::exists(results_path))
+    {
+        fmt::print("skipping {} because results dir exists\n", genome_path);
+        return;
+    }
+
+    fmt::print("\n\n");
 
     auto total = time();
     auto start = time();
@@ -102,20 +75,64 @@ void prospect_genome(string genome_path)
     for (Fragment* f : fragments) loci.push_back(f);
 
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) {return a->get_start() < b->get_start(); });
-    write_loci(genome_path, loci);
 
-    for (Crispr* c : crisprs)
-        delete c;
+    std::filesystem::create_directory(results_path);
 
-    for (Translation* t : translations)
-        delete t;
+#if DEBUG 1
+    std::ofstream out_debug(results_path / "out_debug.txt");
+#endif
+    std::ofstream out_gene(results_path / "out_gene.txt");
+    std::ofstream out_domain(results_path / "out_domain.txt");
 
-    for (Fragment* f : fragments)
-        delete f;
+    for (Locus* l : loci)
+    {
+
+
+#if DEBUG 1
+    string debug_info = l->to_string_debug();
+    out_debug << debug_info;
+#endif
+
+        string summary_info = l->to_string_summary();
+
+
+        if (l->is_crispr())
+        {
+            out_domain << summary_info;
+            out_gene << summary_info;
+        }
+
+        if (l->is_domain())
+        {
+            out_domain << summary_info;
+        }
+
+        if (l->is_gene())
+        {
+            out_gene << summary_info;
+        }
+    }
 
     start = time(start, "write loci");
 
-    total = time(total, genome_path.c_str());
+    auto total_time = time_diff(total, time());
+    total = time(total, "total");
+
+    string finished = fmt::format("// finished in {} ms\n", total_time);
+
+#if DEBUG 1
+    out_debug.close();
+#endif
+
+    out_gene << finished;
+    out_domain << finished;
+
+    out_gene.close();
+    out_domain.close();
+
+    for (Crispr* c : crisprs) delete c;
+    for (Translation* t : translations) delete t;
+    for (Fragment* f : fragments) delete f;
 }
 
 void prospect_genome_dir(string genome_dir)
@@ -137,10 +154,6 @@ int main()
 
     prospect_genome_dir(genome_dir);
     
-    out_debug.close();
-    out_gene.close();
-    out_domain.close();
-
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }
