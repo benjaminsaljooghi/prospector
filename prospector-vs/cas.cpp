@@ -358,53 +358,33 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 {
     vector<Translation*> translations;
 
-    ll max = 0;
 
-    std::sort(crisprs.begin(), crisprs.end(), [](Crispr* a, Crispr* b) { return a->start < b->start; });
-
-    for (signed long c_index = 0; c_index < crisprs.size(); c_index++)
+    std::sort(crisprs.begin(), crisprs.end(), [](Crispr* a, Crispr* b) { return a->genome_start < b->genome_start; });
+    const ll min_translation_size = 20;
+    const ll permitted_translation_overlap = 100;
+    ll prev_final = 0;
+    for (Crispr* c : crisprs)
     {
-        Crispr* c = crisprs[c_index];
+        ll t_start = c->genome_start - Cas::upstream_size; // normal case
+        ll t_final = c->genome_final + Cas::upstream_size; // normal case
 
-        ll l_begin = c->start - (ll) Cas::upstream_size; 
-        ll l_final = c->start;
+        t_start = std::max(t_start, prev_final - permitted_translation_overlap); // previous translation may overlap
 
-        ll r_begin = c->end;
-        ll r_final = c->end + (ll) Cas::upstream_size;
+        // genome bounds
+        t_start = std::max(t_start, (ll)0);
+        t_final = std::min(t_final, (ll)genome.size() - 1);
 
-        if (l_begin > c->start) // overflow
-            l_begin = 0;
+        ll translation_size = t_final - t_start;
 
-        if (r_final >= genome.size())
-            r_final = genome.size() - 1;
+        if (translation_size < min_translation_size) continue;
 
-        l_begin = std::max(max, l_begin);
-        r_begin = std::max(max, r_begin);
+        prev_final = t_final;
 
-        bool can_l = l_begin < l_final && c->start >= 100;
-        bool can_r = r_begin < genome.size() - 100 && r_begin < r_final;
+        // TODO: if the crispr is contained within the translation (it normally will be) then strip it out before computing the translation
 
-        if (can_r)
-        {
-            max = std::max(max, r_final);
-        }
-        
-        vector<Translation*> l;
-        vector<Translation*> r;
-
-        if (can_l)
-            l = get_sixframe(genome, l_begin, l_final);
-
-        if (can_r)
-            r = get_sixframe(genome, r_begin, r_final);
-
-        vector<Translation*> local;
-        local.insert(local.end(), l.begin(), l.end());
-        local.insert(local.end(), r.begin(), r.end());
-        for (Translation* t : local) t->reference_crispr = c;
-
-        translations.insert(translations.end(), local.begin(), local.end());
-        
+        vector<Translation*> six_frame = Cas::get_sixframe(genome, t_start, t_final);
+        for (Translation* t : six_frame) t->reference_crispr = c;
+        translations.insert(translations.end(), six_frame.begin(), six_frame.end());
     }
     return translations;
 }
