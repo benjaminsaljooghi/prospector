@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 
 struct Translation
 {
-    const Crispr* reference_crispr;
+    Crispr* reference_crispr;
     ui genome_start;
     ui genome_final;
     bool pos;
@@ -33,9 +33,9 @@ struct Fragment : public Locus
 {
     string* reference_genome;
 
-    const Crispr* reference_crispr;
-    const Translation* reference_translation;
-    const CasProfile* reference_profile;
+    Crispr* reference_crispr;
+    Translation* reference_translation;
+    CasProfile* reference_profile;
 
     vector<vector<ll>> clusters;
     ll clust_begin;
