@@ -8,83 +8,85 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 
-#define DEBUG 0
-
 std::filesystem::path domain_table_path = "T:/prospector-truth/table_domain.tsv";
 std::filesystem::path type_table_path = "T:/prospector-truth/table_type.tsv";
-std::filesystem::path serial = "T:/prospector/cas/serial";
-std::filesystem::path genome_dir = "T:/performance-test-genomes";
-std::filesystem::path results_dir = "T:/results-test";
+std::filesystem::path serial = "T:/prospector/cas/serial/";
+std::filesystem::path genome_dir = "T:/genome/full/";
+std::filesystem::path results_dir = "T:/results/prosp/";
 
 std::map<string, std::set<string>> type_table;
 
 void load_type_table(std::filesystem::path path)
 {
-    std::ifstream table(path);
+    //std::ifstream table(path);
 
-    if (!table)
-    {
-        throw runtime_error(path.string());
-    }
+    //if (!table)
+    //{
+    //    throw runtime_error(path.string());
+    //}
 
-    string line;
-    while (getline(table, line))
-    {
-        auto split = Util::parse(line, "\t");
-        auto links = split[0];
-        auto recht = split[1];
-        //auto any = Util::parse(recht, ",");
-        std::set<string> genes;
+    //string line;
+    //while (getline(table, line))
+    //{
+    //    auto split = Util::parse(line, "\t");
+    //    auto type = split[0];
+    //    auto required = split[1];
+    //    auto additional_any = split[2];
+    //    
+    //    std::set<string> genes;
 
-        for (string gene : Util::parse(recht, ","))
-            genes.insert(gene);
+    //    for (string gene : Util::parse(, ","))
+    //        genes.insert(gene);
 
-        type_table[links] = genes;
-    }
+    //    type_table[links] = genes;
+    //}
 }
 
-struct System
-{
-    Crispr* crispr;
-    vector<Fragment*> fragments;
-    string type;
+//string resolve_type(vector<Fragment*> fragments)
+//{
+//    return "N";
+//    for (Fragment* f : fragments)
+//    {
+//        string r = CasProfileUtil::domain_table_fetch(f->reference_profile->identifier);
+//        for (const auto& [a, b] : type_table)
+//            if (b.contains(r))
+//                return a;
+//    }
+//    return "N";
+//}
+//
+//struct System
+//{
+//    Crispr* crispr;
+//    vector<Fragment*> fragments;
+//    string type;
+//
+//    ui get_start()
+//    {
+//        return std::min(crispr->get_start(), fragments[0]->get_start());
+//    }
+//
+//    string to_string()
+//    {
+//        std::ostringstream out;
+//
+//        vector<Locus*> loci;
+//
+//
+//        loci.push_back(crispr);
+//        for (Fragment* f : fragments)
+//            loci.push_back(f);
+//
+//        std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() - b->get_start(); });
+//
+//        for (Locus* l : loci)
+//            out << fmt::format("{}\t{}\n", l->to_string_summary(), this->type);
+//
+//        return out.str();
+//    }
+//};
 
-    ui get_start()
-    {
-        return std::min(crispr->get_start(), fragments[0]->get_start());
-    }
 
-    string to_string()
-    {
-        std::ostringstream out;
-
-        vector<Locus*> loci;
-        loci.push_back(crispr);
-        for (Fragment* f : fragments)
-            loci.push_back(f);
-
-        std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() - b->get_start(); });
-
-        for (Locus* l : loci)
-        {
-            out << l->to_string_summary();
-        }
-
-        return out.str();
-    }
-};
-
-string resolve_type(vector<Fragment*> fragments)
-{
-    for (Fragment* f : fragments)
-    {
-        string r = CasProfileUtil::domain_table_fetch(f->reference_profile->identifier);
-        for (const auto& [a, b] : type_table)
-            if (b.contains(r))
-                return a;
-    }
-    return "N";
-}
 
 void init()
 {
@@ -124,45 +126,59 @@ void prospect_genome(std::filesystem::path genome_path)
     std::sort(fragments.begin(), fragments.end(), [](Fragment* a, Fragment* b) {return a->get_start() - b->get_start(); });
     start = time(start, "get fragments");
 
-    map<string, System*> system_map;
+    //map<string, System*> system_map;
+    //for (Fragment* f : fragments)
+    //{
+    //    if (!f->is_gene())
+    //    {
+    //        continue;
+    //    }
 
-    for (Fragment* f : fragments)
-    {
-        if (!f->is_gene())
-        {
-            continue;
-        }
+    //    string id = f->reference_crispr->identifier_string();
+    //    if (system_map.contains(id))
+    //    {
+    //        system_map[id]->fragments.push_back(f);
+    //        continue;
+    //    }
 
-        string id = f->reference_crispr->identifier_string();
-        if (system_map.contains(id))
-        {
-            system_map[id]->fragments.push_back(f);
-            continue;
-        }
+    //    System* system = new System;
+    //    system->crispr = f->reference_crispr;
+    //    system->fragments.push_back(f);
+    //    system_map[id] = system;
+    //}
 
-        System* system = new System;
-        system->crispr = f->reference_crispr;
-        system->fragments.push_back(f);
-        system_map[id] = system;
-    }
+    //vector<System*> systems;
 
-    vector<System*> systems;
+    //for (map<string, System*>::iterator i = system_map.begin(); i != system_map.end(); i++)
+    //{
+    //    systems.push_back(i->second);
+    //}
 
-    for (map<string, System*>::iterator i = system_map.begin(); i != system_map.end(); i++)
-    {
-        systems.push_back(i->second);
-    }
+    //for (System* s : systems)
+    //{
+    //    s->type = resolve_type(s->fragments);
+    //}
 
-    for (System* s : systems)
-    {
-        s->type = resolve_type(s->fragments);
-    }
-
-    std::sort(systems.begin(), systems.end(), [](System* a, System* b) {return a->get_start() - b->get_start(); });
+    //std::sort(systems.begin(), systems.end(), [](System* a, System* b) {return a->get_start() - b->get_start(); });
 
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
-    for (System* s : systems) out_gene << s->to_string();
+    //for (System* s : systems)
+        //out_gene << s->to_string();
+
+    std::vector<Locus*> loci;
+
+    for (Crispr* c : crisprs)
+        loci.push_back(c);
+
+    for (Fragment* f : fragments)
+        loci.push_back(f);
+
+    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
+
+    for (Locus* l : loci)
+        if (!l->is_domain())
+            out_gene << l->to_string_summary() << endl;
 
     start = time(start, "write loci");
 
@@ -171,20 +187,13 @@ void prospect_genome(std::filesystem::path genome_path)
 
     string finished = fmt::format("// finished in {} ms\n", total_time);
 
-#if DEBUG 1
-    out_debug.close();
-#endif
-
     out_gene << finished;
-    //out_domain << finished;
 
     out_gene.close();
-    //out_domain.close();
 
     for (Crispr* c : crisprs) delete c;
     for (Translation* t : translations) delete t;
     for (Fragment* f : fragments) delete f;
-    //for (Locus* l : loci) delete l;
 }
 
 int main()
@@ -192,6 +201,10 @@ int main()
     auto start_main = time();
 
     init();
+
+
+    //prospect_genome("T:/data/genome/GCA_003017225.1_ASM301722v1_genomic.fna");
+    //return 0;
 
     for (const auto& entry : std::filesystem::directory_iterator(genome_dir))
     {
