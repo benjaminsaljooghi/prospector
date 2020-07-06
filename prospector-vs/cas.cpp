@@ -436,5 +436,5 @@ string Fragment::to_string_summary()
     string domain = reference_profile->identifier;
     string strand = reference_translation->pos ? "+" : "-";
     string identifier = CasProfileUtil::domain_table_contains(domain) ? CasProfileUtil::domain_table_fetch(domain) : domain;
-    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}\n", expanded_genome_begin, expanded_genome_final, strand, identifier, genome_begin, genome_final, domain);
+    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}", expanded_genome_begin, expanded_genome_final, strand, identifier, genome_begin, genome_final, domain);
 }
