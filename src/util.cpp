@@ -29,6 +29,7 @@ ui Util::difference_cpu(const ui& _a, const ui& _b)
 	ui oddBits = _xor & 0x5555555555555555ull;
 	ui comp = (evenBits >> 1) | oddBits;
 	return __builtin_popcount(comp);
+	//return std::popcount(comp);
 }
 
 string Util::translate_domain(const string& domain)

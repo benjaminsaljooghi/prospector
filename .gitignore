@@ -1,9 +1,9 @@
-**/cas/**
-**/fmt-6.2.1/**
+out/*
 
 
-out.txt
-crispr-data
+
+
+
 
 # Prerequisites
 *.d

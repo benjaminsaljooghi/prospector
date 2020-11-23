@@ -3,7 +3,7 @@
 #include "util.h"
 #include "prospector.h"
 #include "cas.h"
-#include "time.h"
+#include "time_util.h"
 #include "debug.h"
 #include "cas_profiles.h"
 #include "array_discovery.h"
@@ -87,9 +87,27 @@ void load_type_table(std::filesystem::path path)
 //};
 
 
+void assert_file(std::filesystem::path path)
+{
+    if (std::filesystem::exists(path))
+    {
+        return;
+    }
+    fmt::print("path does not exist: {}\n", path.string());
+    exit(1);
+}
 
 void init()
 {
+
+    assert_file(domain_table_path);
+    assert_file(type_table_path);
+    assert_file(serial);
+    assert_file(genome_dir);
+    assert_file(results_dir);
+
+
+
     Prospector::device_init();
     CasProfileUtil::load_profiles(serial);
     CasProfileUtil::load_domain_table(domain_table_path);

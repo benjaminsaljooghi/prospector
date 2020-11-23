@@ -27,16 +27,23 @@
 #include <csignal>
 
 #include <bitset>
+#include <bit>
 #include <cstddef>
 #include <filesystem>
 
 #include <chrono>
 
+#define FMT_HEADER_ONLY 1
 
 #include "fmt/core.h"
 #include "fmt/format.h"
-#include "time.h"
+#include "time_util.h"
 
+
+#ifdef _MSC_VER
+#  include <intrin.h>
+#  define __builtin_popcount __popcnt
+#endif
 
 using namespace std;
 namespace fs = std::filesystem;

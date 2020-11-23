@@ -10,7 +10,7 @@
 #include <cassert>
 #include <chrono>
 #include <stdio.h>
-#include "time.h"
+#include "time_util.h"
 
 
 #ifdef __CUDACC__
