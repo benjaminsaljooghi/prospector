@@ -1,11 +1,35 @@
 #include "cas_profiles.h"
 
-static map<string, string> domain_table;
-static vector<CasProfile*> profiles;
+static std::map<string, string> domain_map;
 
-void CasProfileUtil::load_profiles(std::filesystem::path path)
+void CasProfileUtil::load_domain_map(std::filesystem::path path)
 {
-	for (const auto& entry : std::filesystem::directory_iterator(path))
+	std::ifstream file(path);
+	if (!file)
+		throw std::runtime_error("failed to open domain table");
+
+	string line;
+	while (getline(file, line))
+	{
+		auto split = Util::parse(line, "\t");
+		domain_map[split[0]] = split[1];
+	}
+}
+
+bool CasProfileUtil::domain_table_contains(string name)
+{
+	return domain_map.contains(name);
+}
+
+string CasProfileUtil::domain_table_fetch(string name)
+{
+	return domain_map[name];
+}
+
+vector<CasProfile*> CasProfileUtil::load_profiles(std::filesystem::path directory)
+{
+	vector<CasProfile*> profiles;
+	for (const auto& entry : std::filesystem::directory_iterator(directory))
 	{
 		string file_path = entry.path().string();
 		phmap::BinaryInputArchive archive(file_path.c_str());
@@ -15,54 +39,20 @@ void CasProfileUtil::load_profiles(std::filesystem::path path)
 		profiles.push_back(profile);
 	}
 	fmt::print("loaded {} profiles\n", profiles.size());
-}
-
-vector<CasProfile*>& CasProfileUtil::get_profiles()
-{
 	return profiles;
 }
 
-void CasProfileUtil::load_domain_table(std::filesystem::path path)
-{
-	std::ifstream file(path);
-	if (!file)
-	{
-		throw std::runtime_error("failed to open domain table");
-	}
-
-	string line;
-	while (getline(file, line))
-	{
-		auto split = Util::parse(line, "\t");
-		domain_table[split[0]] = split[1];
-	}
-}
-
-bool CasProfileUtil::domain_table_contains(string domain)
-{
-	return domain_table.contains(domain);
-}
-
-string CasProfileUtil::domain_table_fetch(string domain)
-{
-	return domain_table.at(domain);
-}
-
-
-void clean_seq(string& seq)
-{
-	seq.erase(remove(seq.begin(), seq.end(), '.'), seq.end());
-	seq.erase(remove(seq.begin(), seq.end(), '-'), seq.end());
-	transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-}
-
+// serialization
 CasProfile* profile_factory(string id, vector<string> sequences, ll k)
 {
 	CasProfile* profile = new CasProfile;
 	profile->identifier = id;
 	for (string& seq : sequences)
 	{	
-		clean_seq(seq);
+		// clean seq
+		seq.erase(remove(seq.begin(), seq.end(), '.'), seq.end());
+		seq.erase(remove(seq.begin(), seq.end(), '-'), seq.end());
+		transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
 		for (ll i = 0; i < seq.size() - k + 1; i++)
 		{
@@ -78,22 +68,11 @@ CasProfile* profile_factory(string id, vector<string> sequences, ll k)
 	return profile;
 }
 
-void CasProfileUtil::pfam_filter(std::filesystem::path in, std::filesystem::path out, std::filesystem::path pfam_table)
+// serialization
+void filter_pfam(std::map<string, string>& domain_map, std::filesystem::path pfam_full, std::filesystem::path pfam_filt) 
 {
-	unordered_set<string> known;
-	
-	std::ifstream list(pfam_table);
-	if (!list)
-		throw runtime_error(pfam_table.string());
-
-	string line;
-	while (getline(list, line))
-	{
-		known.insert(Util::parse(line, "\t")[0]);
-	}
-	
-	ifstream input(in);
-	ofstream output(out);
+	ifstream input(pfam_full);
+	ofstream output(pfam_filt);
 	if (!input.good())
 		throw runtime_error(strerror(errno));
 
@@ -113,6 +92,7 @@ void CasProfileUtil::pfam_filter(std::filesystem::path in, std::filesystem::path
 	string ac;
 	ui line_count = 0;
 	bool engage = false;
+	string line;
 	while (getline(input, line))
 	{
 		if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
@@ -123,7 +103,7 @@ void CasProfileUtil::pfam_filter(std::filesystem::path in, std::filesystem::path
 			ac.erase(0, 10);
 			ac.erase(ac.find_first_of('.'));
 
-			if (known.contains(ac))
+			if (domain_map.contains(ac))
 			{
 				engage = true;
 			}
@@ -142,14 +122,9 @@ void CasProfileUtil::pfam_filter(std::filesystem::path in, std::filesystem::path
 
 			for (string& line : seq_buffer)
 			{
-				int first_space = line.find(' ');
-				line.erase(0, first_space);
-				int first_amino = line.find_first_not_of(' ');
-				line.erase(0, first_amino);
+				string sequence = line.substr(line.find_last_of(' ') + 1);
 
-				clean_seq(line);
-
-				output << line << endl;
+				output << sequence << endl;
 			}
 
 			output << "//" << endl;
@@ -162,19 +137,20 @@ void CasProfileUtil::pfam_filter(std::filesystem::path in, std::filesystem::path
 		if (non_seq(line)) continue;
 		seq_buffer.push_back(line);
 	}
-	
+
 	input.close();
 	output.close();
 }
 
-vector<const CasProfile*> profiles_from_processed_pfam(std::filesystem::path path)
+// serialization
+vector<CasProfile*> profiles_from_processed_pfam(std::filesystem::path path)
 {
 	ifstream input(path);
 
 	if (!input.good())
 		throw runtime_error(strerror(errno));
 
-	vector<const CasProfile*> profiles;
+	vector<CasProfile*> profiles;
 	string line;
 	while (getline(input, line))
 	{
@@ -190,27 +166,8 @@ vector<const CasProfile*> profiles_from_processed_pfam(std::filesystem::path pat
 	return profiles;
 }
 
-
-std::map<string, string> parse_tigr_table(std::filesystem::path path)
-{
-	ifstream file(path);
-	if (!file.good())
-		throw runtime_error(strerror(errno));
-
-	std::map<string, string> table;
-
-	string line;
-	while (getline(file, line))
-	{
-		auto split = Util::parse(line, "\t");
-		table[split[0]] = split[1];
-	}
-
-	return table;
-}
-
-
-vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(std::filesystem::path tigr_table, std::filesystem::path tigr_dir)
+// serialization
+vector<CasProfile*> profiles_from_tigrfam_dir(std::map<string, string> domain_map, std::filesystem::path tigr_dir)
 {
 	auto stockholm_to_profile = [](std::filesystem::path stockholm) {
 		ifstream file(stockholm);
@@ -226,21 +183,18 @@ vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(std::filesys
 			if (skip.contains(line[0]))
 				continue;
 
-			size_t last_space = line.find_last_of(' ');
-			string parsable = line.substr(last_space + 1);
-			sequences.push_back(parsable);
+			string sequence = line.substr(line.find_last_of(' ') + 1);
+			sequences.push_back(sequence);
 		}
 
 		return profile_factory(stockholm.filename().string(), sequences, CasProfileUtil::k);
 	};
 
-	std::map<string, string> table = parse_tigr_table(tigr_table);
-
-	vector<const CasProfile*> profiles;
+	vector<CasProfile*> profiles;
 
 	for (const auto& entry : std::filesystem::directory_iterator(tigr_dir))
 	{
-		if (!table.contains(entry.path().filename().string()))
+		if (!domain_map.contains(entry.path().filename().string()))
 			continue;
 
 		profiles.push_back(stockholm_to_profile(entry.path()));
@@ -250,28 +204,36 @@ vector<const CasProfile*> CasProfileUtil::profiles_from_tigrfam_dir(std::filesys
 	return profiles;
 }
 
-
-
-
-
+// serialization
 void CasProfileUtil::serialize()
-{
-	std::filesystem::path serialization_dir = "T:/prospector-util/cas/serial_staging/";
+{	
+	std::filesystem::path serialization_dir = "T:/prospector-util/profiles/";
+	std::filesystem::path pfam_full = "T:/prospector-util/seed/Pfam-A.full";
+	std::filesystem::path pfam_filt = "T:/prospector-util/seed/Pfam-A.filt";
+	std::filesystem::path tigrfam_dir = "T:/prospector-util/seed/TIGRFAMs_13.0_SEED";
+	std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
 
-	//std::filesystem::path filt = "T:/prospector-util/Pfam-A.filt";
-	//vector<const CasProfile*> profiles = profiles_from_processed_pfam(filt);
-	
-	std::filesystem::path tigrfam_dir = "T:/prospector-util/cas/TIGRFAMs_13.0_SEED";
-	std::filesystem::path tigrfam_table = "T:/prospector-util/cas/tigr_to_domain.tsv";
+	// step 0: load domain map
+	CasProfileUtil::load_domain_map(domain_map_path);
 
-	vector<const CasProfile*> profiles = profiles_from_tigrfam_dir(tigrfam_table, tigrfam_dir);
+	// step 1: PFAM full needs to be filtered into PFAM filt
+	filter_pfam(domain_map, pfam_full, pfam_filt);
+		
+	// step 2: generate PFAM profiles
+	vector<CasProfile*> profiles_pfam = profiles_from_processed_pfam(pfam_filt);
 
-	for (auto profile : profiles)
-	{
+	// step 3: generate TIGRFAM profiles
+	vector<CasProfile*> profiles_tigrfam = profiles_from_tigrfam_dir(domain_map, tigrfam_dir);
+
+	// step 4: serialize all profiles
+	auto serialize = [&](CasProfile* profile) {
 		std::filesystem::path file_name = serialization_dir / profile->identifier;
 		phmap::BinaryOutputArchive archive(file_name.string().c_str());
 		profile->hash_table.dump(archive);
-	}
+	};
+
+	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize);
+	std::for_each(profiles_tigrfam.begin(), profiles_tigrfam.end(), serialize);
 }
 
 
