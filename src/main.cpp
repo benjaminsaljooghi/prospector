@@ -10,37 +10,39 @@
 
 std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
 std::filesystem::path type_table_path = "T:/prospector-util/cas/typing.tsv";
-std::filesystem::path serial = "T:/prospector-util/cas/serial_staging";
+std::filesystem::path serial = "T:/prospector-util/profiles/";
 std::filesystem::path genome_dir = "T:/prospector-util/genome/assembly/";
 std::filesystem::path results_dir = "T:/prospector-util/results/";
 
-std::map<string, std::set<string>> type_table;
+unordered_set<string> interest{ "GCF_002355995.1_ASM235599v1_genomic.fna" };
 
-void load_type_table(std::filesystem::path path)
-{
-    //std::ifstream table(path);
-
-    //if (!table)
-    //{
-    //    throw runtime_error(path.string());
-    //}
-
-    //string line;
-    //while (getline(table, line))
-    //{
-    //    auto split = Util::parse(line, "\t");
-    //    auto type = split[0];
-    //    auto required = split[1];
-    //    auto additional_any = split[2];
-    //    
-    //    std::set<string> genes;
-
-    //    for (string gene : Util::parse(, ","))
-    //        genes.insert(gene);
-
-    //    type_table[links] = genes;
-    //}
-}
+//std::map<string, std::set<string>> load_type_table(std::filesystem::path path)
+//{
+//    std::map<string, std::set<string>> type_table;
+//
+//    std::ifstream table(path);
+//
+//    if (!table)
+//    {
+//        throw runtime_error(path.string());
+//    }
+//
+//    string line;
+//    while (getline(table, line))
+//    {
+//        auto split = Util::parse(line, "\t");
+//        auto type = split[0];
+//        auto required = split[1];
+//        auto additional_any = split[2];
+//        
+//        std::set<string> genes;
+//
+//        for (string gene : Util::parse(, ","))
+//            genes.insert(gene);
+//
+//        type_table[links] = genes;
+//    }
+//}
 
 //string resolve_type(vector<Fragment*> fragments)
 //{
@@ -86,30 +88,8 @@ void load_type_table(std::filesystem::path path)
 //    }
 //};
 
-void assert_file(std::filesystem::path path)
-{
-    if (!std::filesystem::exists(path))
-    {
-        fmt::print("path does not exist: {}\n", path.string());
-        exit(1);
-    }
-}
 
-void init()
-{
-    assert_file(domain_map_path);
-    assert_file(type_table_path);
-    assert_file(serial);
-    assert_file(genome_dir);
-    assert_file(results_dir);
-
-    Prospector::device_init();
-    CasProfileUtil::load_profiles(serial);
-    CasProfileUtil::load_domain_table(domain_map_path);
-    load_type_table(type_table_path);
-}
-
-void prospect_genome(std::filesystem::path genome_path)
+void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
     std::filesystem::path file_name = genome_path.stem();
     std::filesystem::path results_path = results_dir / file_name;
@@ -135,7 +115,7 @@ void prospect_genome(std::filesystem::path genome_path)
     vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
     start = time(start, "get translations");
 
-    vector<Fragment*> fragments = Cas::cas(CasProfileUtil::get_profiles(), translations, genome);
+    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
     std::sort(fragments.begin(), fragments.end(), [](Fragment* a, Fragment* b) {return a->get_start() < b->get_start(); });
     start = time(start, "get fragments");
 
@@ -213,30 +193,40 @@ void prospect_genome(std::filesystem::path genome_path)
     for (Fragment* f : fragments) delete f;
 }
 
-void pfam_filt()
+void assert_file(std::filesystem::path path)
 {
-    std::filesystem::path known_pfam = "T:/prospector-util/pfam_list.txt";
-    std::filesystem::path full = "T:/prospector-util/Pfam-A.full";
-    std::filesystem::path filt = "T:/prospector-util/Pfam-A.filt";
-    CasProfileUtil::pfam_filter(full, filt, known_pfam);
+    if (!std::filesystem::exists(path))
+    {
+        fmt::print("path does not exist: {}\n", path.string());
+        exit(1);
+    }
 }
 
-
-unordered_set<string> interest{ "GCF_002355995.1_ASM235599v1_genomic.fna" };
-
-int main()
+void run()
 {
-    auto start_main = time();
+    assert_file(domain_map_path);
+    assert_file(type_table_path);
+    assert_file(serial);
+    assert_file(genome_dir);
+    assert_file(results_dir);
 
-    init();
+    CasProfileUtil::load_domain_map(domain_map_path);
+    vector<CasProfile*> profiles = CasProfileUtil::load_profiles(serial);
+
+    Prospector::device_init();
 
     for (const auto& entry : std::filesystem::directory_iterator(genome_dir))
     {
         string filename = entry.path().filename().string();
         if (interest.contains(filename))
-            prospect_genome(entry);
+            prospect_genome(profiles, entry);
     }
+}
 
+int main()
+{
+    auto start_main = time();
+    run();
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }
