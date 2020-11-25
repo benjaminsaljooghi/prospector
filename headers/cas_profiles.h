@@ -30,5 +30,9 @@ namespace CasProfileUtil
 
     string domain_table_fetch(string);
 
+    void pfam_filter(std::filesystem::path in, std::filesystem::path out, std::filesystem::path known_path);
+
+    vector<const CasProfile*> profiles_from_tigrfam_dir(std::filesystem::path tigr_table, std::filesystem::path tigr_dir);
+
     void serialize();
 }
