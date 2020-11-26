@@ -150,5 +150,7 @@ vector<Crispr*> Array::get_crisprs(string& genome)
     Util::sort(crisprs, [](Crispr* a, Crispr* b) { return a->genome_start < b->genome_start; });
     start = time(start, "remain");
 
+    fmt::print("returned {} crisprs\n", crisprs.size());
+
     return crisprs;
 }

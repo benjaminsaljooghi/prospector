@@ -390,51 +390,7 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 }
 
 
-bool Fragment::is_domain()
-{
-    bool is_domain = !CasProfileUtil::domain_table_contains(this->reference_profile->identifier);
-    //fmt::print("is domain {} {}\n", this->reference_profile->identifier, is_domain);
-    return is_domain;
-}
-
-bool Fragment::is_gene()
-{
-    return !this->is_domain();
-}
 
 
-string Fragment::to_string_debug()
-{
-    string amino_domain = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
-    string amino_gene = Util::translate_genome(*reference_genome, expanded_genome_begin, expanded_genome_final, reference_translation->pos);
 
-    string dna_domain = reference_genome->substr(genome_begin, genome_final - genome_begin);
-    string dna_gene = reference_genome->substr(expanded_genome_begin, expanded_genome_final - expanded_genome_begin);
 
-    string amino_buffer;
-
-    ui begin_discrepant = (genome_begin - expanded_genome_begin);
-    ui final_discpreant = (expanded_genome_final - genome_final);
-
-    dna_gene.insert(begin_discrepant, "-");
-    amino_gene.insert(begin_discrepant / 3, "-");
-
-    dna_gene.insert(dna_gene.size() - final_discpreant, "-");
-    amino_gene.insert(amino_gene.size() - (final_discpreant / 3), "-");
-
-    std::ostringstream out;
-    out << fmt::format("{}\t{}\n", reference_translation->pos ? "+" : "-", reference_profile->identifier);
-    out << fmt::format("\t{}...{}\n", genome_begin, genome_final);
-    out << fmt::format("\t{}...{}\n", expanded_genome_begin, expanded_genome_final);
-    out << fmt::format("\t{}\n", amino_gene);
-    out << fmt::format("\t{}\n", dna_gene);
-    return out.str();
-}
-
-string Fragment::to_string_summary()
-{
-    string domain = reference_profile->identifier;
-    string strand = reference_translation->pos ? "+" : "-";
-    string identifier = CasProfileUtil::domain_table_contains(domain) ? CasProfileUtil::domain_table_fetch(domain) : domain;
-    return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}", expanded_genome_begin, expanded_genome_final, strand, identifier, genome_begin, genome_final, domain);
-}

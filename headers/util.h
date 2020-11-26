@@ -120,7 +120,7 @@ namespace Util
 	string translate_domain(const string&);
 	string translate_genome(const string&, ui, ui, bool);
 
-	bool any_overlap(ui a, ui b, ui x, ui y);
+	bool any_overlap(ui a_start, ui a_final, ui b_start, ui b_final);
 
 
 	template <typename T> void print_vector(vector<T> a)
