@@ -10,8 +10,8 @@ if(NOT DEFINED CMAKE_CUDA_STANDARD)
 endif()
 
 include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
-include_directories(headers)
-include_directories(.)
+include_directories(include)
+include_directories(lib)
 
 add_library(util "src/cas.cpp" "src/array_discovery.cpp" "src/cas_profiles.cpp" "src/crispr.cpp" "src/debug.cpp" "src/util.cpp")
 set_property(TARGET util PROPERTY CXX_STANDARD 20)
