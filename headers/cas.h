@@ -89,7 +89,15 @@ struct MultiFragment : public Locus
 
     string to_string_debug()
     {
-        return fmt::format("debugging info not implemented for MultiFragment struct");
+        std::ostringstream out;
+        out << "-------------------------" << endl;
+        for (Fragment* f : fragments)
+        {
+            out << f->to_string_debug();
+            out << endl;
+        }
+        out << "-------------------------" << endl;
+        return out.str();
     }
 
     string to_string_summary()
@@ -120,8 +128,20 @@ struct MultiFragment : public Locus
         {
             string id = fragment->reference_profile->identifier;
             string domain = CasProfileUtil::domain_table_contains(id) ? CasProfileUtil::domain_table_fetch(id) : id;
-            result += fmt::format("{}-{} ", domain, id);
+            result += fmt::format("{},", domain);
         }
+
+        result = result.substr(0, result.size() - 1);
+
+        result += "\t";
+
+        for (Fragment* fragment : fragments)
+        {
+            string id = fragment->reference_profile->identifier;
+            result += fmt::format("{},", id);
+        }
+
+        result = result.substr(0, result.size() - 1);
 
         return result;
     }

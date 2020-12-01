@@ -129,6 +129,13 @@ std::filesystem::path results_dir = "T:/prospector-util/results/";
 
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
+
+
+    //95819	96809 - cmr1gr7	cd09657
+    //Debug::triframe_print(genome, 95819, 96809, false);
+    //exit(0);
+
+
     std::filesystem::path results_path = results_dir / genome_path.stem();
     if (std::filesystem::exists(results_path))
     {
@@ -139,6 +146,8 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     fmt::print("\n\n");
 
     string genome = Util::load_genome(genome_path);
+
+
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
 
@@ -188,6 +197,8 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
+    std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
+
 
     std::vector<Locus*> loci;
 
@@ -204,7 +215,13 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         out_gene << l->to_string_summary() << endl;
     }
 
+    for (Locus* l : loci)
+    {
+        out_gene_debug << l->to_string_debug() << endl;
+    }
+
     out_gene.close();
+    out_gene_debug.close();
 
 }
 
@@ -245,6 +262,10 @@ void run()
 
 int main()
 {
+
+
+
+
     auto start_main = time();
     run();
     start_main = time(start_main, "main");
