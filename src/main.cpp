@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "cas_profiles.h"
 #include "array_discovery.h"
+#include "path.h"
 
 //map<string, System*> system_map;
 //for (Fragment* f : fragments)
@@ -119,24 +120,28 @@
 //};
 
 
-std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
-std::filesystem::path type_table_path = "T:/prospector-util/cas/typing.tsv";
-std::filesystem::path serial = "T:/prospector-util/profiles/";
-std::filesystem::path genome_dir = "T:/prospector-util/genome/assembly/";
-std::filesystem::path results_dir = "T:/prospector-util/results/";
+namespace Path
+{
+    // required big data
+    std::filesystem::path serialization_dir = "T:/data/profiles/";
+    std::filesystem::path genome_dir = "T:/data/genome/assembly/";
 
+    // required small data
+    std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
+    std::filesystem::path type_table_path = "T:/prospector-util/cas/typing.tsv";
+    std::filesystem::path results_dir = "T:/prospector-util/results/";
+
+    // profile generation (dev only)
+	std::filesystem::path pfam_full = "T:/data/seed/Pfam-A.full";
+	std::filesystem::path pfam_filt = "T:/data/seed/Pfam-A.filt";
+	std::filesystem::path tigrfam_dir = "T:/data/seed/TIGRFAMs_13.0_SEED";
+    std::filesystem::path cog_dir = "T:/data/seed/COG/";
+}
 
 
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
-
-
-    //95819	96809 - cmr1gr7	cd09657
-    //Debug::triframe_print(genome, 95819, 96809, false);
-    //exit(0);
-
-
-    std::filesystem::path results_path = results_dir / genome_path.stem();
+    std::filesystem::path results_path = Path::results_dir / genome_path.stem();
     if (std::filesystem::exists(results_path))
     {
         fmt::print("skipping {} because results dir exists\n", genome_path.string());
@@ -146,8 +151,6 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     fmt::print("\n\n");
 
     string genome = Util::load_genome(genome_path);
-
-
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
 
@@ -235,37 +238,35 @@ void assert_file(std::filesystem::path path)
 }
 
 
+
+
 void run()
 {
-    assert_file(domain_map_path);
-    assert_file(type_table_path);
-    assert_file(serial);
-    assert_file(genome_dir);
-    assert_file(results_dir);
+    assert_file(Path::domain_map_path);
+    assert_file(Path::type_table_path);
+    assert_file(Path::serialization_dir);
+    assert_file(Path::genome_dir);
+    assert_file(Path::results_dir);
 
-    CasProfileUtil::load_domain_map(domain_map_path);
-    vector<CasProfile*> profiles = CasProfileUtil::load_profiles(serial);
+    CasProfileUtil::load_domain_map(Path::domain_map_path);
+    // CasProfileUtil::serialize(Path::serialization_dir, Path::cog_dir);
+
+    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Path::serialization_dir);
 
     Prospector::device_init();
 
+    // unordered_set<string> interest{ "GCF_002355995.1_ASM235599v1_genomic.fna" };
 
-    unordered_set<string> interest{ "GCF_002355995.1_ASM235599v1_genomic.fna" };
-
-
-    for (const auto& entry : std::filesystem::directory_iterator(genome_dir))
+    for (const auto& entry : std::filesystem::directory_iterator(Path::genome_dir))
     {
         string filename = entry.path().filename().string();
-        if (interest.contains(filename))
-            prospect_genome(profiles, entry);
+        // if (interest.contains(filename))
+        prospect_genome(profiles, entry);
     }
 }
 
 int main()
 {
-
-
-
-
     auto start_main = time();
     run();
     start_main = time(start_main, "main");

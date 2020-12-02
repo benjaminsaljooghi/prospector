@@ -124,60 +124,60 @@ string Util::load_genome(std::filesystem::path path)
 	assert(false);
 }
 
-//map<string, string> Util::parse_fasta (string file_path)
-//{
-//	// printf("reading %s... ", file_path.c_str());
-//	// auto start = time();
-//	ifstream input(file_path);
-//	if (!input.good())
-//	{
-//		throw runtime_error("input not good!");
-//	}
-//
-//	map<string, string> seqs;
-//	string line, name, content;
-//	while (getline(input, line))
-//	{
-//		if (line.empty() || line[0] == '>') // Identifier marker
-//		{
-//			if (!name.empty())
-//			{
-//				// Get what we read from the last entry
-//				seqs[name] = content;
-//				name.clear();
-//			}
-//			if (!line.empty())
-//			{
-//				name = line.substr(1);
-//			}
-//			content.clear();
-//		}
-//		else if (!name.empty())
-//		{
-//			if (line.find(' ') != string::npos) // Invalid sequence--no spaces allowed
-//			{
-//				name.clear();
-//				content.clear();
-//			}
-//			if (line.find("\r") != string::npos)
-//			{
-//				throw runtime_error("File contains carriage returns (CRLF). Please reformat to LF.");
-//			}
-//			else
-//			{
-//				content += line;
-//			}
-//		}
-//	}
-//	if (!name.empty())
-//	{
-//		// Get what we read from the last 
-//		seqs[name] = content;
-//	}
-//
-//	// done(start);
-//	return seqs;
-//}
+map<string, string> Util::parse_fasta (string file_path)
+{
+	// printf("reading %s... ", file_path.c_str());
+	// auto start = time();
+	ifstream input(file_path);
+	if (!input.good())
+	{
+		throw runtime_error("input not good!");
+	}
+
+	map<string, string> seqs;
+	string line, name, content;
+	while (getline(input, line))
+	{
+		if (line.empty() || line[0] == '>') // Identifier marker
+		{
+			if (!name.empty())
+			{
+				// Get what we read from the last entry
+				seqs[name] = content;
+				name.clear();
+			}
+			if (!line.empty())
+			{
+				name = line.substr(1);
+			}
+			content.clear();
+		}
+		else if (!name.empty())
+		{
+			if (line.find(' ') != string::npos) // Invalid sequence--no spaces allowed
+			{
+				name.clear();
+				content.clear();
+			}
+			if (line.find("\r") != string::npos)
+			{
+				throw runtime_error("File contains carriage returns (CRLF). Please reformat to LF.");
+			}
+			else
+			{
+				content += line;
+			}
+		}
+	}
+	if (!name.empty())
+	{
+		// Get what we read from the last 
+		seqs[name] = content;
+	}
+
+	// done(start);
+	return seqs;
+}
 
 char Util::complement(char nuc)
 {

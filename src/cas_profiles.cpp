@@ -1,4 +1,5 @@
 #include "cas_profiles.h"
+#include "path.h"
 
 static std::map<string, string> domain_map;
 
@@ -26,7 +27,7 @@ string CasProfileUtil::domain_table_fetch(string name)
 	return domain_map[name];
 }
 
-vector<CasProfile*> CasProfileUtil::load_profiles(std::filesystem::path directory)
+vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path directory)
 {
 	vector<CasProfile*> profiles;
 	for (const auto& entry : std::filesystem::directory_iterator(directory))
@@ -42,7 +43,6 @@ vector<CasProfile*> CasProfileUtil::load_profiles(std::filesystem::path director
 	return profiles;
 }
 
-// serialization
 CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 {
 	CasProfile* profile = new CasProfile;
@@ -68,84 +68,81 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 	return profile;
 }
 
-// serialization
-void filter_pfam(std::map<string, string>& domain_map, std::filesystem::path pfam_full, std::filesystem::path pfam_filt) 
+vector<CasProfile*> generate_pfams(std::filesystem::path pfam_full, std::filesystem::path pfam_filt)
 {
-	ifstream input(pfam_full);
-	ofstream output(pfam_filt);
-	if (!input.good())
-		throw runtime_error("input not good!");
+	auto filter_pfam = [](std::filesystem::path pfam_full, std::filesystem::path pfam_filt)  {
+		ifstream input(pfam_full);
+		ofstream output(pfam_filt);
+		if (!input.good())
+			throw runtime_error("input not good!");
 
-	auto non_seq = [](string& line) {
-		return
-			line.starts_with(" ") ||
-			line.starts_with("#=GF") ||
-			line.starts_with("#=GS") ||
-			line.starts_with("#=GC") ||
-			line.starts_with("#=GR") ||
-			line.starts_with("# STOCKHOLM 1.0") ||
-			line.starts_with("//") ||
-			line == "";
+		auto non_seq = [](string& line) {
+			return
+				line.starts_with(" ") ||
+				line.starts_with("#=GF") ||
+				line.starts_with("#=GS") ||
+				line.starts_with("#=GC") ||
+				line.starts_with("#=GR") ||
+				line.starts_with("# STOCKHOLM 1.0") ||
+				line.starts_with("//") ||
+				line == "";
+		};
+
+		vector<string> seq_buffer;
+		string ac;
+		ui line_count = 0;
+		bool engage = false;
+		string line;
+		while (getline(input, line))
+		{
+			if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
+
+			if (line.starts_with("#=GF AC"))
+			{
+				ac = line;
+				ac.erase(0, 10);
+				ac.erase(ac.find_first_of('.'));
+
+				if (domain_map.contains(ac))
+				{
+					engage = true;
+				}
+
+				continue;
+			}
+
+			if (!engage)
+			{
+				continue;
+			}
+
+			if (line.starts_with("//"))
+			{
+				output << ac << endl;
+
+				for (string& line : seq_buffer)
+				{
+					string sequence = line.substr(line.find_last_of(' ') + 1);
+
+					output << sequence << endl;
+				}
+
+				output << "//" << endl;
+
+				seq_buffer.clear();
+				engage = false;
+				continue;
+			}
+
+			if (non_seq(line)) continue;
+			seq_buffer.push_back(line);
+		}
+
+		input.close();
+		output.close();
 	};
 
-	vector<string> seq_buffer;
-	string ac;
-	ui line_count = 0;
-	bool engage = false;
-	string line;
-	while (getline(input, line))
-	{
-		if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
-
-		if (line.starts_with("#=GF AC"))
-		{
-			ac = line;
-			ac.erase(0, 10);
-			ac.erase(ac.find_first_of('.'));
-
-			if (domain_map.contains(ac))
-			{
-				engage = true;
-			}
-
-			continue;
-		}
-
-		if (!engage)
-		{
-			continue;
-		}
-
-		if (line.starts_with("//"))
-		{
-			output << ac << endl;
-
-			for (string& line : seq_buffer)
-			{
-				string sequence = line.substr(line.find_last_of(' ') + 1);
-
-				output << sequence << endl;
-			}
-
-			output << "//" << endl;
-
-			seq_buffer.clear();
-			engage = false;
-			continue;
-		}
-
-		if (non_seq(line)) continue;
-		seq_buffer.push_back(line);
-	}
-
-	input.close();
-	output.close();
-}
-
-// serialization
-vector<CasProfile*> profiles_from_processed_pfam(std::filesystem::path path)
-{
-	ifstream input(path);
+	ifstream input(pfam_filt);
 
 	if (!input.good())
 		throw runtime_error("input not good!");
@@ -155,19 +152,17 @@ vector<CasProfile*> profiles_from_processed_pfam(std::filesystem::path path)
 	while (getline(input, line))
 	{
 		string id = line;
-
 		vector<string> sequences;
 		while (getline(input, line) && line != "//")
 			sequences.push_back(line);
-
 		profiles.push_back(profile_factory(id, sequences, CasProfileUtil::k));
 		fmt::print("{} pfam profiles built\n", profiles.size());
 	}
+
 	return profiles;
 }
 
-// serialization
-vector<CasProfile*> profiles_from_tigrfam_dir(std::map<string, string> domain_map, std::filesystem::path tigr_dir)
+vector<CasProfile*> generate_tigrfams(std::filesystem::path tigr_dir)
 {
 	auto stockholm_to_profile = [](std::filesystem::path stockholm) {
 		ifstream file(stockholm);
@@ -200,40 +195,46 @@ vector<CasProfile*> profiles_from_tigrfam_dir(std::map<string, string> domain_ma
 		profiles.push_back(stockholm_to_profile(entry.path()));
 		fmt::print("{} tigrfam profiles built\n", profiles.size());
 	}
-	
 	return profiles;
 }
 
-// serialization
-void CasProfileUtil::serialize()
+vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
+{
+	vector<CasProfile*> profiles;
+
+	for (const auto& entry : std::filesystem::directory_iterator(cog_dir))
+	{
+		string identifier = entry.path().filename().string();
+
+		if (!domain_map.contains(identifier))
+			continue;
+
+		std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string());
+		vector<string> seqs;
+
+		for (auto const& entry : fasta_seqs)
+			seqs.push_back(entry.second);
+
+		CasProfile* profile = profile_factory(identifier, seqs, CasProfileUtil::k);
+		profiles.push_back(profile);
+	}
+
+	return profiles;
+}
+
+void CasProfileUtil::serialize(std::filesystem::path serialization_dir, std::filesystem::path cog_dir)
 {	
-	std::filesystem::path serialization_dir = "T:/prospector-util/profiles/";
-	std::filesystem::path pfam_full = "T:/prospector-util/seed/Pfam-A.full";
-	std::filesystem::path pfam_filt = "T:/prospector-util/seed/Pfam-A.filt";
-	std::filesystem::path tigrfam_dir = "T:/prospector-util/seed/TIGRFAMs_13.0_SEED";
-	std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
-
-	// step 0: load domain map
-	CasProfileUtil::load_domain_map(domain_map_path);
-
-	// step 1: PFAM full needs to be filtered into PFAM filt
-	filter_pfam(domain_map, pfam_full, pfam_filt);
-		
-	// step 2: generate PFAM profiles
-	vector<CasProfile*> profiles_pfam = profiles_from_processed_pfam(pfam_filt);
-
-	// step 3: generate TIGRFAM profiles
-	vector<CasProfile*> profiles_tigrfam = profiles_from_tigrfam_dir(domain_map, tigrfam_dir);
-
-	// step 4: serialize all profiles
-	auto serialize = [&](CasProfile* profile) {
+	auto serialize_profile = [&](CasProfile* profile) {
 		std::filesystem::path file_name = serialization_dir / profile->identifier;
 		phmap::BinaryOutputArchive archive(file_name.string().c_str());
 		profile->hash_table.dump(archive);
 	};
 
-	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize);
-	std::for_each(profiles_tigrfam.begin(), profiles_tigrfam.end(), serialize);
+	// auto profiles_pfam = generate_pfams(Path::pfam_full, Path::pfam_filt);
+	// auto profiles_tigrfams = generate_tigrfams(Path::tigrfam_dir);
+	auto profiles_cog = generate_cogs(cog_dir);
+
+	// std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize);
+	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize);
+	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
-
-
