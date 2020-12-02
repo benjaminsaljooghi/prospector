@@ -4,6 +4,11 @@
         "*.cu": "cpp",
         "Makefile.*": "makefile",
         "xstring": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "__config": "cpp",
+        "system_error": "cpp",
+        "xhash": "cpp"
     }
 }

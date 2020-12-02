@@ -13,12 +13,12 @@
 struct CasProfile
 {
     string identifier;
-    phmap::flat_hash_set<ui> hash_table;
+    phmap::flat_hash_set<kmer> hash_table;
 };
 
 namespace CasProfileUtil
 {
-    static const ui k = 6; // k * encoding size cannot exceed word size.
+    static const ull k = 6; // k * encoding size cannot exceed word size.
     void load_domain_map(std::filesystem::path path);
     bool domain_table_contains(string);
     string domain_table_fetch(string);

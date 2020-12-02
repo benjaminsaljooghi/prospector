@@ -73,7 +73,7 @@ __device__ ui scheme(const char c)
     return 0;
 }
 
-__global__ void compute_encoding(const char* genome, ui* encoding, ui genome_size, ui encoding_size)
+__global__ void compute_encoding(const char* genome, kmer* encoding, ull genome_size, ull encoding_size)
 {
     const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     const ui stride = blockDim.x * gridDim.x;
@@ -89,7 +89,7 @@ __global__ void compute_encoding(const char* genome, ui* encoding, ui genome_siz
     }
 }
 
-Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui genome_size)
+Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ull genome_size)
 {
 
     Prospector::Encoding encoding;
@@ -97,7 +97,7 @@ Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ui geno
     cudaError er;
     
     char* d_genome;
-    ui bytes_genome = sizeof(char) * genome_size;
+    ull bytes_genome = sizeof(char) * genome_size;
     er = cudaMalloc(&d_genome, bytes_genome); checkCuda(er);
     er = cudaMemcpy(d_genome, genome, bytes_genome, cudaMemcpyHostToDevice); checkCuda(er);
 
@@ -183,7 +183,7 @@ void Prospector::device_init()
 
 }
 
-uc* Prospector::get_qmap_small(const ui* encoding, const ui encoding_size)
+uc* Prospector::get_qmap_small(const kmer* encoding, const ull encoding_size)
 {
     assert(Prospector::k_start >= Prospector::size);
     cudaError er; 

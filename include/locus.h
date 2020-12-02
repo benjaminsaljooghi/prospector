@@ -3,7 +3,7 @@
 
 struct Locus
 {
-	virtual ui get_start() = 0;
+	virtual ull get_start() = 0;
 	virtual string to_string_debug() = 0;
 	virtual string to_string_summary() = 0;
 	virtual bool is_crispr() = 0;

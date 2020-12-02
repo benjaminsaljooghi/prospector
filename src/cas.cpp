@@ -11,12 +11,12 @@ static unordered_set<string> stop_codons_neg{ "TTA", "CTA", "TCA" };
 // potential performance optimization: compare amino_family acids of codons in the amino_family rather than codons in the genome.
 // should be faster to compare single chars rather than strings.
 
-ll generic_expand(const string& genome, unordered_set<string>& sinks, ll begin, ll increment, ll increments)
+ull generic_expand(const string& genome, unordered_set<string>& sinks, ull begin, ull increment, ull increments)
 {
-    ll offset = 0;
+    ull offset = 0;
     try
     {
-        for (ll i = 0; i < increments; i++)
+        for (ull i = 0; i < increments; i++)
         {
             if (sinks.contains(genome.substr(begin + offset, 3)))
             {
@@ -25,14 +25,14 @@ ll generic_expand(const string& genome, unordered_set<string>& sinks, ll begin, 
             offset += increment;
         }
     }
-    catch (exception& e)
+    catch (exception&)
     {
         return begin;
     }
     return begin;
 }
 
-ll steps = 200;
+ull steps = 200;
 
 void fragment_expansion_pos(Fragment* fragment, const string& genome)
 {
@@ -57,16 +57,16 @@ void fragment_expansion_neg(Fragment* fragment, const string& genome)
 
 }
 
-vector<vector<ll>> cluster_index(const vector<ll>& indices)
+vector<vector<ull>> cluster_index(const vector<ull>& indices)
 {
-    vector<vector<ll>> clusters;
-    vector<ll> cluster;
-    ll prev = indices[0];
-    for (ll index : indices)
+    vector<vector<ull>> clusters;
+    vector<ull> cluster;
+    ull prev = indices[0];
+    for (ull index : indices)
     {
         if (index - prev > Cas::max_inter_cluster_dist)
         {
-            vector<ll> cluster_cp = cluster; 
+            vector<ull> cluster_cp = cluster; 
             if (cluster_cp.size() > 1)
             {
                 clusters.push_back(cluster_cp);
@@ -80,9 +80,9 @@ vector<vector<ll>> cluster_index(const vector<ll>& indices)
     return clusters;
 }
 
-bool good_clusters(const vector<vector<ll>>& clusters)
+bool good_clusters(const vector<vector<ull>>& clusters)
 {
-    for (vector<ll> cluster : clusters)
+    for (vector<ull> cluster : clusters)
     {   
         if (cluster.size() > Cas::cluster_metric_min)
         {
@@ -92,17 +92,17 @@ bool good_clusters(const vector<vector<ll>>& clusters)
     return false;
 }
 
-ll demarc_start_clusters(const vector<vector<ll>>& clusters)
+ull demarc_start_clusters(const vector<vector<ull>>& clusters)
 {
-    for (const vector<ll>& cluster : clusters)
+    for (const vector<ull>& cluster : clusters)
         if (cluster.size() > Cas::cluster_metric_min)
             return cluster[0];
     assert(false); return -1;
 }
 
-ll demarc_final_clusters(const vector<vector<ll>>& clusters)
+ull demarc_final_clusters(const vector<vector<ull>>& clusters)
 {
-    for (ll i = clusters.size()-1; i >= 0; i--)
+    for (ull i = clusters.size()-1; i >= 0; i--)
         if (clusters[i].size() > Cas::cluster_metric_min)
             return clusters[i][clusters[i].size()-1];
     assert(false); return -1;
@@ -116,16 +116,16 @@ void compute_demarc(Fragment* frag)
 
 void compute_details(Fragment* fragment, const string& genome)
 {    
-    ll index_kmer_start = fragment->clust_begin;
-    ll index_kmer_final = fragment->clust_final;
+    ull index_kmer_start = fragment->clust_begin;
+    ull index_kmer_final = fragment->clust_final;
 
     // string protein = f.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + CasUtil::k);
 
-    ll raw_pos_start = fragment->reference_translation->pure_mapping[index_kmer_start];
-    ll raw_pos_end = fragment->reference_translation->pure_mapping[index_kmer_final];
+    ull raw_pos_start = fragment->reference_translation->pure_mapping[index_kmer_start];
+    ull raw_pos_end = fragment->reference_translation->pure_mapping[index_kmer_final];
 
-    ll genome_begin;
-    ll genome_final;
+    ull genome_begin;
+    ull genome_final;
     if (fragment->reference_translation->pos)
     {
         genome_begin = fragment->reference_translation->genome_start + (raw_pos_start * 3); // inclusive begin
@@ -172,9 +172,9 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
         CasProfile* profile = profiles[p];
         for (Translation* t : translations)
         {
-            vector<ll> index;
+            vector<ull> index;
 
-            for (ll i = 0; i < t->pure_kmerized_encoded.size(); i++)
+            for (ull i = 0; i < t->pure_kmerized_encoded.size(); i++)
             {
                 bool contains = profile->hash_table.contains(t->pure_kmerized_encoded[i]);
                 if (contains)
@@ -184,7 +184,7 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
             if (index.size() == 0)
                 continue;
 
-            vector<vector<ll>> clusters = cluster_index(index);
+            vector<vector<ull>> clusters = cluster_index(index);
 
             if (!good_clusters(clusters))
                 continue;
@@ -298,7 +298,7 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
 
 
-vector<Translation*> Cas::get_triframe(const string& genome, ll genome_start, ll genome_final, bool pos)
+vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos)
 {
     string domain = genome.substr(genome_start, genome_final - genome_start);
     //domain = pos ? domain : Util::reverse_complement(domain);
@@ -309,7 +309,7 @@ vector<Translation*> Cas::get_triframe(const string& genome, ll genome_start, ll
     }
 
     vector<Translation*> translations;
-    for (ll frame = 0; frame < 3; frame++)
+    for (ull frame = 0; frame < 3; frame++)
 	{
         Translation* translation = new Translation;
         translation->pos = pos;
@@ -320,8 +320,8 @@ vector<Translation*> Cas::get_triframe(const string& genome, ll genome_start, ll
 
 		translation->pure = "";
 
-		ll stop_count = 0;
-		ll index = 0;
+		ull stop_count = 0;
+		ull index = 0;
 		for (char elem : translation->raw )
 		{
 			if (elem == Util::stop_c)
@@ -340,7 +340,7 @@ vector<Translation*> Cas::get_triframe(const string& genome, ll genome_start, ll
     return translations;
 }
 
-vector <Translation*> Cas::get_sixframe(const string& genome, ll genome_start, ll genome_final)
+vector <Translation*> Cas::get_sixframe(const string& genome, ull genome_start, ull genome_final)
 {
     vector<Translation*> sixframe;
 
@@ -360,29 +360,34 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 
 
     std::sort(crisprs.begin(), crisprs.end(), [](Crispr* a, Crispr* b) { return a->genome_start < b->genome_start; });
-    const ll min_translation_size = 20;
-    const ll permitted_translation_overlap = 100;
-    ll prev_final = 0;
+    const ull min_translation_size = 20;
+    const ull permitted_translation_overlap = 100;
+    ull minimum_bound = 0;
     for (Crispr* c : crisprs)
     {
-        ll t_start = c->genome_start - Cas::upstream_size; // normal case
-        ll t_final = c->genome_final + Cas::upstream_size; // normal case
+        ull translation_start;
+        ull translation_final;
 
-        t_start = std::max(t_start, prev_final - permitted_translation_overlap); // previous translation may overlap
+        // normal case
+        translation_start = c->genome_start - Cas::upstream_size;
+        translation_final = c->genome_final + Cas::upstream_size;
 
-        // genome bounds
-        t_start = std::max(t_start, (ll)0);
-        t_final = std::min(t_final, (ll)genome.size() - 1);
+        // guard bounds
+        translation_start = translation_start > c->genome_start ? 0 : translation_start; // underflow
+        translation_final = std::min(translation_final, (ull)genome.size() - 1); // exceeds genome
 
-        ll translation_size = t_final - t_start;
+        // bound the start
+        translation_start = std::max(translation_start, minimum_bound);
 
-        if (translation_size < min_translation_size) continue;
+        // require min size
+        if (translation_final - translation_start < min_translation_size)
+            continue;
 
-        prev_final = t_final;
+        // new bound
+        minimum_bound = translation_final - permitted_translation_overlap;
+        assert(minimum_bound < translation_final); // guard underflow
 
-        // TODO: if the crispr is contained within the translation (it normally will be) then strip it out before computing the translation
-
-        vector<Translation*> six_frame = Cas::get_sixframe(genome, t_start, t_final);
+        vector<Translation*> six_frame = Cas::get_sixframe(genome, translation_start, translation_final);
         for (Translation* t : six_frame) t->reference_crispr = c;
         translations.insert(translations.end(), six_frame.begin(), six_frame.end());
     }

@@ -78,7 +78,7 @@ namespace Util
 		{"GGG", "G"}
 	};
 
-	static const map<char, ui> amino_encoding {
+	static const map<char, kmer> amino_encoding {
 		{'F', 0},
 		{'L', 1},
 		{'I', 2},
@@ -115,17 +115,17 @@ namespace Util
 	//};
 
 
-	ui difference_cpu(const ui& _a, const ui& _b);
+	ui difference_cpu(const kmer& _a, const kmer& _b);
 
 	string translate_domain(const string&);
-	string translate_genome(const string&, ui, ui, bool);
+	string translate_genome(const string&, ull, ull, bool);
 
-	bool any_overlap(ui a_start, ui a_final, ui b_start, ui b_final);
+	bool any_overlap(ull a_start, ull a_final, ull b_start, ull b_final);
 
 
 	template <typename T> void print_vector(vector<T> a)
 	{
-		for (ui i = 0; i < a.size(); i++)
+		for (ull i = 0; i < a.size(); i++)
 		{
 			fmt::print("{}:{}\n", i, a[i]);
 		}
@@ -176,9 +176,9 @@ namespace Util
 		return false;
 	}
 
-	template <typename T> bool contains(const T* target_begin, ll target_size, const T& query)
+	template <typename T> bool contains(const T* target_begin, ull target_size, const T& query)
 	{
-	    for (ll i = 0; i < target_size; i++)
+	    for (ull i = 0; i < target_size; i++)
 		{
 			if (*(target_begin+i) == query)
 				return true;
@@ -220,13 +220,13 @@ namespace Util
 	void reverse_complement(string& seq);
 
 	
-	int mismatch_count(string);
+	ull mismatch_count(string);
 	string seqs_to_fasta(vector<string>);
-	vector<string> kmerize(string, ui);
+	vector<string> kmerize(string seq, ui k);
 
-	ui encode_amino_kmer(const string& kmer);
+	kmer encode_amino_kmer(const string& kmer);
 
-	vector<ui> encode_amino_kmers(vector<string>, ui);
+	vector<kmer> encode_amino_kmers(vector<string> kmers, ull k);
 
     //map<string, string> load_genomes(string dir);
 }

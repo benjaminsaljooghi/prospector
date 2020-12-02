@@ -25,7 +25,7 @@ void Debug::visualize_map(string& genome_path)
 }
 
 
-void Debug::visualize_proximals(map<ui, vector<ui>> proximal_targets, string genome)
+void Debug::visualize_proximals(map<ull, vector<ull>> proximal_targets, string genome)
 {
     for (auto const& [query, proximal] : proximal_targets)
     {
@@ -34,7 +34,7 @@ void Debug::visualize_proximals(map<ui, vector<ui>> proximal_targets, string gen
         {
             // ui query = queries[q_i];
             fmt::print("{}:{}-{}\n", query, genome.substr(query, 16), genome.substr(query + 16, 16));
-            for (ui target : proximal)
+            for (ull target : proximal)
             {
                 // ui qmap_index = q_i * Prospector::map_size_big + t_i;
                 // ui target = query + Prospector::k_start + Prospector::spacer_skip + t_i;
@@ -46,9 +46,9 @@ void Debug::visualize_proximals(map<ui, vector<ui>> proximal_targets, string gen
     exit(0);
 }
 
-// void Debug::debug_clusters(const vector<vector<ll>>& clusters)
+// void Debug::debug_clusters(const vector<vector<ull>>& clusters)
 // {
-//     for (vector<ll> cluster : clusters) 
+//     for (vector<ull> cluster : clusters) 
 //         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 // }
 
@@ -57,18 +57,18 @@ vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string ident
     return Util::filter(profiles, [&](CasProfile* p) {return p->identifier == identifier; });
 }
 
-vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ui start, ui end)
+vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ull start, ull end)
 {
     return Util::filter(crisprs, [&](Crispr* c) { return c->genome_start > start && c->genome_final < end; });
 }
 
-void Debug::genome_substr(const string& genome_path, ui genome_start, ui genome_final)
+void Debug::genome_substr(const string& genome_path, ull genome_start, ull genome_final)
 {
     fmt::print("{}\n", Util::load_genome(genome_path).substr(genome_start, genome_final - genome_start));
     exit(0); 
 }
 
-string Debug::translation_test(const string& genome, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
+string Debug::translation_test(const string& genome, ull genome_start, ull genome_final, bool pos, ull debug_aminos)
 {
     genome_start -= debug_aminos * 3;
     genome_final += debug_aminos * 3;
@@ -83,7 +83,7 @@ string Debug::translation_test(const string& genome, ui genome_start, ui genome_
     return fmt::format("{}--{}--{}", a, b, c);
 }
 
-void Debug::translation_print(const string& genome_path, ui genome_start, ui genome_final, bool pos, ui debug_aminos)
+void Debug::translation_print(const string& genome_path, ull genome_start, ull genome_final, bool pos, ull debug_aminos)
 {
     string genome = Util::load_genome(genome_path);
     string translation = Debug::translation_test(genome, genome_start, genome_final, pos, debug_aminos);
@@ -91,7 +91,7 @@ void Debug::translation_print(const string& genome_path, ui genome_start, ui gen
     exit(0);
 }
 
-void Debug::triframe_print(const string& genome, ui genome_start, ui genome_final, bool pos)
+void Debug::triframe_print(const string& genome, ull genome_start, ull genome_final, bool pos)
 {
     auto triframe = Cas::get_triframe(genome, genome_start, genome_final, pos);
     for (auto translation : triframe)
@@ -102,7 +102,7 @@ void Debug::triframe_print(const string& genome, ui genome_start, ui genome_fina
 }
 
 
-void Debug::cas_detect(const string& genome_path, ui genome_start, ui genome_final, bool pos, CasProfile* profile)
+void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_final, bool pos, CasProfile* profile)
 {
     string genome = Util::load_genome(genome_path);
     Translation* translation = Cas::get_triframe(genome, genome_start, genome_final, pos)[0];
@@ -131,11 +131,11 @@ void Debug::cas_detect(const string& genome_path, ui genome_start, ui genome_fin
 
 
 
-void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ui start, ui end)
+void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull end)
 {
     auto filtered = Debug::crispr_filter(crisprs, start, end);
     Util::sort(filtered, CrisprUtil::heuristic_greater);
-    for (ll i = 0; i < filtered.size(); i++)
+    for (ull i = 0; i < filtered.size(); i++)
         fmt::print("{}\n", filtered[i]->to_string_debug());
     exit(0);
 }
@@ -178,7 +178,7 @@ void Debug::sage_interpreter(string path, string genome_dir)
         }
 
 
-        auto gen_debug_str = [&genome](string kind, ui begin, ui final, string strand) {
+        auto gen_debug_str = [&genome](string kind, ull begin, ull final, string strand) {
             auto a = genome.substr(begin, final - begin);
 
             auto b = kind == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
@@ -195,8 +195,8 @@ void Debug::sage_interpreter(string path, string genome_dir)
 
         if (split[0] != "")
         {
-            ui g_begin = stoi(split[0]);
-            ui g_final = stoi(split[1]);
+            ull g_begin = std::stoull(split[0]);
+            ull g_final = std::stoull(split[1]);
             string g_strand = split[2];
             string kind = split[3];
             string str = gen_debug_str(kind, g_begin, g_final, g_strand);
@@ -209,8 +209,8 @@ void Debug::sage_interpreter(string path, string genome_dir)
 
         if (split[5] != "")
         {
-            ui t_begin = stoi(split[5]);
-            ui t_final = stoi(split[6]);
+            ull t_begin = stoull(split[5]);
+            ull t_final = stoull(split[6]);
             string t_strand = split[7];
             string kind = split[8];
             auto str = gen_debug_str(kind, t_begin, t_final, t_strand);

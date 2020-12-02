@@ -1,14 +1,14 @@
 #include "array_discovery.h"
 
 
-vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
+vector<ull> get_candidate_queries(unsigned char* qmap, ull genome_encoding_size)
 {
-    vector<ui> query_indices;
+    vector<ull> query_indices;
     static const ui tolerance = Prospector::size / Prospector::repeat_tolerance_ratio;
-    for (ui query_index = 0; query_index < genome_encoding_size - 200; query_index++)
+    for (ull query_index = 0; query_index < genome_encoding_size - 200; query_index++)
     {
-        ui ting = query_index * Prospector::map_size_small;
-        for (ui i = 0; i < Prospector::map_size_small; i++)
+        ull ting = query_index * Prospector::map_size_small;
+        for (ull i = 0; i < Prospector::map_size_small; i++)
         {
             if (qmap[ting + i] <= tolerance)
             {
@@ -21,7 +21,7 @@ vector<ui> get_candidate_queries(unsigned char* qmap, ui genome_encoding_size)
 }
 
 
-bool Array::mutant(const char* genome, ui* genome_encoding, ui k, ui i, ui j, ui repeat_tolerance_ratio)
+bool Array::mutant(const char* genome, kmer* genome_encoding, ui k, ull i, ull j, ui repeat_tolerance_ratio)
 {
     ui allowed_mutations = k / repeat_tolerance_ratio;
 
@@ -58,19 +58,19 @@ vector<Crispr*> prospector_main(string& genome)
 {
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
     uc* qmap = Prospector::get_qmap_small(encoding.d, encoding.size);
-    vector<ui> query_indices = get_candidate_queries(qmap, encoding.size);
-    map<ui, bool> consumed; for (ui query : query_indices) consumed[query] = false;
+    vector<ull> query_indices = get_candidate_queries(qmap, encoding.size);
+    map<ull, bool> consumed; for (ull query : query_indices) consumed[query] = false;
     
     vector<Crispr*> all_crisprs;
-    for (ui query : query_indices)
+    for (ull query : query_indices)
     {
         if (consumed[query])
             continue;
 
         for (ui k = Prospector::k_start; k < Prospector::k_end; k++) 
         {
-            vector<ui> proximals{ query };
-            ui target = query + k + Prospector::spacer_min;
+            vector<ull> proximals{ query };
+            ull target = query + k + Prospector::spacer_min;
 
             while (++target - ( proximals[proximals.size()-1] + k) <= Prospector::spacer_max && target + k < genome.size())
             {
@@ -93,8 +93,8 @@ vector<Crispr*> prospector_main(string& genome)
             if (proximals.size() >= Prospector::repeats_min && proximals.size() < 500 && proximals[proximals.size()-1] > proximals[0])
             {
                 // perform expansion
-                ui __query;
-                ui __target;
+                ull __query;
+                ull __target;
 
                 // forward
                 __query = proximals[proximals.size() - 1];

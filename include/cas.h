@@ -19,14 +19,14 @@ namespace fs = std::filesystem;
 struct Translation
 {
     Crispr* reference_crispr;
-    ui genome_start;
-    ui genome_final;
+    ull genome_start;
+    ull genome_final;
     bool pos;
     string raw;
     string pure;
     vector<string> pure_kmerized;
-    vector<ui> pure_kmerized_encoded;
-    vector<ll> pure_mapping;
+    vector<kmer> pure_kmerized_encoded;
+    vector<ull> pure_mapping;
 };
 
 struct Fragment
@@ -37,15 +37,15 @@ struct Fragment
     Translation* reference_translation;
     CasProfile* reference_profile;
 
-    vector<vector<ll>> clusters;
-    ll clust_begin;
-    ll clust_final;
+    vector<vector<ull>> clusters;
+    ull clust_begin;
+    ull clust_final;
 
-    ll genome_begin;
-    ll genome_final;
+    ull genome_begin;
+    ull genome_final;
 
-    ll expanded_genome_begin;
-    ll expanded_genome_final;
+    ull expanded_genome_begin;
+    ull expanded_genome_final;
 
     string to_string_debug()
     {
@@ -57,8 +57,8 @@ struct Fragment
 
         string amino_buffer;
 
-        ui begin_discrepant = (genome_begin - expanded_genome_begin);
-        ui final_discpreant = (expanded_genome_final - genome_final);
+        ull begin_discrepant = (genome_begin - expanded_genome_begin);
+        ull final_discpreant = (expanded_genome_final - genome_final);
 
         dna_gene.insert(begin_discrepant, "-");
         amino_gene.insert(begin_discrepant / 3, "-");
@@ -81,7 +81,7 @@ struct MultiFragment : public Locus
 {
     vector<Fragment*> fragments;
 
-    ui get_start()
+    ull get_start()
     {
         return fragments[0]->expanded_genome_begin;
     }
@@ -104,10 +104,10 @@ struct MultiFragment : public Locus
     {
         std::string result;
         
-        ui min = fragments[0]->expanded_genome_begin;
-        ui max = fragments[0]->expanded_genome_final;
+        ull min = fragments[0]->expanded_genome_begin;
+        ull max = fragments[0]->expanded_genome_final;
 
-        for (ui i = 1; i < fragments.size(); i++)
+        for (ull i = 1; i < fragments.size(); i++)
         {
             if (fragments[i]->expanded_genome_begin < min)
                 min = fragments[i]->expanded_genome_begin;
@@ -166,12 +166,12 @@ struct MultiFragment : public Locus
 
 namespace Cas
 {
-    static const ui upstream_size = 20000;
-    static const ui cluster_metric_min = 15;
-    static const ui max_inter_cluster_dist = 2;
+    static const ull upstream_size = 20000;
+    static const ull cluster_metric_min = 15;
+    static const ull max_inter_cluster_dist = 2;
 
-    vector<Translation*> get_triframe(const string& genome, ll genome_start, ll genome_final, bool pos);
-    vector<Translation*> get_sixframe(const string& genome, ll genome_start, ll genome_final);
+    vector<Translation*> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);
+    vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);
     vector<Translation*> crispr_proximal_translations(const string& genome, vector<Crispr*>&);
     vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
 }

@@ -3,34 +3,36 @@
 
 typedef long long ll;
 typedef unsigned int ui;
+typedef unsigned int kmer;
 //typedef signed long int li;
+typedef unsigned long long ull;
 typedef unsigned char uc;
 
 namespace Prospector
 {
     static const ui k_start = 20;
     static const ui k_end = 60;
-    static const ui k_count = (k_end - k_start);
-    static const ui spacer_min =  21;
-    static const ui spacer_max = 72;
-    static const ui spacer_skip = (spacer_min - 1);
-    static const ui repeats_min = 3;
-    static const ui size = 16;
-    static const ui map_size_small = 64;
-    static const ui bits = 2;
-    static const ui repeat_tolerance_ratio = 10; // lower is more sensitive
-    static const ui repeat_tolerance_ratio_sensitive = 4; // lower is more sensitive
+    static const ull k_count = (k_end - k_start);
+    static const ull spacer_min =  21;
+    static const ull spacer_max = 72;
+    static const ull spacer_skip = (spacer_min - 1);
+    static const ull repeats_min = 3;
+    static const ull size = 16;
+    static const ull map_size_small = 64;
+    static const ull bits = 2;
+    static const ull repeat_tolerance_ratio = 10; // lower is more sensitive
+    static const ull repeat_tolerance_ratio_sensitive = 4; // lower is more sensitive
 
     struct Encoding {
-        ui* h;
-        ui* d;
-        ui size;
-        ui bytes;
+        kmer* h;
+        kmer* d;
+        ull size;
+        ull bytes;
     };
 
     void device_init();
-    Encoding get_genome_encoding(const char*, const ui);
-    uc* get_qmap_small(const ui*, const ui);
+    Encoding get_genome_encoding(const char*, const ull);
+    uc* get_qmap_small(const kmer* encoding, const ull encoding_size);
 
     void free_encoding(Encoding);
 }

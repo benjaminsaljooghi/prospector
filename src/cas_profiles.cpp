@@ -43,7 +43,7 @@ vector<CasProfile*> CasProfileUtil::load_profiles(std::filesystem::path director
 }
 
 // serialization
-CasProfile* profile_factory(string id, vector<string> sequences, ll k)
+CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 {
 	CasProfile* profile = new CasProfile;
 	profile->identifier = id;
@@ -54,7 +54,7 @@ CasProfile* profile_factory(string id, vector<string> sequences, ll k)
 		seq.erase(remove(seq.begin(), seq.end(), '-'), seq.end());
 		transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
-		for (ll i = 0; i < seq.size() - k + 1; i++)
+		for (ull i = 0; i < seq.size() - k + 1; i++)
 		{
 			string kmer = seq.substr(i, k);
 
@@ -74,7 +74,7 @@ void filter_pfam(std::map<string, string>& domain_map, std::filesystem::path pfa
 	ifstream input(pfam_full);
 	ofstream output(pfam_filt);
 	if (!input.good())
-		throw runtime_error(strerror(errno));
+		throw runtime_error("input not good!");
 
 	auto non_seq = [](string& line) {
 		return
@@ -148,7 +148,7 @@ vector<CasProfile*> profiles_from_processed_pfam(std::filesystem::path path)
 	ifstream input(path);
 
 	if (!input.good())
-		throw runtime_error(strerror(errno));
+		throw runtime_error("input not good!");
 
 	vector<CasProfile*> profiles;
 	string line;
@@ -172,7 +172,7 @@ vector<CasProfile*> profiles_from_tigrfam_dir(std::map<string, string> domain_ma
 	auto stockholm_to_profile = [](std::filesystem::path stockholm) {
 		ifstream file(stockholm);
 		if (!file.good())
-			throw runtime_error(strerror(errno));
+			throw runtime_error("input not good!");
 
 		std::unordered_set<char> skip{ '#', '/' };
 

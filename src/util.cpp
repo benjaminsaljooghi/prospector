@@ -34,9 +34,9 @@ ui Util::difference_cpu(const ui& _a, const ui& _b)
 
 string Util::translate_domain(const string& domain)
 {
-	ll codon_size = 3;
+	ull codon_size = 3;
 	string raw = "";
-	for (ll i = 0; i + codon_size < domain.size(); i += codon_size)
+	for (ull i = 0; i + codon_size < domain.size(); i += codon_size)
 	{
 		string codon = domain.substr(i, codon_size);
 		string amino_acid = codon_table.at(codon);
@@ -45,7 +45,7 @@ string Util::translate_domain(const string& domain)
 	return raw;
 }
 
-string Util::translate_genome(const string& genome, ui genome_begin, ui genome_final, bool pos)
+string Util::translate_genome(const string& genome, ull genome_begin, ull genome_final, bool pos)
 {
 	string domain = genome.substr(genome_begin, genome_final - genome_begin);
 	if (!pos)
@@ -55,7 +55,7 @@ string Util::translate_genome(const string& genome, ui genome_begin, ui genome_f
 	return Util::translate_domain(domain);
 }
 
-bool Util::any_overlap(ui a_start, ui a_final, ui b_start, ui b_final)
+bool Util::any_overlap(ull a_start, ull a_final, ull b_start, ull b_final)
 {
 	bool a_before_b = a_start <= b_start;
 	bool b_before_a = b_start <= a_start;
@@ -75,7 +75,7 @@ string Util::load_genome(std::filesystem::path path)
 	ifstream input(path);
 	if (!input.good())
 	{
-		throw runtime_error(strerror(errno));
+		throw runtime_error("input not good!");
 	}
 
 
@@ -131,7 +131,7 @@ string Util::load_genome(std::filesystem::path path)
 //	ifstream input(file_path);
 //	if (!input.good())
 //	{
-//		throw runtime_error(strerror(errno));
+//		throw runtime_error("input not good!");
 //	}
 //
 //	map<string, string> seqs;
@@ -209,15 +209,15 @@ void Util::reverse_complement(string& seq)
 }
 
 
-int Util::mismatch_count (string repeat)
+ull Util::mismatch_count (string repeat)
 {
-	int _count = 0;
+	ull _count = 0;
 
-	ll k = repeat.size();
-    unsigned int start_index = 0;
-	unsigned int end_index = start_index + repeat.size() - 1;
+	ull k = repeat.size();
+    ull start_index = 0;
+	ull end_index = start_index + repeat.size() - 1;
 
-	for (ll i = 0; i < k/2; i++)
+	for (ull i = 0; i < k/2; i++)
 	{
 		char upstream = repeat[start_index + i];
 		char downstream = repeat[end_index - i];
@@ -229,7 +229,7 @@ int Util::mismatch_count (string repeat)
 string Util::seqs_to_fasta (vector <string> seqs)
 {
     ostringstream string_stream;
-    for (ll i = 0; i < seqs.size(); i++)
+    for (ull i = 0; i < seqs.size(); i++)
     {
         string_stream << ">" << i << endl;
         string_stream << seqs[i] << endl;  
@@ -240,26 +240,26 @@ string Util::seqs_to_fasta (vector <string> seqs)
 vector <string> Util::kmerize (string seq, ui k)
 {
 	vector<string> kmers;
-	for (ui i = 0; i < seq.length() - k + 1; i++)
+	for (ull i = 0; i < seq.length() - k + 1; i++)
 		kmers.push_back(seq.substr(i, k));
 	return kmers;
 }
 
-ui Util::encode_amino_kmer(const string& kmer)
+kmer Util::encode_amino_kmer(const string& seq)
 {
-	ll k = kmer.size();
-	ui encoded = 0;
+	ull k = seq.size();
+	kmer encoded = 0;
 	for (ui i = 0; i < k; i++)
-		encoded += Util::amino_encoding.at(kmer[i]) << k * i;
+		encoded += Util::amino_encoding.at(seq[i]) << k * i;
 	return encoded;
 }
 
-vector<ui> Util::encode_amino_kmers(vector<string> kmers, ui k)
+vector<kmer> Util::encode_amino_kmers(vector<string> kmers, ull k)
 {
 	assert(kmers[0].size() == k);
-	vector<ui> encoded(kmers.size());
-	memset(&encoded[0], 0, sizeof(ui) * kmers.size());
-	for (ui j = 0; j < kmers.size(); j++)
+	vector<kmer> encoded(kmers.size());
+	memset(&encoded[0], 0, sizeof(kmer) * kmers.size());
+	for (ull j = 0; j < kmers.size(); j++)
 		encoded[j] = encode_amino_kmer(kmers[j]);
 	return encoded;
 }

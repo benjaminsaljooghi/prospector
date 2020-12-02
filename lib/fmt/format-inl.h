@@ -58,7 +58,7 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 #  define FMT_SNPRINTF fmt_snprintf
 #endif  // _MSC_VER
 
-// A portable thread-safe version of strerror.
+// A portable thread-safe version of strerror_s.
 // Sets buffer to point to a string describing the error code.
 // This can be either a pointer to a string stored in buffer,
 // or a pointer to some static immutable string.
@@ -111,10 +111,10 @@ inline int safe_strerror(int error_code, char*& buffer,
     }
 
 #if !FMT_MSC_VER
-    // Fallback to strerror if strerror_r and strerror_s are not available.
+    // Fallback to strerror_s if strerror_r and strerror_s are not available.
     int fallback(detail::null<>) {
       errno = 0;
-      buffer_ = strerror(error_code_);
+      buffer_ = strerror_s(error_code_);
       return errno;
     }
 #endif
