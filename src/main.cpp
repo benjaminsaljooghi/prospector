@@ -165,7 +165,10 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     {
 
         if (CasProfileUtil::domain_table_contains(f->reference_profile->identifier))
+        {
             filtered_fragments.push_back(f);
+        }
+            
     }
 
 
@@ -183,8 +186,16 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
             //fmt::print("multifragment comparison {}\n", j);
             //if (filtered_fragments[i]->expanded_genome_begin == filtered_fragments[j]->expanded_genome_begin &&
                 //filtered_fragments[i]->expanded_genome_final == filtered_fragments[j]->expanded_genome_final)
-            if (Util::any_overlap(filtered_fragments[i]->genome_begin, filtered_fragments[i]->genome_final,
-                                    filtered_fragments[j]->genome_begin, filtered_fragments[j]->genome_final))
+
+            bool any_overlap = Util::any_overlap(filtered_fragments[i]->genome_begin, filtered_fragments[i]->genome_final,
+                                                filtered_fragments[j]->genome_begin, filtered_fragments[j]->genome_final);
+
+            string first = CasProfileUtil::domain_table_fetch(filtered_fragments[i]->reference_profile->identifier);
+            string second = CasProfileUtil::domain_table_fetch(filtered_fragments[j]->reference_profile->identifier);
+
+            bool domain_overlap = (first.find(second) != string::npos) || (second.find(first) != string::npos);
+
+            if (any_overlap && domain_overlap)
             {
                 multifragment->fragments.push_back(filtered_fragments[j]);
                 i = j;
@@ -201,7 +212,6 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
     std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
-
 
     std::vector<Locus*> loci;
 
@@ -238,37 +248,29 @@ void assert_file(std::filesystem::path path)
 }
 
 
-
-
 void run()
 {
-    assert_file(Path::domain_map_path);
-    assert_file(Path::type_table_path);
-    assert_file(Path::serialization_dir);
-    assert_file(Path::genome_dir);
-    assert_file(Path::results_dir);
-
-    CasProfileUtil::load_domain_map(Path::domain_map_path);
-    // CasProfileUtil::serialize(Path::serialization_dir, Path::cog_dir);
-
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Path::serialization_dir);
-
     Prospector::device_init();
-
-    // unordered_set<string> interest{ "GCF_002355995.1_ASM235599v1_genomic.fna" };
-
+    unordered_set<string> interest{ "GCF_000024165.1_ASM2416v1_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Path::genome_dir))
     {
         string filename = entry.path().filename().string();
-        // if (interest.contains(filename))
-        prospect_genome(profiles, entry);
+        if (interest.contains(filename))
+            prospect_genome(profiles, entry);
     }
 }
 
 int main()
 {
     auto start_main = time();
-    run();
+    assert_file(Path::domain_map_path);
+    assert_file(Path::type_table_path);
+    assert_file(Path::serialization_dir);
+    assert_file(Path::genome_dir);
+    assert_file(Path::results_dir);
+    CasProfileUtil::load_domain_map(Path::domain_map_path);    run();
+    // CasProfileUtil::serialize(Path::serialization_dir, Path::cog_dir);
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }

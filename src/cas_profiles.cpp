@@ -204,7 +204,7 @@ vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
 
 	for (const auto& entry : std::filesystem::directory_iterator(cog_dir))
 	{
-		string identifier = entry.path().filename().string();
+		string identifier = entry.path().stem().string();
 
 		if (!domain_map.contains(identifier))
 			continue;
