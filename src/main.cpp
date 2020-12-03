@@ -142,11 +142,15 @@ namespace Path
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
     std::filesystem::path results_path = Path::results_dir / genome_path.stem();
-    if (std::filesystem::exists(results_path))
-    {
-        fmt::print("skipping {} because results dir exists\n", genome_path.string());
-        return;
-    }
+    // if (std::filesystem::exists(results_path))
+    // {
+        // fmt::print("skipping {} because results dir exists\n", genome_path.string());
+        // return;
+    // }
+
+    Debug::sage_interpreter("T:\\prospector-util\\report_align.tsv", Path::genome_dir);
+    exit(0);	
+
 
     fmt::print("\n\n");
 
@@ -200,10 +204,6 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
                 multifragment->fragments.push_back(filtered_fragments[j]);
                 i = j;
             }
-            //else
-            //{
-                //break;
-            //}
         }
 
         multifragments.push_back(multifragment);
@@ -269,8 +269,10 @@ int main()
     assert_file(Path::serialization_dir);
     assert_file(Path::genome_dir);
     assert_file(Path::results_dir);
-    CasProfileUtil::load_domain_map(Path::domain_map_path);    run();
+    CasProfileUtil::load_domain_map(Path::domain_map_path);    
+    run();
     // CasProfileUtil::serialize(Path::serialization_dir, Path::cog_dir);
+
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }

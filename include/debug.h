@@ -30,6 +30,6 @@ namespace Debug
 	
 	void genome_substr(const string& genome_path, ull genome_start, ull genome_final);
 
-	void sage_interpreter(string path, string genome_dir);
+	void sage_interpreter(std::filesystem::path path, std::filesystem::path genome_dir);
 }
 

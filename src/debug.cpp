@@ -142,17 +142,22 @@ void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull star
 
 
 
-void Debug::sage_interpreter(string path, string genome_dir)
+void Debug::sage_interpreter(std::filesystem::path path, std::filesystem::path genome_dir)
 {
     std::ifstream in(path);
+
+	if (!in.good())
+		throw runtime_error("input not good!");
+    
+    
     string line;
     string genome_accession = "";
     string genome = "";
-    std::ofstream sage_interpretation("sage_interpretation.txt");
+    std::ofstream sage_interpretation("T:\\prospector-util\\sage_interpretation.txt");
 
     while (std::getline(in, line))
     {
-        if (line[0] == '-')
+        if (line == "" || line[0] == '-')
         {
             continue;
         }
@@ -193,12 +198,12 @@ void Debug::sage_interpreter(string path, string genome_dir)
         };
 
 
-        if (split[0] != "")
+        if (split[1] != "")
         {
-            ull g_begin = std::stoull(split[0]);
-            ull g_final = std::stoull(split[1]);
-            string g_strand = split[2];
-            string kind = split[3];
+            ull g_begin = std::stoull(split[1]);
+            ull g_final = std::stoull(split[2]);
+            string g_strand = split[3];
+            string kind = split[4];
             string str = gen_debug_str(kind, g_begin, g_final, g_strand);
             sage_interpretation << fmt::format("ground:\n{}\n", str);
         }
@@ -207,12 +212,12 @@ void Debug::sage_interpreter(string path, string genome_dir)
             sage_interpretation << "ground:\nno data\n";
         }
 
-        if (split[5] != "")
+        if (split[6] != "")
         {
-            ull t_begin = stoull(split[5]);
-            ull t_final = stoull(split[6]);
-            string t_strand = split[7];
-            string kind = split[8];
+            ull t_begin = stoull(split[6]);
+            ull t_final = stoull(split[7]);
+            string t_strand = split[8];
+            string kind = split[9];
             auto str = gen_debug_str(kind, t_begin, t_final, t_strand);
             sage_interpretation << fmt::format("target:\n{}\n", str);
         }
