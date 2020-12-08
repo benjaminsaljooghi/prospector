@@ -18,12 +18,9 @@ void Debug::visualize_map(string& genome_path)
 
         if (mutant)
             fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);
-        
-
     }
     exit(0);
 }
-
 
 void Debug::visualize_proximals(map<ull, vector<ull>> proximal_targets, string genome)
 {
@@ -101,7 +98,6 @@ void Debug::triframe_print(const string& genome, ull genome_start, ull genome_fi
     //return triframe;
 }
 
-
 void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_final, bool pos, CasProfile* profile)
 {
     string genome = Util::load_genome(genome_path);
@@ -129,8 +125,6 @@ void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_f
         fmt::print("{}\n", fragments[i]->to_string_debug());
 }
 
-
-
 void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull end)
 {
     auto filtered = Debug::crispr_filter(crisprs, start, end);
@@ -142,36 +136,65 @@ void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull star
 
 
 
-void Debug::sage_interpreter(std::filesystem::path path, std::filesystem::path genome_dir)
+
+void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::path genome_dir)
 {
     std::ifstream in(path);
 
 	if (!in.good())
 		throw runtime_error("input not good!");
-    
-    
+        
     string line;
     string genome_accession = "";
     string genome = "";
-    std::ofstream sage_interpretation("T:\\prospector-util\\sage_interpretation.txt");
+    std::ofstream interpretation("T:\\prospector-util\\cartograph_interpretation.txt");
+
+
+    auto gen_debug_str = [&genome](string domains, string signals, ull begin, ull final, string strand) {
+        auto a = genome.substr(begin, final - begin);
+        auto b = domains == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
+
+        std::ostringstream stream;
+        stream << fmt::format("\t{}\t{}\t{}..{}\t{}\n", domains, signals, begin, final, strand);
+        stream << "\t" << a << "\n";
+        stream << "\t" << b << "\n";
+        return stream.str();
+    };
+
+    auto gen_ground_str = [&](std::vector<string> split) {
+        ull begin = std::stoull(split[1]);
+        ull final = std::stoull(split[2]);
+        string strand = split[3];
+        string domains = split[4];
+        string signals = split[5];
+        return gen_debug_str(domains, signals, begin, final, strand);
+    };
+
+    auto gen_target_str = [&](std::vector<string> split) {
+        ull begin = std::stoull(split[6]);
+        ull final = std::stoull(split[7]);
+        string strand = split[8];
+        string domains = split[9];
+        string signals = split[10];
+        return gen_debug_str(domains, signals, begin, final, strand);
+    };
 
     while (std::getline(in, line))
     {
         if (line == "" || line[0] == '-')
-        {
             continue;
-        }
 
         auto split = Util::parse(line, "\t");
+        string alignment_type = split[0];        
 
-        if (split[0] == "===")
+        if (alignment_type == "===")
         {
             genome_accession = split[1];
-
+            interpretation << fmt::format("=== {}\n", genome_accession);
+            
             for (const auto& entry : filesystem::directory_iterator(genome_dir))
             {
                 string genome_path = entry.path().string();
-
                 if (genome_path.find(genome_accession) != string::npos)
                 {
                     genome = Util::load_genome(genome_path);
@@ -179,55 +202,32 @@ void Debug::sage_interpreter(std::filesystem::path path, std::filesystem::path g
                 }
             }
 
-            continue;
         }
 
-
-        auto gen_debug_str = [&genome](string kind, ull begin, ull final, string strand) {
-            auto a = genome.substr(begin, final - begin);
-
-            auto b = kind == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
-
-            std::ostringstream stream;
-
-            stream << fmt::format("\t{}\t{}..{}\t{}\n", kind, begin, final, strand);
-            stream << "\t" << a << "\n";
-            stream << "\t" << b << "\n";
-
-            return stream.str();
-        };
-
-
-        if (split[1] != "")
+        if (alignment_type == "<")
         {
-            ull g_begin = std::stoull(split[1]);
-            ull g_final = std::stoull(split[2]);
-            string g_strand = split[3];
-            string kind = split[4];
-            string str = gen_debug_str(kind, g_begin, g_final, g_strand);
-            sage_interpretation << fmt::format("ground:\n{}\n", str);
+            interpretation << "ground only:\n";
+            interpretation << gen_ground_str(split);
         }
-        else
+        
+        if (alignment_type == ">")
         {
-            sage_interpretation << "ground:\nno data\n";
+            interpretation << "target only:\n";
+            interpretation << gen_target_str(split);
         }
 
-        if (split[6] != "")
+        if (alignment_type == "!")
         {
-            ull t_begin = stoull(split[6]);
-            ull t_final = stoull(split[7]);
-            string t_strand = split[8];
-            string kind = split[9];
-            auto str = gen_debug_str(kind, t_begin, t_final, t_strand);
-            sage_interpretation << fmt::format("target:\n{}\n", str);
-        }
-        else
-        {
-            sage_interpretation << "target:\nno data\n";
+
         }
 
-        sage_interpretation << "\n\n";
+        if (alignment_type == "$")
+        {
+
+        }
+
+        interpretation << "\n\n";
     }
 
-    sage_interpretation.close();
+    interpretation.close();
 }

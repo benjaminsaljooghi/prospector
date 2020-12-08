@@ -129,13 +129,10 @@ namespace Path
     // required small data
     std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
     std::filesystem::path type_table_path = "T:/prospector-util/cas/typing.tsv";
-    std::filesystem::path results_dir = "T:/prospector-util/results/";
+    std::filesystem::path results_dir = "T:/prospector-util/results_prosp/";
 
-    // profile generation (dev only)
-	std::filesystem::path pfam_full = "T:/data/seed/Pfam-A.full";
-	std::filesystem::path pfam_filt = "T:/data/seed/Pfam-A.filt";
-	std::filesystem::path tigrfam_dir = "T:/data/seed/TIGRFAMs_13.0_SEED";
-    std::filesystem::path cog_dir = "T:/data/seed/COG/";
+    // debug (dev only)
+    std::filesystem::path cartograph_prosp = "T:/prospector-util/cartograph_prosp.tsv";
 }
 
 
@@ -148,8 +145,8 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         // return;
     // }
 
-    Debug::sage_interpreter("T:\\prospector-util\\report_align.tsv", Path::genome_dir);
-    exit(0);	
+    // Debug::sage_interpreter("T:\\prospector-util\\report_align.tsv", Path::genome_dir);
+    // exit(0);	
 
 
     fmt::print("\n\n");
@@ -252,11 +249,11 @@ void run()
 {
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Path::serialization_dir);
     Prospector::device_init();
-    unordered_set<string> interest{ "GCF_000024165.1_ASM2416v1_genomic.fna" };
+    // unordered_set<string> interest{ "GCF_000024165.1_ASM2416v1_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Path::genome_dir))
     {
         string filename = entry.path().filename().string();
-        if (interest.contains(filename))
+        // if (interest.contains(filename))
             prospect_genome(profiles, entry);
     }
 }
@@ -270,8 +267,10 @@ int main()
     assert_file(Path::genome_dir);
     assert_file(Path::results_dir);
     CasProfileUtil::load_domain_map(Path::domain_map_path);    
-    run();
-    // CasProfileUtil::serialize(Path::serialization_dir, Path::cog_dir);
+
+    // run();
+    // CasProfileUtil::serialize();
+    Debug::cartograph_interpreter(Path::cartograph_prosp, Path::genome_dir);
 
     start_main = time(start_main, "main");
     return 0;                                                                                                           
