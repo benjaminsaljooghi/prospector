@@ -122,17 +122,20 @@
 
 namespace Path
 {
+    std::filesystem::path data_root = "/home/ben/crispr/data/";
+    std::filesystem::path util_root = "/home/ben/crispr/prospector-util/";
+
     // required big data
-    std::filesystem::path serialization_dir = "T:/data/profiles/";
-    std::filesystem::path genome_dir = "T:/data/genome/assembly/";
+    std::filesystem::path serialization_dir = data_root / "profiles/";
+    std::filesystem::path genome_dir = data_root / "genome/assembly/";
 
     // required small data
-    std::filesystem::path domain_map_path = "T:/prospector-util/cas/domain_map.tsv";
-    std::filesystem::path type_table_path = "T:/prospector-util/cas/typing.tsv";
-    std::filesystem::path results_dir = "T:/prospector-util/results_prosp/";
+    std::filesystem::path domain_map_path = util_root / "cas/domain_map.tsv";
+    std::filesystem::path type_table_path = util_root / "cas/typing.tsv";
+    std::filesystem::path results_dir = util_root / "results_prosp/";
 
     // debug (dev only)
-    std::filesystem::path cartograph_prosp = "T:/prospector-util/cartograph_prosp.tsv";
+    std::filesystem::path cartograph_prosp = util_root / "cartograph_prosp.tsv";
 }
 
 
@@ -164,12 +167,10 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
     for (Fragment* f : fragments)
     {
-
         if (CasProfileUtil::domain_table_contains(f->reference_profile->identifier))
         {
             filtered_fragments.push_back(f);
-        }
-            
+        }            
     }
 
 
@@ -248,7 +249,13 @@ void assert_file(std::filesystem::path path)
 void run()
 {
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Path::serialization_dir);
+
+
+    for (size_t i = 0; i < profiles.size(); i++)
+        fmt::print("loaded: {}\n", profiles[i]->identifier);
+
     Prospector::device_init();
+
     // unordered_set<string> interest{ "GCF_000024165.1_ASM2416v1_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Path::genome_dir))
     {
@@ -268,9 +275,9 @@ int main()
     assert_file(Path::results_dir);
     CasProfileUtil::load_domain_map(Path::domain_map_path);    
 
-    // run();
+    run();
     // CasProfileUtil::serialize();
-    Debug::cartograph_interpreter(Path::cartograph_prosp, Path::genome_dir);
+    // Debug::cartograph_interpreter(Path::cartograph_prosp, Path::genome_dir);
 
     start_main = time(start_main, "main");
     return 0;                                                                                                           
