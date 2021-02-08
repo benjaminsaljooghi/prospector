@@ -99,7 +99,6 @@ string Util::load_genome(std::filesystem::path path)
 
 		if (line.empty() || line[0] == '>')
 		{
-
 			//content.erase(std::remove(content.begin(), content.end(), 'N'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'R'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'Y'), content.end());
@@ -107,18 +106,13 @@ string Util::load_genome(std::filesystem::path path)
 			//content.erase(std::remove(content.begin(), content.end(), 'W'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'M'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'S'), content.end());
-
-			content.erase(std::remove_if(content.begin(), content.end(),
-				[](char c) {
-					return !(c == 'A' || c == 'C' || c == 'G' || c == 'T');
-				}));
-
+			content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
 			return content;
-
 		}
 
 		check_line(line);
 		content += line;
+		// fmt::print("hello world\n");
 	}
 
 	assert(false);
