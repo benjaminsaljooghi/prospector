@@ -142,7 +142,7 @@ vector<CasProfile*> generate_pfams(std::filesystem::path pfam_full, std::filesys
 
     for (const auto& entry : std::filesystem::directory_iterator(dir))
 	{
-		ifstream raw(entry);
+		ifstream raw(entry.path().string());
 
 		if (!raw.good())
 			throw runtime_error("input not good!");
@@ -222,12 +222,13 @@ vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
 }
 
 
+std::filesystem::path data_root = "/home/ben/crispr/data/";
 
-std::filesystem::path serialization_dir = "T:/data/profiles/"; // duplicated in main
-std::filesystem::path pfam_full = "T:/data/seed/Pfam-A.full/Pfam-A.full";
-std::filesystem::path pfam_dir = "T:/data/seed/PFAMS";
-std::filesystem::path tigrfam_dir = "T:/data/seed/TIGRFAMs_13.0_SEED";
-std::filesystem::path cog_dir = "T:/data/seed/COG/";
+std::filesystem::path serialization_dir = data_root / "profiles/"; // duplicated in main
+std::filesystem::path pfam_full = data_root / "seed/Pfam-A.full/Pfam-A.full";
+std::filesystem::path pfam_dir = data_root / "seed/PFAMS";
+std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_13.0_SEED";
+std::filesystem::path cog_dir = data_root / "seed/cog/";
 void CasProfileUtil::serialize()
 {	
 	auto serialize_profile = [&](CasProfile* profile) {
@@ -236,11 +237,11 @@ void CasProfileUtil::serialize()
 		profile->hash_table.dump(archive);
 	};
 
-	auto profiles_pfam = generate_pfams(pfam_full, pfam_dir);
-	// auto profiles_tigrfams = generate_tigrfams(Path::tigrfam_dir);
-	// auto profiles_cog = generate_cogs(cog_dir);
+	// auto profiles_pfam = generate_pfams(pfam_full, pfam_dir);
+	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
+	auto profiles_cog = generate_cogs(cog_dir);
 
 	// std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize);
 	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize);
-	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
