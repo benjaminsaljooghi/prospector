@@ -163,7 +163,7 @@ vector<CasProfile*> generate_pfams(std::filesystem::path pfam_full, std::filesys
 
 vector<CasProfile*> generate_tigrfams(std::filesystem::path tigr_dir)
 {
-	auto stockholm_to_profile = [](std::filesystem::path stockholm) {
+	auto stockholm_to_profile = [](std::filesystem::path stockholm, string identifier) {
 		ifstream file(stockholm);
 		if (!file.good())
 			throw runtime_error("input not good!");
@@ -181,17 +181,25 @@ vector<CasProfile*> generate_tigrfams(std::filesystem::path tigr_dir)
 			sequences.push_back(sequence);
 		}
 
-		return profile_factory(stockholm.filename().string(), sequences, CasProfileUtil::k);
+		return profile_factory(identifier, sequences, CasProfileUtil::k);
 	};
 
 	vector<CasProfile*> profiles;
 
 	for (const auto& entry : std::filesystem::directory_iterator(tigr_dir))
 	{
-		if (!domain_map.contains(entry.path().filename().string()))
+
+		string identifier = entry.path().filename().string();
+
+		if (identifier.ends_with(".SEED"))
+			identifier = identifier.substr(0, 9);
+
+		if (!domain_map.contains(identifier))
 			continue;
 
-		profiles.push_back(stockholm_to_profile(entry.path()));
+		CasProfile* profile = stockholm_to_profile(entry.path(), identifier);
+		profiles.push_back(profile);
+		fmt::print("built: {}\n", profile->identifier);
 		fmt::print("{} tigrfam profiles built\n", profiles.size());
 	}
 	return profiles;
@@ -227,7 +235,7 @@ std::filesystem::path data_root = "/home/ben/crispr/data/";
 std::filesystem::path serialization_dir = data_root / "profiles/"; // duplicated in main
 std::filesystem::path pfam_full = data_root / "seed/Pfam-A.full/Pfam-A.full";
 std::filesystem::path pfam_dir = data_root / "seed/PFAMS";
-std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_13.0_SEED";
+std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_14.0_SEED";
 std::filesystem::path cog_dir = data_root / "seed/cog/";
 void CasProfileUtil::serialize()
 {	
@@ -238,10 +246,10 @@ void CasProfileUtil::serialize()
 	};
 
 	// auto profiles_pfam = generate_pfams(pfam_full, pfam_dir);
-	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
-	auto profiles_cog = generate_cogs(cog_dir);
+	auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
+	// auto profiles_cog = generate_cogs(cog_dir);
 
-	// std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize);
-	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize);
-	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	// std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
+	std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
+	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
