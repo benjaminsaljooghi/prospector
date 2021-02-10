@@ -68,14 +68,14 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 	return profile;
 }
 
-vector<CasProfile*> generate_pfams(std::filesystem::path pfam_full, std::filesystem::path dir)
+vector<CasProfile*> generate_pfams(std::filesystem::path dir)
 {
-	ifstream input(pfam_full);
-	if (!input.good())
-		throw runtime_error("input not good!");
+	// ifstream input(pfam_full);
+	// if (!input.good())
+		// throw runtime_error("input not good!");
 
-	auto non_seq = [](string& line) {
-		return
+	auto is_seq = [](string& line) {
+		return !(
 			line.starts_with(" ") ||
 			line.starts_with("#=GF") ||
 			line.starts_with("#=GS") ||
@@ -83,60 +83,60 @@ vector<CasProfile*> generate_pfams(std::filesystem::path pfam_full, std::filesys
 			line.starts_with("#=GR") ||
 			line.starts_with("# STOCKHOLM 1.0") ||
 			line.starts_with("//") ||
-			line == "";
+			line == "");
 	};
 
-	vector<string> seq_buffer;
-	string ac;
-	ui line_count = 0;
-	bool engage = false;
-	string line;
-	while (getline(input, line))
-	{
-		if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
+	// vector<string> seq_buffer;
+	// string ac;
+	// ui line_count = 0;
+	// bool engage = false;
+	// string line;
+	// while (getline(input, line))
+	// {
+	// 	if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
 
-		if (line.starts_with("#=GF AC"))
-		{
-			ac = line;
-			ac.erase(0, 10);
-			ac.erase(ac.find_first_of('.'));
+	// 	if (line.starts_with("#=GF AC"))
+	// 	{
+	// 		ac = line;
+	// 		ac.erase(0, 10);
+	// 		ac.erase(ac.find_first_of('.'));
 
-			cout << ac << endl;
-			if (domain_map.contains(ac))
-			{
-				engage = true;
-			}
+	// 		cout << ac << endl;
+	// 		if (domain_map.contains(ac))
+	// 		{
+	// 			engage = true;
+	// 		}
 
-			continue;
-		}
+	// 		continue;
+	// 	}
 
-		if (!engage)
-		{
-			continue;
-		}
+	// 	if (!engage)
+	// 	{
+	// 		continue;
+	// 	}
 
-		if (line.starts_with("//"))
-		{
-			ofstream output(dir / ac);
+	// 	if (line.starts_with("//"))
+	// 	{
+	// 		ofstream output(dir / ac);
 
-			for (string& line : seq_buffer)
-			{
-				string sequence = line.substr(line.find_last_of(' ') + 1);
+	// 		for (string& line : seq_buffer)
+	// 		{
+	// 			string sequence = line.substr(line.find_last_of(' ') + 1);
 
-				output << sequence << endl;
-			}
-			output.close();
+	// 			output << sequence << endl;
+	// 		}
+	// 		output.close();
 
-			seq_buffer.clear();
-			engage = false;
-			continue;
-		}
+	// 		seq_buffer.clear();
+	// 		engage = false;
+	// 		continue;
+	// 	}
 
-		if (non_seq(line)) continue;
-		seq_buffer.push_back(line);
-	}
+	// 	if (is_seq(line)) continue;
+	// 	seq_buffer.push_back(line);
+	// }
 
-	input.close();
+	// input.close();
 
 	vector<CasProfile*> profiles;
 
@@ -152,7 +152,13 @@ vector<CasProfile*> generate_pfams(std::filesystem::path pfam_full, std::filesys
 		vector<string> sequences;
 
 		while (getline(raw, line))
-			sequences.push_back(line);
+		{
+			if (is_seq(line))
+			{
+				string sequence = line.substr(line.find_last_of(' ') + 1);
+				sequences.push_back(sequence);
+			}
+		}
 		profiles.push_back(profile_factory(id, sequences, CasProfileUtil::k));
 		fmt::print("{} pfam profiles built\n", profiles.size());
 	}
@@ -245,11 +251,11 @@ void CasProfileUtil::serialize()
 		profile->hash_table.dump(archive);
 	};
 
-	// auto profiles_pfam = generate_pfams(pfam_full, pfam_dir);
-	auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
+	auto profiles_pfam = generate_pfams(pfam_dir);
+	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
 	// auto profiles_cog = generate_cogs(cog_dir);
 
-	// std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
-	std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
+	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
+	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
 	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
