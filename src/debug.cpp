@@ -147,8 +147,9 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
     string line;
     string genome_accession = "";
     string genome = "";
-    std::ofstream interpretation("T:\\prospector-util\\cartograph_interpretation.txt");
 
+    string interpretation_path = "cartograph_interpretation.txt";
+    std::ofstream interpretation(interpretation_path.c_str());
 
     auto gen_debug_str = [&genome](string domains, string signals, ull begin, ull final, string strand) {
         auto a = genome.substr(begin, final - begin);
@@ -229,5 +230,8 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         interpretation << "\n\n";
     }
 
+
     interpretation.close();
+
+    fmt::print("wrote {}\n", interpretation_path);
 }
