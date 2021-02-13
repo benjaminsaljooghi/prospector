@@ -180,6 +180,8 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         return gen_debug_str(domains, signals, begin, final, strand);
     };
 
+    bool engage_genome = true;
+
     while (std::getline(in, line))
     {
         if (line == "" || line[0] == '-')
@@ -191,6 +193,14 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         if (alignment_type == "===")
         {
             genome_accession = split[1];
+
+            if (genome_accession != "GCF_900166885.1")
+            {
+                engage_genome = false;
+                continue;
+            }
+            engage_genome = true;
+
             interpretation << fmt::format("=== {}\n", genome_accession);
             
             for (const auto& entry : filesystem::directory_iterator(genome_dir))
@@ -205,6 +215,11 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
 
         }
 
+        if (!engage_genome)
+        {
+            continue;
+        }
+ 
         if (alignment_type == "<")
         {
             interpretation << "ground only:\n";
@@ -219,6 +234,14 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
 
         if (alignment_type == "!")
         {
+            interpretation << "overlap ground:\n";
+            interpretation << gen_ground_str(split);
+        
+            std::getline(in, line);
+            auto split = Util::parse(line, "\t");
+
+            interpretation << "overlap target:\n";
+            interpretation << gen_target_str(split);
 
         }
 
