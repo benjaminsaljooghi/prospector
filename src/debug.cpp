@@ -98,31 +98,43 @@ void Debug::triframe_print(const string& genome, ull genome_start, ull genome_fi
     //return triframe;
 }
 
+// useful for debugging both false positives and false negatives
 void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_final, bool pos, CasProfile* profile)
 {
     string genome = Util::load_genome(genome_path);
-    Translation* translation = Cas::get_triframe(genome, genome_start, genome_final, pos)[0];
+    vector<Translation*> triframe = Cas::get_triframe(genome, genome_start, genome_final, pos);
     
-    fmt::print("translation raw: {}\n", translation->raw);
-    
-    fmt::print("containment info:\n");
-    for (auto kmer : translation->pure_kmerized)
+    int i = 0;
+    for (Translation* translation : triframe)
     {
-        auto enco = Util::encode_amino_kmer(kmer);
-        bool contains = profile->hash_table.contains(enco);
-        fmt::print("{} : {}\n", kmer, contains);
+        fmt::print("\n\n\nframe {}\n", i++);
+        fmt::print("translation raw: {}\n", translation->raw);
+        
+        fmt::print("containment info:\n");
+        int j = 0;
+        for (auto kmer : translation->pure_kmerized)
+        {
+            auto enco = Util::encode_amino_kmer(kmer);
+            bool contains = profile->hash_table.contains(enco);
+            fmt::print("{} : {} : {}\n", kmer, contains, j++);
+        }
+
+        vector<CasProfile*> profiles;
+        vector<Translation*> translations;
+        
+        profiles.push_back(profile);
+        translations.push_back(translation);
+
+        vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
+        fmt::print("fragment info:\n");
+        for (int i = 0; i < fragments.size(); i++)
+            fmt::print("{}\n", fragments[i]->to_string_debug());
+
+        fmt::print("---------------------\n");
+
     }
 
-    vector<CasProfile*> profiles;
-    vector<Translation*> translations;
-    
-    profiles.push_back(profile);
-    translations.push_back(translation);
-    
-    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
-    fmt::print("fragment info:\n");
-    for (int i = 0; i < fragments.size(); i++)
-        fmt::print("{}\n", fragments[i]->to_string_debug());
+
 }
 
 void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull end)
@@ -180,7 +192,7 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         return gen_debug_str(domains, signals, begin, final, strand);
     };
 
-    bool engage_genome = true;
+    // bool engage_genome = true;
 
     while (std::getline(in, line))
     {
@@ -194,12 +206,12 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         {
             genome_accession = split[1];
 
-            if (genome_accession != "GCF_900166885.1")
-            {
-                engage_genome = false;
-                continue;
-            }
-            engage_genome = true;
+            // if (genome_accession != "GCF_000013265.1")
+            // {
+                // engage_genome = false;
+                // continue;
+            // }
+            // engage_genome = true;
 
             interpretation << fmt::format("=== {}\n", genome_accession);
             
@@ -215,10 +227,10 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
 
         }
 
-        if (!engage_genome)
-        {
-            continue;
-        }
+        // if (!engage_genome)
+        // {
+        //     continue;
+        // }
  
         if (alignment_type == "<")
         {
