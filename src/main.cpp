@@ -120,7 +120,7 @@
 //};
 
 
-namespace Path
+namespace Config
 {
     std::filesystem::path data_root = "/home/ben/crispr/data/";
     std::filesystem::path util_root = "/home/ben/crispr/prospector-util/";
@@ -136,19 +136,38 @@ namespace Path
 
     // debug (dev only)
     std::filesystem::path cartograph_prosp = util_root / "cartograph_prosp.tsv";
+
+    bool crispr_proximal_search = true;
+}
+
+
+vector<Fragment*> collect_fragments_crispr_proximal(string& genome, vector<CasProfile*>& profiles, vector<Crispr*>& crisprs)
+{
+    fmt::print("collecting fragments crispr proximally...\n");
+    vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
+    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
+    return fragments;
+}
+
+vector<Fragment*> collect_fragments_genome_wide(string& genome, vector<CasProfile*>& profiles)
+{
+    fmt::print("collecting fragments genome wide...\n");
+    vector<Translation*> genome_sixframe = Cas::get_sixframe(genome, 0, genome.length()-1);
+    vector<Fragment*> fragments = Cas::cas(profiles, genome_sixframe, genome);
+    return fragments;
 }
 
 
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
-    std::filesystem::path results_path = Path::results_dir / genome_path.stem();
+    std::filesystem::path results_path = Config::results_dir / genome_path.stem();
     // if (std::filesystem::exists(results_path))
     // {
         // fmt::print("skipping {} because results dir exists\n", genome_path.string());
         // return;
     // }
 
-    // Debug::sage_interpreter("T:\\prospector-util\\report_align.tsv", Path::genome_dir);
+    // Debug::sage_interpreter("T:\\prospector-util\\report_align.tsv", Config::genome_dir);
     // exit(0);	
 
 
@@ -158,9 +177,8 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
 
-    vector<Translation*> translations = Cas::crispr_proximal_translations(genome, crisprs);
+    vector<Fragment*> fragments = Config::crispr_proximal_search ? collect_fragments_crispr_proximal(genome, profiles, crisprs) : collect_fragments_genome_wide(genome, profiles); 
 
-    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
     std::sort(fragments.begin(), fragments.end(), [](Fragment* a, Fragment* b) {return a->expanded_genome_begin < b->expanded_genome_begin; });
 
     vector<Fragment*> filtered_fragments;
@@ -172,7 +190,6 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
             filtered_fragments.push_back(f);
         }            
     }
-
 
     vector<MultiFragment*> multifragments;
     for (ui i = 0; i < filtered_fragments.size(); i++)
@@ -196,6 +213,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
             string second = CasProfileUtil::domain_table_fetch(filtered_fragments[j]->reference_profile->identifier);
 
             bool domain_overlap = (first.find(second) != string::npos) || (second.find(first) != string::npos);
+            // bool domain_overlap = first == second;
 
             if (any_overlap && domain_overlap)
             {
@@ -248,36 +266,46 @@ void assert_file(std::filesystem::path path)
 
 void run()
 {
-    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Path::serialization_dir);
-
+    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
 
     for (size_t i = 0; i < profiles.size(); i++)
         fmt::print("loaded: {}\n", profiles[i]->identifier);
 
     Prospector::device_init();
 
-    // unordered_set<string> interest{ "GCF_000024165.1_ASM2416v1_genomic.fna" };
-    for (const auto& entry : std::filesystem::directory_iterator(Path::genome_dir))
+    // int count = 200;
+    // int i = 0;
+
+    // 3057327	3057892	-	cas2,cas2	COG1343,PF09707	
+
+    // profiles = Debug::cas_filter(profiles, "PF09707");
+
+    unordered_set<string> interest{ "GCF_002863665.1_ASM286366v1_genomic.fna" };
+    for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
-        // if (interest.contains(filename))
+        if (interest.contains(filename))
+            // Debug::cas_detect(entry.path().string(), 3057327, 3057892, false, profiles[0]);        
             prospect_genome(profiles, entry);
+        
+        // if (i++ > count)
+            // break;
     }
 }
 
 int main()
 {
     auto start_main = time();
-    assert_file(Path::domain_map_path);
-    assert_file(Path::type_table_path);
-    assert_file(Path::serialization_dir);
-    assert_file(Path::genome_dir);
-    assert_file(Path::results_dir);
-    CasProfileUtil::load_domain_map(Path::domain_map_path);    
+    assert_file(Config::domain_map_path);
+    assert_file(Config::type_table_path);
+    assert_file(Config::serialization_dir);
+    assert_file(Config::genome_dir);
+    assert_file(Config::results_dir);
+    CasProfileUtil::load_domain_map(Config::domain_map_path);    
 
     run();
     // CasProfileUtil::serialize();
-    // Debug::cartograph_interpreter(Path::cartograph_prosp, Path::genome_dir);
+    // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
 
     start_main = time(start_main, "main");
     return 0;                                                                                                           
