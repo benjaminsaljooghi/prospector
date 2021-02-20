@@ -166,7 +166,7 @@ struct MultiFragment : public Locus
 
 namespace Cas
 {
-    static const ull upstream_size = 20000;
+    static const ull upstream_size = 30000;
     static const ull cluster_metric_min = 15;
     static const ull max_inter_cluster_dist = 2;
 
