@@ -79,26 +79,44 @@ string Util::load_genome(std::filesystem::path path)
 	}
 
 
+	auto fasta = parse_fasta(path.string());
+
+	// string seq = "";
+	string max_name = "";
+	int max_length = 0;
+	for (auto const& [name, sequence] : fasta)
+	{
+		if (sequence.length() > max_length)
+		{
+			max_length = sequence.length();
+			max_name = name;
+		}
+	}
+
+	// fmt::print("genome seq count is: {}\n", i);
+	return fasta[max_name];
+	// return seq;
+
 	auto check_line = [](string& line) {
 		assert(line.find(' ') == string::npos);
 		assert(line.find("\r") == string::npos);
 	};
 
-
 	string line;
 	string name;
-	string content;
 
-	getline(input, line);
-	assert(line.starts_with('>'));
-	name = line.substr(1);
 	
-	while (true)
-	{
-		getline(input, line);
+	string content;
+	// getline(input, line);
+	// assert(line.starts_with('>'));
+	// name = line.substr(1);
+	
+	// while (true)
+	// {
+		// getline(input, line);
 
-		if (line.empty() || line[0] == '>')
-		{
+		// if (line.empty() || line[0] == '>')
+		// {
 			//content.erase(std::remove(content.begin(), content.end(), 'N'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'R'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'Y'), content.end());
@@ -106,14 +124,17 @@ string Util::load_genome(std::filesystem::path path)
 			//content.erase(std::remove(content.begin(), content.end(), 'W'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'M'), content.end());
 			//content.erase(std::remove(content.begin(), content.end(), 'S'), content.end());
-			content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
-			return content;
-		}
+			
+			
+			
+			// content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
+			// return content;
+		// }
 
-		check_line(line);
-		content += line;
+		// check_line(line);
+		// content += line;
 		// fmt::print("hello world\n");
-	}
+	// }
 
 	assert(false);
 }
@@ -128,16 +149,21 @@ map<string, string> Util::parse_fasta (string file_path)
 		throw runtime_error("input not good!");
 	}
 
+
+
 	map<string, string> seqs;
 	string line, name, content;
 	while (getline(input, line))
 	{
+
 		if (line.empty() || line[0] == '>') // Identifier marker
 		{
 			if (!name.empty())
 			{
 				// Get what we read from the last entry
+				content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
 				seqs[name] = content;
+				
 				name.clear();
 			}
 			if (!line.empty())
@@ -166,6 +192,8 @@ map<string, string> Util::parse_fasta (string file_path)
 	if (!name.empty())
 	{
 		// Get what we read from the last 
+		content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
+
 		seqs[name] = content;
 	}
 
