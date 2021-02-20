@@ -54,9 +54,9 @@ vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string ident
     return Util::filter(profiles, [&](CasProfile* p) {return p->identifier == identifier; });
 }
 
-vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ull start, ull end)
+vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ull start, ull final)
 {
-    return Util::filter(crisprs, [&](Crispr* c) { return c->genome_start > start && c->genome_final < end; });
+    return Util::filter(crisprs, [&](Crispr* c) { return c->genome_start > start && c->genome_final < final; });
 }
 
 void Debug::genome_substr(const string& genome_path, ull genome_start, ull genome_final)
@@ -137,9 +137,9 @@ void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_f
 
 }
 
-void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull end)
+void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull final)
 {
-    auto filtered = Debug::crispr_filter(crisprs, start, end);
+    auto filtered = Debug::crispr_filter(crisprs, start, final);
     Util::sort(filtered, CrisprUtil::heuristic_greater);
     for (ull i = 0; i < filtered.size(); i++)
         fmt::print("{}\n", filtered[i]->to_string_debug());
@@ -200,6 +200,9 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
             continue;
 
         auto split = Util::parse(line, "\t");
+        if (split[0] == "symbol")
+            continue;
+     
         string alignment_type = split[0];        
 
         if (alignment_type == "===")
