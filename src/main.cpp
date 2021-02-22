@@ -107,6 +107,28 @@ struct System
     //     }
     // }
 
+    ull crispr_count()
+    {
+        ull count = 0;
+        for (Locus* l : loci)
+        {
+            if (l->is_crispr())
+                count++;
+        }
+        return count;
+    }
+
+    ull cas_count()
+    {
+        ull count = 0;
+        for (Locus* l : loci)
+        {
+            if (!l->is_crispr())
+                count++;
+        }
+        return count;
+    }
+
     void sort_loci()
     {
         // vector<Locus*> loci;
@@ -320,25 +342,15 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     //     out_gene << l->to_string_summary() << endl;
     //     out_gene_debug << l->to_string_debug() << endl;
     // }
+    
+    auto legitimate_system = [](System* sys) {
+        return sys->cas_count() >= 2;
+    };
 
     for (System* system : systems)
     {
-        // if (system->loci.size() == 1 && system->loci[0]->is_crispr())
-            // continue;
-        bool contains_cas = false;
-        for (Locus* l : system->loci)
-        {
-            if (!l->is_crispr())
-            {
-                contains_cas = true;
-                break;
-            }
-        }
-  
-        if (!contains_cas)
-            continue;
-
-        out_gene << system->to_string_summary();
+        if (legitimate_system(system))
+            out_gene << system->to_string_summary();
         // out_gene_debug << system->to_string_debug() << endl;
     }
 
@@ -373,7 +385,7 @@ void run()
 
     // profiles = Debug::cas_filter(profiles, "PF09707");
 
-    unordered_set<string> interest{ "GCF_000743255.1_ASM74325v1_genomic.fna" };
+    unordered_set<string> interest{ "GCF_900636125.1_38977_C01_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
@@ -400,7 +412,6 @@ int main()
 
     run();
     // CasProfileUtil::serialize();
-
     // Util::load_genome("/home/ben/crispr/data/genome/assembly/GCF_002863885.1_ASM286388v1_genomic.fna");
     // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
 
