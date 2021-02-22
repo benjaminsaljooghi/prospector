@@ -86,6 +86,11 @@ struct MultiFragment : public Locus
         return fragments[0]->expanded_genome_begin;
     }
 
+    ull get_final()
+    {
+        return fragments[fragments.size()-1]->expanded_genome_final;
+    }
+
 
     string to_string_debug()
     {

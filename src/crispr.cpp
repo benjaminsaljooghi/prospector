@@ -124,6 +124,11 @@ ull Crispr::get_start()
 	return this->genome_start;
 }
 
+ull Crispr::get_final()
+{
+	return this->genome_final;
+}
+
 void Crispr::update(const string& genome)
 {
 	this->repeats = vector<string>(size);

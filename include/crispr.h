@@ -37,6 +37,7 @@ class Crispr : public Locus
         string identifier_string() const;
 
         ull get_start();
+        ull get_final();
         string to_string_debug();
         string to_string_summary();
         bool is_crispr() { return true; }

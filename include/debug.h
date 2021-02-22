@@ -10,7 +10,7 @@
 
 namespace Debug
 {
-	void visualize_map(string& genome_path);
+	void visualize_map(string genome_path);
 
 	void visualize_proximals(map<ull, vector<ull>> proximal_targets, string genome);
 	

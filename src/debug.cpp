@@ -1,11 +1,11 @@
 #include "debug.h"
 
-void Debug::visualize_map(string& genome_path)
+void Debug::visualize_map(string genome_path)
 {
     string genome = Util::load_genome(genome_path);
     Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
 
-    ui query = 2110970;
+    ui query = 1011498;
     auto k = 32; 
     for (ui i = 0; i < 50000; i++)
     {
@@ -139,10 +139,18 @@ void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_f
 
 void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull final)
 {
+
+    string write_path = "crispr_debug.txt";
+    std::ofstream file(write_path.c_str());
+
+
     auto filtered = Debug::crispr_filter(crisprs, start, final);
     Util::sort(filtered, CrisprUtil::heuristic_greater);
     for (ull i = 0; i < filtered.size(); i++)
-        fmt::print("{}\n", filtered[i]->to_string_debug());
+        file << fmt::format("{}\n", filtered[i]->to_string_debug());
+    
+    file.close();
+    
     exit(0);
 }
 
@@ -208,6 +216,11 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         if (alignment_type == "===")
         {
             genome_accession = split[1];
+
+            if (genome_accession == "GCF_900184875.1")
+            {
+                fmt::print("break\n");
+            }
 
             // if (genome_accession != "GCF_000013265.1")
             // {

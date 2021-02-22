@@ -88,36 +88,65 @@
 //    return "N";
 //}
 //
-//struct System
-//{
-//    Crispr* crispr;
-//    vector<Fragment*> fragments;
-//    string type;
-//
-//    ui get_start()
-//    {
-//        return std::min(crispr->get_start(), fragments[0]->get_start());
-//    }
-//
-//    string to_string()
-//    {
-//        std::ostringstream out;
-//
-//        vector<Locus*> loci;
-//
-//
-//        loci.push_back(crispr);
-//        for (Fragment* f : fragments)
-//            loci.push_back(f);
-//
-//        std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() - b->get_start(); });
-//
-//        for (Locus* l : loci)
-//            out << fmt::format("{}\t{}\n", l->to_string_summary(), this->type);
-//
-//        return out.str();
-//    }
-//};
+struct System
+{
+    // vector<Crispr*> crisprs;
+    // vector<MultiFragment*> multifragments;
+    vector<Locus*> loci;
+    string type;
+
+    // void add_locus(Locus* l)
+    // {
+    //     if (l->is_crispr())
+    //     {
+    //         this->crisprs.push_back((Crispr*) l);
+    //     }
+    //     else
+    //     {
+    //         this->multifragments.push_back((MultiFragment*) l);
+    //     }
+    // }
+
+    void sort_loci()
+    {
+        // vector<Locus*> loci;
+
+        // for (Crispr* c : crisprs)
+        //     loci.push_back(c);
+
+        // for (MultiFragment* f : multifragments)
+        //     loci.push_back(f);
+
+        std::sort(this->loci.begin(), this->loci.end(), [](Locus* a, Locus* b) { return a->get_start() - b->get_start(); });
+
+        // return loci;
+    }
+
+    ull get_start()
+    {
+        Locus* first = this->loci[0];
+        return first->get_start();
+    }
+
+    ull get_final()
+    {
+        Locus* last = this->loci[this->loci.size()-1];
+        return last->get_final();
+    }
+
+    string to_string_summary()
+    {
+        std::ostringstream out;
+        
+        for (Locus* l : this->loci)
+            out << l->to_string_summary() << endl;
+
+        return out.str();        
+    }
+
+
+
+};
 
 
 namespace Config
@@ -170,7 +199,6 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     // Debug::sage_interpreter("T:\\prospector-util\\report_align.tsv", Config::genome_dir);
     // exit(0);	
 
-
     fmt::print("\n\n");
 
     string genome = Util::load_genome(genome_path);
@@ -188,7 +216,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         if (CasProfileUtil::domain_table_contains(f->reference_profile->identifier))
         {
             filtered_fragments.push_back(f);
-        }            
+        }
     }
 
     vector<MultiFragment*> multifragments;
@@ -237,16 +265,81 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     for (MultiFragment* f : multifragments)
         loci.push_back(f);
 
-    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
-
-    for (Locus* l : loci)
+    if (loci.size() == 0)
     {
-        out_gene << l->to_string_summary() << endl;
+        return;   
     }
 
-    for (Locus* l : loci)
+
+    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
+
+    System* current = new System;
+    vector<System*> systems;
+
+    current->loci.push_back(loci[0]);
+    for (size_t i = 1; i < loci.size(); i++)
     {
-        out_gene_debug << l->to_string_debug() << endl;
+        if (loci[i]->get_start() < current->get_final() + 30000)
+        {
+            current->loci.push_back(loci[i]);
+        }
+        else
+        {
+            systems.push_back(current);
+            // current = (System*) malloc(sizeof(System));
+            current = new System;
+            current->loci.push_back(loci[i]);
+        }
+    }
+
+    systems.push_back(current);
+
+
+    // system categorization here
+    // map<string, System*> system_map;
+    // for (MultiFragment* f : multifragments)
+    // {
+    //     string id = f->fragments[0]->reference_crispr->identifier_string();
+    //     if (system_map.contains(id))
+    //     {
+    //         system_map[id]->multifragments.push_back(f);
+    //         continue;            
+    //     }
+
+    //     System* system = new System;
+    //     system->crispr = f->fragments[0]->reference_crispr;
+    //     system->multifragments.push_back(f);
+    //     system_map[id] = system;
+    // }
+
+
+    // end system categorization
+
+    // for (Locus* l : loci)
+    // {
+    //     out_gene << l->to_string_summary() << endl;
+    //     out_gene_debug << l->to_string_debug() << endl;
+    // }
+
+    for (System* system : systems)
+    {
+        // if (system->loci.size() == 1 && system->loci[0]->is_crispr())
+            // continue;
+        bool contains_cas = false;
+        for (Locus* l : system->loci)
+        {
+            if (!l->is_crispr())
+            {
+                contains_cas = true;
+                break;
+            }
+        }
+  
+        if (!contains_cas)
+            continue;
+
+        out_gene << system->to_string_summary();
+        // out_gene_debug << system->to_string_debug() << endl;
     }
 
     out_gene.close();
@@ -273,20 +366,22 @@ void run()
 
     Prospector::device_init();
 
-    // int count = 200;
+    // int count = 10;
     // int i = 0;
 
     // 3057327	3057892	-	cas2,cas2	COG1343,PF09707	
 
     // profiles = Debug::cas_filter(profiles, "PF09707");
 
-    unordered_set<string> interest{ "GCF_002863665.1_ASM286366v1_genomic.fna" };
+    unordered_set<string> interest{ "GCF_000743255.1_ASM74325v1_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
-        if (interest.contains(filename))
+        // if (interest.contains(filename))
+            // Debug::visualize_map(entry.path().string());
             // Debug::cas_detect(entry.path().string(), 3057327, 3057892, false, profiles[0]);        
             prospect_genome(profiles, entry);
+
         
         // if (i++ > count)
             // break;
@@ -305,6 +400,8 @@ int main()
 
     run();
     // CasProfileUtil::serialize();
+
+    // Util::load_genome("/home/ben/crispr/data/genome/assembly/GCF_002863885.1_ASM286388v1_genomic.fna");
     // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
 
     start_main = time(start_main, "main");
