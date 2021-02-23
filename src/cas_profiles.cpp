@@ -39,6 +39,9 @@ vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path d
 		profile->identifier = entry.path().stem().string();
 		profiles.push_back(profile);
 	}
+	for (size_t i = 0; i < profiles.size(); i++)
+		fmt::print("loaded: {}\n", profiles[i]->identifier);
+
 	fmt::print("loaded {} profiles\n", profiles.size());
 	return profiles;
 }

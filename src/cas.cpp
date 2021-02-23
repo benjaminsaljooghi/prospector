@@ -219,7 +219,19 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
     }
 
 
-    return fragments;
+    vector<Fragment*> filtered_fragments;
+
+    for (Fragment* f : fragments)
+    {
+        if (CasProfileUtil::domain_table_contains(f->reference_profile->identifier))
+            filtered_fragments.push_back(f);
+        else
+            delete f;
+    }
+
+    std::sort(filtered_fragments.begin(), filtered_fragments.end(), [](Fragment* a, Fragment* b) {return a->expanded_genome_begin < b->expanded_genome_begin; });
+
+    return filtered_fragments;
 }
 
 //Gene* gene_from_fragments(vector<Fragment*>& fragments)

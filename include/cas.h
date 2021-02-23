@@ -47,6 +47,7 @@ struct Fragment
     ull expanded_genome_begin;
     ull expanded_genome_final;
 
+
     string to_string_debug()
     {
         string amino_domain = Util::translate_genome(*reference_genome, genome_begin, genome_final, reference_translation->pos);
@@ -80,6 +81,15 @@ struct Fragment
 struct MultiFragment : public Locus
 {
     vector<Fragment*> fragments;
+
+    virtual ~MultiFragment()
+    {
+        for (Fragment* f : this->fragments)
+        {
+            delete f;
+        }
+    }
+
 
     ull get_start()
     {

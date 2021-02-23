@@ -10,5 +10,11 @@ struct Locus
 	virtual bool is_crispr() = 0;
 	virtual bool is_domain() = 0;
 	virtual bool is_gene() = 0;
+	virtual ~Locus()
+	{
+		// pure virtual destructors must have a body for linking
+	}
+
+
 };
 
