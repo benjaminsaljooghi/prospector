@@ -82,6 +82,11 @@
         "xtr1common": "cpp",
         "xtree": "cpp",
         "xutility": "cpp",
-        "__nullptr": "cpp"
+        "__nullptr": "cpp",
+        "*.tcc": "cpp",
+        "codecvt": "cpp",
+        "memory_resource": "cpp",
+        "random": "cpp",
+        "string_view": "cpp"
     }
 }
