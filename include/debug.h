@@ -24,7 +24,7 @@ namespace Debug
 	
 	void triframe_print(const string& genome, ull genome_start, ull genome_final, bool pos);
 	
-	void cas_detect(const string& genome, ull genome_start, ull genome_final, bool pos, CasProfile* profile);
+	void cas_detect(std::filesystem::path genome_path, ull genome_start, ull genome_final, bool pos, vector<CasProfile*> profile);
 	
 	void crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull end);
 	

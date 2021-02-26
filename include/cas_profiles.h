@@ -22,6 +22,8 @@ namespace CasProfileUtil
     void load_domain_map(std::filesystem::path path);
     bool domain_table_contains(string);
     string domain_table_fetch(string);
+    bool domain_contained(string domain);
+    std::map<string, string> get_domain_map();
     vector<CasProfile*> deserialize_profiles(std::filesystem::path);
     void serialize();
 }

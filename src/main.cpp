@@ -275,7 +275,10 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         // return;
     // }
 
+
     string genome = Util::load_genome(genome_path);
+    
+
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
     vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
@@ -328,6 +331,11 @@ void assert_file(std::filesystem::path path)
 void run()
 {
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
+    // vector<CasProfile*> filtered = Debug::cas_filter(profiles, "cas9");
+   
+
+
+    // $	542882	545600	-	cas9	cd09643	544647	545600	-1	Cas9_0_II	Cas9_0_II	
 
 
     Prospector::device_init();
@@ -337,17 +345,20 @@ void run()
 
     // 3057327	3057892	-	cas2,cas2	COG1343,PF09707	
 
-    // profiles = Debug::cas_filter(profiles, "PF09707");
+    // profiles = Debug::cas_filter(profiles, "COG3513");
 
-    // unordered_set<string> interest{ "GCF_001705055.1_ASM170505v1_genomic.fna" };
+    // unordered_set<string> interest{ "GCA_000020065.1_ASM2006v1_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
         // if (interest.contains(filename))
+        {
+            // Debug::cas_detect(entry, 542882, 545600, false, filtered);
+            prospect_genome(profiles, entry);
+        }
             // Debug::visualize_map(entry.path().string());
             // Debug::cas_detect(entry.path().string(), 3057327, 3057892, false, profiles[0]);        
-            prospect_genome(profiles, entry);
-
+        
         
         // if (i++ > count)
             // break;
@@ -359,6 +370,8 @@ void run()
     }
 }
 
+
+
 int main()
 {
     auto start_main = time();
@@ -369,8 +382,8 @@ int main()
     assert_file(Config::results_dir);
     CasProfileUtil::load_domain_map(Config::domain_map_path);    
 
+    CasProfileUtil::serialize();
     run();
-    // CasProfileUtil::serialize();
     // Util::load_genome("/home/ben/crispr/data/genome/assembly/GCF_002863885.1_ASM286388v1_genomic.fna");
     // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
 

@@ -49,9 +49,18 @@ void Debug::visualize_proximals(map<ull, vector<ull>> proximal_targets, string g
 //         fmt::print("\t\t {} - {} ({})\n", cluster[0], cluster[cluster.size()-1], cluster.size());
 // }
 
-vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string identifier)
+vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string subset_domain_query)
 {
-    return Util::filter(profiles, [&](CasProfile* p) {return p->identifier == identifier; });
+    std::map<string, string> domain_map = CasProfileUtil::get_domain_map();
+    vector<CasProfile*> filtered_profiles = Util::filter(profiles, [&](CasProfile* p) {return CasProfileUtil::domain_table_fetch(p->identifier).find(subset_domain_query) != string::npos; });
+    fmt::print("filtered cas profiles:\n");
+    for (CasProfile* p : filtered_profiles)
+    {
+        string id = p->identifier;
+        string domain = CasProfileUtil::domain_table_fetch(p->identifier);
+        fmt::print("{}\t{}\n", id, domain);
+    }
+    return filtered_profiles;
 }
 
 vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ull start, ull final)
@@ -99,40 +108,52 @@ void Debug::triframe_print(const string& genome, ull genome_start, ull genome_fi
 }
 
 // useful for debugging both false positives and false negatives
-void Debug::cas_detect(const string& genome_path, ull genome_start, ull genome_final, bool pos, CasProfile* profile)
+void Debug::cas_detect(std::filesystem::path genome_path, ull genome_start, ull genome_final, bool pos, vector<CasProfile*> profiles)
 {
-    string genome = Util::load_genome(genome_path);
-    vector<Translation*> triframe = Cas::get_triframe(genome, genome_start, genome_final, pos);
+    string filename = "cas_detection_report.txt";
+    std::ofstream file(filename.c_str());
+
     
-    int i = 0;
-    for (Translation* translation : triframe)
+    string genome = Util::load_genome(genome_path);
+
+    vector<Translation*> triframe = Cas::get_triframe(genome, genome_start, genome_final, pos); // focus 0 because reaons, okay?
+    Translation* translation = triframe[0];
+
+    for (CasProfile* profile : profiles)
     {
-        fmt::print("\n\n\nframe {}\n", i++);
-        fmt::print("translation raw: {}\n", translation->raw);
-        
-        fmt::print("containment info:\n");
-        int j = 0;
-        for (auto kmer : translation->pure_kmerized)
-        {
-            auto enco = Util::encode_amino_kmer(kmer);
-            bool contains = profile->hash_table.contains(enco);
-            fmt::print("{} : {} : {}\n", kmer, contains, j++);
-        }
+        file << fmt::format("------------------------------------------\n");
+        file << fmt::format("{} : {}\n", profile->identifier, CasProfileUtil::domain_table_fetch(profile->identifier));
+        int i = 0;
+        // for (Translation* translation : triframe)
+        // {
+            file << fmt::format("\n\n\nframe {}\n", i++);
+            file << fmt::format("translation raw: {}\n", translation->raw);
+            
+            file << fmt::format("containment info:\n");
+            int j = 0;
+            for (auto kmer : translation->pure_kmerized)
+            {
+                auto enco = Util::encode_amino_kmer(kmer);
+                bool contains = profile->hash_table.contains(enco);
+                file << fmt::format("{} : {} : {}\n", kmer, contains, j++);
+            }
 
-        vector<CasProfile*> profiles;
-        vector<Translation*> translations;
-        
-        profiles.push_back(profile);
-        translations.push_back(translation);
+            vector<CasProfile*> collected_profiles;
+            vector<Translation*> collected_translations;
+            
+            collected_profiles.push_back(profile);
+            collected_translations.push_back(translation);
 
-        vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
-        fmt::print("fragment info:\n");
-        for (int i = 0; i < fragments.size(); i++)
-            fmt::print("{}\n", fragments[i]->to_string_debug());
+            vector<Fragment*> fragments = Cas::cas(collected_profiles, collected_translations, genome);
+            file << fmt::format("fragment info:\n");
+            for (int i = 0; i < fragments.size(); i++)
+                file << fmt::format("{}\n", fragments[i]->to_string_debug());
 
-        fmt::print("---------------------\n");
+            file << fmt::format("---------------------\n");
 
+        // }
     }
+
 
 
 }
@@ -216,19 +237,8 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         if (alignment_type == "===")
         {
             genome_accession = split[1];
-
-            if (genome_accession == "GCF_900184875.1")
-            {
-                fmt::print("break\n");
-            }
-
-            // if (genome_accession != "GCF_000013265.1")
-            // {
-                // engage_genome = false;
-                // continue;
-            // }
-            // engage_genome = true;
-
+            
+            fmt::print("genome accession: {}\n", genome_accession);
             interpretation << fmt::format("=== {}\n", genome_accession);
             
             for (const auto& entry : filesystem::directory_iterator(genome_dir))

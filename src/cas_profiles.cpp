@@ -27,6 +27,19 @@ string CasProfileUtil::domain_table_fetch(string name)
 	return domain_map[name];
 }
 
+// bool CasProfileUtil::domain_contained(string query_domain)
+// {
+// 	for (auto const& [identifer, domain] : domain_map)
+// 		if (domain.find(query_domain) != string::npos)
+// 			return true;
+// 	return false;
+// }
+
+std::map<string, string> CasProfileUtil::get_domain_map()
+{
+	return domain_map;
+}
+
 vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path directory)
 {
 	vector<CasProfile*> profiles;
@@ -40,7 +53,7 @@ vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path d
 		profiles.push_back(profile);
 	}
 	for (size_t i = 0; i < profiles.size(); i++)
-		fmt::print("loaded: {}\n", profiles[i]->identifier);
+		fmt::print("loaded: {}   {}\n", profiles[i]->identifier, CasProfileUtil::domain_table_fetch(profiles[i]->identifier));
 
 	fmt::print("loaded {} profiles\n", profiles.size());
 	return profiles;
