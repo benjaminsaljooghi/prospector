@@ -24,7 +24,13 @@ bool CasProfileUtil::domain_table_contains(string name)
 
 string CasProfileUtil::domain_table_fetch(string name)
 {
-	return domain_map[name];
+	std::map<string, string>::iterator it = domain_map.find(name);
+	if (it == domain_map.end())
+	{
+		fmt::print("UNKNOWN IDENTIFIER: {}\n", name);
+		throw new exception();
+	}
+	return it->second;
 }
 
 // bool CasProfileUtil::domain_contained(string query_domain)
@@ -53,7 +59,9 @@ vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path d
 		profiles.push_back(profile);
 	}
 	for (size_t i = 0; i < profiles.size(); i++)
+	{
 		fmt::print("loaded: {}   {}\n", profiles[i]->identifier, CasProfileUtil::domain_table_fetch(profiles[i]->identifier));
+	}
 
 	fmt::print("loaded {} profiles\n", profiles.size());
 	return profiles;
@@ -77,8 +85,15 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 			if (kmer.find('O') != string::npos || kmer.find('X') != string::npos || kmer.find('B') != string::npos || kmer.find('Z') != string::npos)
 				continue;
 
-			ui kmer_enc = Util::encode_amino_kmer(kmer);
-			profile->hash_table.insert(kmer_enc);
+			try
+			{
+				ui kmer_enc = Util::encode_amino_kmer(kmer);
+				profile->hash_table.insert(kmer_enc);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+			}
 		}
 	}
 	return profile;

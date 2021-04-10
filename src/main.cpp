@@ -275,13 +275,19 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         // return;
     // }
 
-
     string genome = Util::load_genome(genome_path);
-    
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
     vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
+
+    out_gene_debug << fmt::format("BEGIN raw fragments\n");
+    for (Fragment* f : fragments)
+    {
+        out_gene_debug << f->to_string_debug() << endl;   
+    }
+    out_gene_debug << fmt::format("END raw fragments\n");
+
     vector<MultiFragment*> multifragments = gen_multifragmetns(fragments);
   
     std::vector<Locus*> loci;
@@ -305,17 +311,10 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     out_gene.close();
     out_gene_debug.close();
 
-    for (Crispr* c : crisprs)
-        delete c;
-
-    for (Translation* t : translations)
-        delete t;
-
-    for (MultiFragment* m : multifragments)
-        delete m; // this will also delete all fragments
-
-    for (System* s : systems)
-        delete s;
+    for (Crispr* c : crisprs) delete c;
+    for (Translation* t : translations) delete t;
+    for (MultiFragment* m : multifragments) delete m; // this should also delete all fragments
+    for (System* s : systems) delete s;
 }
 
 void assert_file(std::filesystem::path path)
@@ -345,15 +344,15 @@ void run()
 
     // 3057327	3057892	-	cas2,cas2	COG1343,PF09707	
 
-    // profiles = Debug::cas_filter(profiles, "COG3513");
+    // profiles = Debug::cas_filter(profiles, "cas2");
 
-    // unordered_set<string> interest{ "GCA_000020065.1_ASM2006v1_genomic.fna" };
+    // unordered_set<string> interest{ "GCA_000186245.1_ASM18624v1_genomic.fna" };
     for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
         // if (interest.contains(filename))
         {
-            // Debug::cas_detect(entry, 542882, 545600, false, filtered);
+            // Debug::cas_detect(entry, 1578909, 1579230, true, profiles);
             prospect_genome(profiles, entry);
         }
             // Debug::visualize_map(entry.path().string());

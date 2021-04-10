@@ -87,6 +87,7 @@
         "codecvt": "cpp",
         "memory_resource": "cpp",
         "random": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "queue": "cpp"
     }
 }

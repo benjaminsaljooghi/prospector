@@ -68,7 +68,7 @@ struct Fragment
         amino_gene.insert(amino_gene.size() - (final_discpreant / 3), "-");
 
         std::ostringstream out;
-        out << fmt::format("{}\t{}\n", reference_translation->pos ? "+" : "-", reference_profile->identifier);
+        out << fmt::format("{}\t{}\t{}\n", reference_translation->pos ? "+" : "-", reference_profile->identifier, CasProfileUtil::domain_table_fetch(reference_profile->identifier));
         out << fmt::format("\t{}...{}\n", genome_begin, genome_final);
         out << fmt::format("\t{}...{}\n", expanded_genome_begin, expanded_genome_final);
         out << fmt::format("\t{}\n", amino_gene);

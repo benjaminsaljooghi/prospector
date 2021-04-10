@@ -60,6 +60,8 @@ vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string subse
         string domain = CasProfileUtil::domain_table_fetch(p->identifier);
         fmt::print("{}\t{}\n", id, domain);
     }
+    if (filtered_profiles.size() == 0)
+        fmt::print("filtered profile size is 0, check your subset domain query\n");
     return filtered_profiles;
 }
 

@@ -26,7 +26,7 @@
 #endif
 
 
-#define DEBUG 0
+#define DEBUG 1
 #define GRID 32
 #define BLOCK 256
 

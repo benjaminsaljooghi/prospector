@@ -28,10 +28,10 @@
 
 #include "format.h"
 
-// Dummy implementations of strerror_r and strerror_s called if corresponding
+// Dummy implementations of strerror_r and strerror called if corresponding
 // system functions are not available.
 inline fmt::detail::null<> strerror_r(int, char*, ...) { return {}; }
-inline fmt::detail::null<> strerror_s(char*, size_t, ...) { return {}; }
+inline fmt::detail::null<> strerror(char*, size_t, ...) { return {}; }
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
@@ -58,7 +58,7 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 #  define FMT_SNPRINTF fmt_snprintf
 #endif  // _MSC_VER
 
-// A portable thread-safe version of strerror_s.
+// A portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
 // This can be either a pointer to a string stored in buffer,
 // or a pointer to some static immutable string.
@@ -99,10 +99,10 @@ inline int safe_strerror(int error_code, char*& buffer,
     // Handle the case when strerror_r is not available.
     FMT_MAYBE_UNUSED
     int handle(detail::null<>) {
-      return fallback(strerror_s(buffer_, buffer_size_, error_code_));
+      return fallback(strerror(buffer_, buffer_size_, error_code_));
     }
 
-    // Fallback to strerror_s when strerror_r is not available.
+    // Fallback to strerror when strerror_r is not available.
     FMT_MAYBE_UNUSED
     int fallback(int result) {
       // If the buffer is full then the message is probably truncated.
@@ -111,10 +111,10 @@ inline int safe_strerror(int error_code, char*& buffer,
     }
 
 #if !FMT_MSC_VER
-    // Fallback to strerror_s if strerror_r and strerror_s are not available.
+    // Fallback to strerror if strerror_r and strerror are not available.
     int fallback(detail::null<>) {
       errno = 0;
-      buffer_ = strerror_s(error_code_);
+      buffer_ = strerror(error_code_);
       return errno;
     }
 #endif
