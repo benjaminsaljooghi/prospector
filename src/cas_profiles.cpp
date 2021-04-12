@@ -56,6 +56,13 @@ vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path d
 		CasProfile* profile = new CasProfile;
 		profile->hash_table.load(archive);
 		profile->identifier = entry.path().stem().string();
+
+		if (!CasProfileUtil::domain_table_contains(profile->identifier))
+		{
+			fmt::print("deserialization of {} skipped due to domain table containment failure\n", profile->identifier);
+			continue;
+		}
+			
 		profiles.push_back(profile);
 	}
 	for (size_t i = 0; i < profiles.size(); i++)

@@ -76,6 +76,9 @@ void Debug::genome_substr(const string& genome_path, ull genome_start, ull genom
     exit(0); 
 }
 
+
+
+
 string Debug::translation_test(const string& genome, ull genome_start, ull genome_final, bool pos, ull debug_aminos)
 {
     genome_start -= debug_aminos * 3;
@@ -84,9 +87,10 @@ string Debug::translation_test(const string& genome, ull genome_start, ull genom
     string translation = Util::translate_genome(genome, genome_start, genome_final, pos);
 
     auto len = translation.length();
-    auto a = translation.substr(0, debug_aminos);
-    auto b = translation.substr(debug_aminos, len - (debug_aminos * 2));
-    auto c = translation.substr(len - debug_aminos);
+    auto a = translation.substr(0, debug_aminos); // debug start
+    auto b = translation.substr(debug_aminos, len - (debug_aminos * 2)); // actual protein
+    auto c = translation.substr(len - debug_aminos); // debug end
+
 
     return fmt::format("{}--{}--{}", a, b, c);
 }

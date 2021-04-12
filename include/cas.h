@@ -37,6 +37,8 @@ struct Fragment
     Translation* reference_translation;
     CasProfile* reference_profile;
 
+    string protein_sequence;
+
     vector<vector<ull>> clusters;
     ull clust_begin;
     ull clust_final;
@@ -47,6 +49,25 @@ struct Fragment
     ull expanded_genome_begin;
     ull expanded_genome_final;
 
+    bool repetition_problem()
+    {
+        auto kmers = Util::kmerize(this->protein_sequence, CasProfileUtil::k); // no need to do this sicnce it's already been kmerized etc but keep it for now
+        const int domain = 15;
+        const int contiguous_check_requirement = 2;
+        const int last_checkable_query = kmers.size() - domain;
+        for (int i = 0; i < last_checkable_query; i++)
+        {
+            int how_many_repetitions = 0;
+            for (int j = 0; j < domain; j++)
+            {
+                if (kmers[i] == kmers[j])
+                    how_many_repetitions++;
+            }
+            if (how_many_repetitions >= contiguous_check_requirement)
+                return true;
+        }
+        return false;
+    } 
 
     string to_string_debug()
     {

@@ -119,7 +119,7 @@ void compute_details(Fragment* fragment, const string& genome)
     ull index_kmer_start = fragment->clust_begin;
     ull index_kmer_final = fragment->clust_final;
 
-    // string protein = f.reference_translation->pure.substr(index_kmer_start, (index_kmer_end - index_kmer_start) + CasUtil::k);
+    fragment->protein_sequence = fragment->reference_translation->pure.substr(index_kmer_start, (index_kmer_final - index_kmer_start) + CasProfileUtil::k);
 
     ull raw_pos_start = fragment->reference_translation->pure_mapping[index_kmer_start];
     ull raw_pos_end = fragment->reference_translation->pure_mapping[index_kmer_final];
@@ -208,7 +208,14 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
             if (f->genome_begin < 0)
             {
+                std::exit(1);
                 printf("break\n");
+            }
+
+            if (f->repetition_problem())
+            {
+                fmt::print("rejected on the basis of repetition problem\n");
+                continue;
             }
 
             #pragma omp critical
