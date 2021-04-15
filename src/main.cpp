@@ -176,8 +176,6 @@ struct System
         return this->cas_count() >= 2;
     }
 
-
-
 };
 
 
@@ -263,17 +261,14 @@ vector<System*> gen_systems(vector<Locus*> loci)
 
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
+    auto start_prospect = time();
+
     fmt::print("\n\n");
 
     std::filesystem::path results_path = Config::results_dir / genome_path.stem();    
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
-    std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
-    // if (std::filesystem::exists(results_path))
-    // {
-        // fmt::print("skipping {} because results dir exists\n", genome_path.string());
-        // return;
-    // }
+    // std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
 
     string genome = Util::load_genome(genome_path);
 
@@ -281,12 +276,12 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
     vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
 
-    out_gene_debug << fmt::format("BEGIN raw fragments\n");
-    for (Fragment* f : fragments)
-    {
-        out_gene_debug << f->to_string_debug() << endl;   
-    }
-    out_gene_debug << fmt::format("END raw fragments\n");
+    // out_gene_debug << fmt::format("BEGIN raw fragments\n");
+    // for (Fragment* f : fragments)
+    // {
+        // out_gene_debug << f->to_string_debug() << endl;   
+    // }
+    // out_gene_debug << fmt::format("END raw fragments\n");
 
     vector<MultiFragment*> multifragments = gen_multifragmetns(fragments);
   
@@ -305,16 +300,20 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     for (System* system : systems)
     {
         out_gene << system->to_string_summary();
-        out_gene_debug << system->to_string_debug() << endl;
+        // out_gene_debug << system->to_string_debug() << endl;
     }    
-
-    out_gene.close();
-    out_gene_debug.close();
 
     for (Crispr* c : crisprs) delete c;
     for (Translation* t : translations) delete t;
-    for (MultiFragment* m : multifragments) delete m; // this should also delete all fragments
+    for (MultiFragment* m : multifragments) delete m;
     for (System* s : systems) delete s;
+
+    auto timed_prospect = time_diff(start_prospect, time());
+
+    out_gene << fmt::format("// finished in {} ms", timed_prospect);
+
+    out_gene.close();
+    // out_gene_debug.close();
 }
 
 void assert_file(std::filesystem::path path)
@@ -326,47 +325,18 @@ void assert_file(std::filesystem::path path)
     }
 }
 
-
-void run()
+void run(vector<CasProfile*>& profiles)
 {
-    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
-    
-    // vector<CasProfile*> filtered = Debug::cas_filter(profiles, "cas9");
-    // $	542882	545600	-	cas9	cd09643	544647	545600	-1	Cas9_0_II	Cas9_0_II	
-
-    Prospector::device_init();
-
-    int count = 99999999;
-    int i = 0;
-
-    // 3057327	3057892	-	cas2,cas2	COG1343,PF09707	
-
-    // profiles = Debug::cas_filter(profiles, "cas2");
-
-    // unordered_set<string> interest{ "GCA_000186245.1_ASM18624v1_genomic.fna" };
+    unordered_set<string> interest{ };
     for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
-        // if (interest.contains(filename))
+        if (interest.empty() || (!interest.empty() && interest.contains(filename)))
         {
-            // Debug::cas_detect(entry, 1578909, 1579230, true, profiles);
             prospect_genome(profiles, entry);
-        }
-            // Debug::visualize_map(entry.path().string());
-            // Debug::cas_detect(entry.path().string(), 3057327, 3057892, false, profiles[0]);        
-        
-        
-        if (i++ > count)
-            break;
-    }
-
-    for (CasProfile* p : profiles)
-    {
-        delete p;
+        } 
     }
 }
-
-
 
 int main()
 {
@@ -376,11 +346,16 @@ int main()
     assert_file(Config::serialization_dir);
     assert_file(Config::genome_dir);
     assert_file(Config::results_dir);
+    Prospector::device_init();
     CasProfileUtil::load_domain_map(Config::domain_map_path);    
 
-    Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
-    // CasProfileUtil::serialize(); run();
+    // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
+    CasProfileUtil::serialize();
     
+    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
+    run(profiles);
+    for (CasProfile* p : profiles) delete p;
+
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }

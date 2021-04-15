@@ -79,7 +79,7 @@ string Util::load_genome(std::filesystem::path path)
 	}
 
 
-	auto fasta = parse_fasta(path.string());
+	auto fasta = parse_fasta(path.string(), true);
 
 	// string seq = "";
 	string max_name = "";
@@ -139,7 +139,9 @@ string Util::load_genome(std::filesystem::path path)
 	assert(false);
 }
 
-map<string, string> Util::parse_fasta (string file_path)
+// dna = true for dna
+// dna = false for amino
+map<string, string> Util::parse_fasta(string file_path, bool dna)
 {
 	// printf("reading %s... ", file_path.c_str());
 	// auto start = time();
@@ -161,7 +163,8 @@ map<string, string> Util::parse_fasta (string file_path)
 			if (!name.empty())
 			{
 				// Get what we read from the last entry
-				content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
+				if (dna)
+					content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
 				seqs[name] = content;
 				
 				name.clear();
@@ -192,7 +195,8 @@ map<string, string> Util::parse_fasta (string file_path)
 	if (!name.empty())
 	{
 		// Get what we read from the last 
-		content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
+		if (dna)
+			content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
 
 		seqs[name] = content;
 	}

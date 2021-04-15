@@ -260,9 +260,9 @@ vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
 		if (!domain_map.contains(identifier))
 			continue;
 
-		std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string());
+		std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string(), false);
 		vector<string> seqs;
-
+		seqs.clear();
 		for (auto const& entry : fasta_seqs)
 			seqs.push_back(entry.second);
 
@@ -291,9 +291,9 @@ void CasProfileUtil::serialize()
 
 	auto profiles_pfam = generate_pfams(pfam_dir);
 	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
-	// auto profiles_cog = generate_cogs(cog_dir);
+	auto profiles_cog = generate_cogs(cog_dir);
 
 	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
 	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
-	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
