@@ -11,10 +11,19 @@ std::vector<std::string> Util::parse(std::string str, std::string delim)
 	size_t pos = 0;
 	std::string token;
 	while ((pos = str.find(delim)) != std::string::npos) {
+
+		if (pos == 0) {
+			pos = str.find_first_not_of(delim);
+			str.erase(0, pos);
+			continue;
+		}
+
 		token = str.substr(0, pos);
 		//std::cout << token << std::endl;
 		str.erase(0, pos + delim.length());
-		tokens.push_back(token);
+
+		if (token != delim)
+			tokens.push_back(token);
 	}
 	tokens.push_back(str);
 	return tokens;
@@ -252,7 +261,7 @@ ull Util::mismatch_count (string repeat)
 	}
 	return _count;
 }
-string Util::seqs_to_fasta (vector <string> seqs)
+string Util::seqs_to_fasta(vector<string>& seqs)
 {
     ostringstream string_stream;
     for (ull i = 0; i < seqs.size(); i++)

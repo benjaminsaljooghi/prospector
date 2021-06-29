@@ -103,6 +103,20 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 			}
 		}
 	}
+
+	double sum = 0;
+	for (ui i = 0; i < sequences.size(); i++)
+		sum += sequences[i].size();
+
+	
+	std::sort(sequences.begin(), sequences.end(), [] (const std::string& first, const std::string& second){ return first.size() < second.size(); });
+	profile->length_median = sequences[sequences.size() / 2].length();
+	profile->length_mean = sum / sequences.size();
+	profile->length_min = sequences[0].size();
+	profile->length_max = sequences[sequences.size()-1].size();
+
+	fmt::print("{}\t{}\t{}\t{}\t{}\n", id, profile->length_median, profile->length_mean, profile->length_min, profile->length_max);
+
 	return profile;
 }
 

@@ -203,7 +203,7 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         auto b = domains == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
 
         std::ostringstream stream;
-        stream << fmt::format("\t{}\t{}\t{}..{}\t{}\n", domains, signals, begin, final, strand);
+        stream << fmt::format("\t{}\t{}\t{}..{}\t{}\t{}\n", domains, signals, begin, final, b.size(), strand);
         stream << "\t" << a << "\n";
         stream << "\t" << b << "\n";
         return stream.str();
@@ -266,25 +266,25 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
  
         if (alignment_type == "<")
         {
-            interpretation << "ground only:\n";
+            interpretation << "ground only\t";
             interpretation << gen_ground_str(split);
         }
         
         if (alignment_type == ">")
         {
-            interpretation << "target only:\n";
+            interpretation << "target only\t";
             interpretation << gen_target_str(split);
         }
 
         if (alignment_type == "!")
         {
-            interpretation << "overlap ground:\n";
+            interpretation << "overlap ground\t";
             interpretation << gen_ground_str(split);
         
             std::getline(in, line);
             auto split = Util::parse(line, "\t");
 
-            interpretation << "overlap target:\n";
+            interpretation << "overlap target\t";
             interpretation << gen_target_str(split);
 
         }
@@ -292,6 +292,11 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         if (alignment_type == "$")
         {
 
+        }
+
+        if (alignment_type == "v")
+        {
+            interpretation << "skipping a vindicated gene here because it's essentially a true positive\n";
         }
 
         interpretation << "\n\n";

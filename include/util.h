@@ -122,7 +122,6 @@ namespace Util
 
 	bool any_overlap(ull a_start, ull a_final, ull b_start, ull b_final);
 
-
 	template <typename T> void print_vector(vector<T> a)
 	{
 		for (ull i = 0; i < a.size(); i++)
@@ -221,7 +220,7 @@ namespace Util
 
 	
 	ull mismatch_count(string);
-	string seqs_to_fasta(vector<string>);
+	string seqs_to_fasta(vector<string>&);
 	vector<string> kmerize(string seq, ui k);
 
 	kmer encode_amino_kmer(const string& kmer);

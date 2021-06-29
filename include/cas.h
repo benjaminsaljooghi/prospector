@@ -49,6 +49,8 @@ struct Fragment
     ull expanded_genome_begin;
     ull expanded_genome_final;
 
+    
+
     bool repetition_problem()
     {
         auto kmers = Util::kmerize(this->protein_sequence, CasProfileUtil::k); // no need to do this sicnce it's already been kmerized etc but keep it for now

@@ -179,7 +179,7 @@ struct System
 };
 
 
-vector<MultiFragment*> gen_multifragmetns(vector<Fragment*> fragments)
+vector<MultiFragment*> gen_multifragments(vector<Fragment*> fragments)
 {
     vector<MultiFragment*> multifragments;
     for (ui i = 0; i < fragments.size(); i++)
@@ -246,6 +246,7 @@ vector<System*> gen_systems(vector<Locus*> loci)
     for (System* s : systems)
     {
         if (s->legitimate_system())
+        // if (true)
         {
             filtered_systems.push_back(s);
         }
@@ -259,6 +260,73 @@ vector<System*> gen_systems(vector<Locus*> loci)
 }
 
 
+bool hammer()
+
+
+bool is_this_seq_what_it_says_it_is(Fragment* fragment) {
+
+    // perform a hmm lookup against the reference profile
+
+    // get reference profile identifier
+    auto reference_profile_identifier = fragment->reference_profile->identifier;
+
+    // perform a hammer against this
+
+
+}
+
+
+// hardcoded against cas1 for now
+vector<ui> hammer(vector<Fragment*>& fragments) {
+    
+    // runtime:
+    // - write candidate sequences to file
+    // - system call of hmmscan
+    // - parse results
+    // - make decisions based on results
+
+    vector<string> seqs;
+    for (Fragment* fragment : fragments) {
+        seqs.push_back(fragment->protein_sequence);
+    } 
+
+    string fasta = Util::seqs_to_fasta(seqs);
+
+    // write candidate sequence to file
+    std::ofstream out("/home/ben/hmm/candidates_cas1.txt");
+    out << fasta;
+    out.close();
+
+    // system call of hmmscan
+    string call = "hmmscan --tblout tbloutty.txt /home/ben/hmm/Cas_Cas1.hmm /home/ben/hmm/candidates_cas1.txt > /dev/null";
+    system(call.c_str());
+
+    // parse tblout
+    std::ifstream infile("tbloutty.txt");    
+    string line;
+    vector<ui> acceptable_indices;
+
+    while (std::getline(infile, line))
+    {
+        // fmt::print("line: {}\n", line);
+        if (line.starts_with("#"))
+            continue;
+
+        vector<string> parse_result = Util::parse(line, " ");
+        string query_name = parse_result[2];
+        double score = std::stod(parse_result[5]);
+        fmt::print("{} {}\n", query_name, score);
+        acceptable_indices.push_back(std::stoi(query_name));
+    }
+
+    for (ui ting : acceptable_indices)
+    {
+        fmt::print("{}\n", ting);
+    }
+
+    return acceptable_indices;
+}
+
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
     auto start_prospect = time();
@@ -268,22 +336,44 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     std::filesystem::path results_path = Config::results_dir / genome_path.stem();    
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
-    // std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
+    std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
 
     string genome = Util::load_genome(genome_path);
 
     vector<Crispr*> crisprs = Array::get_crisprs(genome);
     vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
-    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
+    vector<Fragment*> raw_fragments = Cas::cas(profiles, translations, genome);
 
-    // out_gene_debug << fmt::format("BEGIN raw fragments\n");
-    // for (Fragment* f : fragments)
-    // {
-        // out_gene_debug << f->to_string_debug() << endl;   
-    // }
-    // out_gene_debug << fmt::format("END raw fragments\n");
 
-    vector<MultiFragment*> multifragments = gen_multifragmetns(fragments);
+    // perform an analysis here of the fragments (either here or multifragments, not sure yet, but let's focus on proof of concept first)
+    // let's focus just on cas1 for now
+    vector<ui> acceptable_indices = hammer(raw_fragments);
+
+    fmt::print("fasta enumeration of raw fragments:\n");
+    for (ui i = 0; i < raw_fragments.size(); i++) {
+        fmt::print("{}\n", i);
+    }
+
+    fmt::print("we now have acceptable indices\n");
+    for (ui index : acceptable_indices) {
+        fmt::print("{}\n", index);
+    }
+
+    vector<Fragment*> fragments;
+    for (ui i = 0; i < raw_fragments.size(); i++) {
+        if (Util::contains(acceptable_indices, i))
+            fragments.push_back(raw_fragments[i]);
+    }
+
+
+    out_gene_debug << fmt::format("BEGIN raw fragments\n");
+    for (Fragment* f : fragments)
+    {
+        out_gene_debug << f->to_string_debug() << endl;   
+    }
+    out_gene_debug << fmt::format("END raw fragments\n");
+
+    vector<MultiFragment*> multifragments = gen_multifragments(fragments);
   
     std::vector<Locus*> loci;
 
@@ -313,7 +403,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     out_gene << fmt::format("// finished in {} ms", timed_prospect);
 
     out_gene.close();
-    // out_gene_debug.close();
+    out_gene_debug.close();
 }
 
 void assert_file(std::filesystem::path path)
@@ -338,6 +428,7 @@ void run(vector<CasProfile*>& profiles)
     }
 }
 
+
 int main()
 {
     auto start_main = time();
@@ -346,15 +437,19 @@ int main()
     assert_file(Config::serialization_dir);
     assert_file(Config::genome_dir);
     assert_file(Config::results_dir);
-    Prospector::device_init();
     CasProfileUtil::load_domain_map(Config::domain_map_path);    
 
-    // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir);
-    CasProfileUtil::serialize();
-    
+    // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir); return 0;
+
+    Prospector::device_init();
+    // CasProfileUtil::serialize();
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
-    run(profiles);
+    vector<CasProfile*> profiles_filtered = Debug::cas_filter(profiles, "cas1");
+    
+    run(profiles_filtered);
     for (CasProfile* p : profiles) delete p;
+
+
 
     start_main = time(start_main, "main");
     return 0;                                                                                                           
