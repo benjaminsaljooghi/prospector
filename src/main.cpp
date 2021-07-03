@@ -30,6 +30,83 @@ namespace Config
 }
 
 
+// // hardcoded against cas1 for now
+// vector<ui> hammer(vector<Fragment*> fragments) {
+    
+//     // runtime:
+//     // - write candidate sequences to file
+//     // - system call of hmmscan
+//     // - parse results
+//     // - make decisions based on results
+
+//     vector<string> seqs;
+//     for (Fragment* fragment : fragments) {
+//         seqs.push_back(fragment->protein_sequence);
+//     } 
+
+//     string fasta = Util::seqs_to_fasta(seqs);
+
+//     // write candidate sequence to file
+//     std::ofstream out("/home/ben/crispr/hmm/candidates_cas1.txt");
+//     out << fasta;
+//     out.close();
+
+//     // system call of hmmscan
+//     string call = "hmmscan --tblout tbloutty.txt /home/ben/crispr/hmm/Cas_Cas1.hmm /home/ben/crispr/hmm/candidates_cas1.txt > /dev/null";
+//     system(call.c_str());
+
+//     // parse tblout
+//     std::ifstream infile("tbloutty.txt");    
+//     string line;
+//     vector<ui> acceptable_indices;
+
+//     while (std::getline(infile, line))
+//     {
+//         // fmt::print("line: {}\n", line);
+//         if (line.starts_with("#"))
+//             continue;
+
+//         vector<string> parse_result = Util::parse(line, " ");
+//         string query_name = parse_result[2];
+//         double score = std::stod(parse_result[5]);
+//         fmt::print("{} {}\n", query_name, score);
+//         acceptable_indices.push_back(std::stoi(query_name));
+//     }
+
+//     for (ui ting : acceptable_indices)
+//     {
+//         fmt::print("{}\n", ting);
+//     }
+
+//     return acceptable_indices;
+// }
+
+// vector<Fragment*> acceptable_indices_filter_methodology(vector<Fragment*> raw_fragments)
+// {
+//     // perform an analysis here of the fragments (either here or multifragments, not sure yet, but let's focus on proof of concept first)
+//     // let's focus just on cas1 for now
+//     vector<ui> acceptable_indices = hammer(raw_fragments);
+
+//     fmt::print("fasta enumeration of raw fragments:\n");
+//     for (ui i = 0; i < raw_fragments.size(); i++) {
+//         fmt::print("{}\n", i);
+//     }
+
+//     fmt::print("we now have acceptable indices\n");
+//     for (ui index : acceptable_indices) {
+//         fmt::print("{}\n", index);
+//     }
+
+//     vector<Fragment*> fragments;
+//     for (ui i = 0; i < raw_fragments.size(); i++) {
+//         if (Util::contains(acceptable_indices, i))
+//             fragments.push_back(raw_fragments[i]);
+//     }
+
+//     return fragments;
+// }
+
+
 
 //map<string, System*> system_map;
 //for (Fragment* f : fragments)
@@ -260,48 +337,42 @@ vector<System*> gen_systems(vector<Locus*> loci)
 }
 
 
-bool hammer()
-
-
-bool is_this_seq_what_it_says_it_is(Fragment* fragment) {
-
-    // perform a hmm lookup against the reference profile
-
-    // get reference profile identifier
-    auto reference_profile_identifier = fragment->reference_profile->identifier;
-
-    // perform a hammer against this
-
-
+string get_hmm_file(string hmm_identifier)
+{
+    fmt::print("seeking HMM file with identifier: {}\n", hmm_identifier);
+    return fmt::format("/home/ben/crispr/hmm/hmm_files/{}.HMM", hmm_identifier);
 }
 
+bool have_hmm_file(string hmm_file)
+{
+    bool exists = std::filesystem::exists(hmm_file);
+    if (!exists)
+    {
+        fmt::print("does NOT exist: {}\n", hmm_file);
+    }
+    return exists;
+}
 
-// hardcoded against cas1 for now
-vector<ui> hammer(vector<Fragment*>& fragments) {
-    
-    // runtime:
-    // - write candidate sequences to file
-    // - system call of hmmscan
-    // - parse results
-    // - make decisions based on results
+bool singleton_hammer(string& singleton_seq, string hmm_file)
+{
+    if (!have_hmm_file(hmm_file))
+    {
+        throw new exception();
+    }
 
-    vector<string> seqs;
-    for (Fragment* fragment : fragments) {
-        seqs.push_back(fragment->protein_sequence);
-    } 
-
-    string fasta = Util::seqs_to_fasta(seqs);
+    vector<string> singleton_vec;
+    singleton_vec.push_back(singleton_seq);
+    string fasta = Util::seqs_to_fasta(singleton_vec);
 
     // write candidate sequence to file
-    std::ofstream out("/home/ben/hmm/candidates_cas1.txt");
+    std::ofstream out("/home/ben/crispr/hmm/temp_fasta.txt");
     out << fasta;
     out.close();
 
-    // system call of hmmscan
-    string call = "hmmscan --tblout tbloutty.txt /home/ben/hmm/Cas_Cas1.hmm /home/ben/hmm/candidates_cas1.txt > /dev/null";
+    string call = fmt::format("hmmscan --tblout tbloutty.txt {} /home/ben/crispr/hmm/temp_fasta.txt > /dev/null", hmm_file);
     system(call.c_str());
 
-    // parse tblout
+     // parse tblout
     std::ifstream infile("tbloutty.txt");    
     string line;
     vector<ui> acceptable_indices;
@@ -319,13 +390,40 @@ vector<ui> hammer(vector<Fragment*>& fragments) {
         acceptable_indices.push_back(std::stoi(query_name));
     }
 
-    for (ui ting : acceptable_indices)
-    {
-        fmt::print("{}\n", ting);
+    // return true;
+    assert(acceptable_indices.size() <= 1);
+    return acceptable_indices.size() > 0;
+}
+
+bool singleton_hammer(Fragment* fragment) {
+    string hmm_file;
+    
+    // attempt an exact match
+    hmm_file = get_hmm_file(fragment->reference_profile->identifier);
+    if (!have_hmm_file(hmm_file)) {
+        // exact match could be found, so this is probably like a COG profile. In which case we get the profile's domain and then we find a suitable HMM for that domain.
+
     }
 
-    return acceptable_indices;
+    return singleton_hammer(fragment->protein_sequence, hmm_file);
+
 }
+
+
+vector<Fragment*> individuated_singleton_methodology(vector<Fragment*> raw_fragments) {
+    vector<Fragment*> fragments;
+    for (Fragment* fragment : raw_fragments) {
+        if (singleton_hammer(fragment)) {
+            fragments.push_back(fragment);
+        }
+        else {
+            fmt::print("rejecting {} {} {} {} on the basis of hammer\n", fragment->reference_profile->identifier, CasProfileUtil::domain_table_fetch(fragment->reference_profile->identifier), fragment->expanded_genome_begin, fragment->expanded_genome_final);
+        }
+    }
+    return fragments;
+}
+
+
 
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
@@ -344,34 +442,15 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
     vector<Fragment*> raw_fragments = Cas::cas(profiles, translations, genome);
 
-
-    // perform an analysis here of the fragments (either here or multifragments, not sure yet, but let's focus on proof of concept first)
-    // let's focus just on cas1 for now
-    vector<ui> acceptable_indices = hammer(raw_fragments);
-
-    fmt::print("fasta enumeration of raw fragments:\n");
-    for (ui i = 0; i < raw_fragments.size(); i++) {
-        fmt::print("{}\n", i);
-    }
-
-    fmt::print("we now have acceptable indices\n");
-    for (ui index : acceptable_indices) {
-        fmt::print("{}\n", index);
-    }
-
-    vector<Fragment*> fragments;
-    for (ui i = 0; i < raw_fragments.size(); i++) {
-        if (Util::contains(acceptable_indices, i))
-            fragments.push_back(raw_fragments[i]);
-    }
-
-
     out_gene_debug << fmt::format("BEGIN raw fragments\n");
-    for (Fragment* f : fragments)
+    for (Fragment* f : raw_fragments)
     {
         out_gene_debug << f->to_string_debug() << endl;   
     }
     out_gene_debug << fmt::format("END raw fragments\n");
+
+    // vector<Fragment*> fragments = acceptable_indices_filter_methodology(raw_fragments);
+    vector<Fragment*> fragments = individuated_singleton_methodology(raw_fragments);
 
     vector<MultiFragment*> multifragments = gen_multifragments(fragments);
   
@@ -417,16 +496,26 @@ void assert_file(std::filesystem::path path)
 
 void run(vector<CasProfile*>& profiles)
 {
-    unordered_set<string> interest{ };
+    // interest "GCA_002139875.1_ASM213987v1_genomic.fna"
+    unordered_set<string> interest {  };
+    ui limiter = 1;
+    ui track = 0;
     for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
     {
         string filename = entry.path().filename().string();
+        // fmt::print("{}\n", filename);
         if (interest.empty() || (!interest.empty() && interest.contains(filename)))
         {
             prospect_genome(profiles, entry);
-        } 
+        }
+
+        if (++track == limiter) {
+            break;
+        }
     }
 }
+
+
 
 
 int main()
@@ -439,18 +528,27 @@ int main()
     assert_file(Config::results_dir);
     CasProfileUtil::load_domain_map(Config::domain_map_path);    
 
-    // Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir); return 0;
+    Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir); return 0;
 
     Prospector::device_init();
-    // CasProfileUtil::serialize();
+    CasProfileUtil::serialize();
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
-    vector<CasProfile*> profiles_filtered = Debug::cas_filter(profiles, "cas1");
-    
-    run(profiles_filtered);
+    // vector<CasProfile*> profiles_filtered = Debug::cas_filter(profiles, "cas1");
+    // vector<CasProfile*> profiles_filtered;
+    // for (CasProfile* profile : profiles) {
+    //     if (profile->identifier.starts_with("PF") || profile->identifier.starts_with("TIGR")) {
+    //         profiles_filtered.push_back(profile);
+    //     }
+    // }
+
+    CasProfileUtil::print_profiles(profiles);
+
+
+    run(profiles);
+
+
+
     for (CasProfile* p : profiles) delete p;
-
-
-
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }

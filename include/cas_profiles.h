@@ -9,7 +9,6 @@
 #include "phmap/phmap.h"
 #include "phmap/phmap_dump.h"
 
-
 struct CasProfile
 {
     string identifier;
@@ -19,7 +18,10 @@ struct CasProfile
     double length_mean;
     ui length_min;
     ui length_max;
+
 };
+
+
 
 namespace CasProfileUtil
 {
@@ -29,6 +31,8 @@ namespace CasProfileUtil
     string domain_table_fetch(string);
     bool domain_contained(string domain);
     std::map<string, string> get_domain_map();
+    void print_profiles(vector<CasProfile*> profiles);
     vector<CasProfile*> deserialize_profiles(std::filesystem::path);
     void serialize();
 }
+

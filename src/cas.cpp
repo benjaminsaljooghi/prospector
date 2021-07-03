@@ -166,12 +166,14 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
     vector<Fragment*> fragments;
 
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (signed long p = 0; p < profiles.size(); p++)
     {
         CasProfile* profile = profiles[p];
+        ui translation_index = -1;
         for (Translation* t : translations)
         {
+            translation_index++;
             vector<ull> index;
 
             for (ull i = 0; i < t->pure_kmerized_encoded.size(); i++)
@@ -181,13 +183,47 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
                     index.push_back(i);
             }
 
+
             if (index.size() == 0)
                 continue;
 
-            vector<vector<ull>> clusters = cluster_index(index);
+            // dump index to a file for analysis
+            string file_name = fmt::format("/home/ben/index_dump/{}_{}_{}_{}_{}_{}", CasProfileUtil::domain_table_fetch(profile->identifier), profile->identifier, t->genome_start, t->genome_final, translation_index, index.size());
+            std::ofstream out(file_name);
+            for (ull index_location : index)
+            {
+                out << index_location << "\t" << t->genome_start + index_location << endl;
+            }
+            out.close();
 
+            // std::ofstream out("/home/ben/hmm/temp_fasta.txt");
+            // out << fasta;
+            // out.close();
+
+            vector<vector<ull>> clusters = cluster_index(index);
             if (!good_clusters(clusters))
+            {
                 continue;
+            }
+            else
+            {
+
+                fmt::print("accepted {}\n", file_name);
+    
+                // string file_name = fmt::format("/home/ben/index_dump/{}_{}_{}_{}_clust.txt", profile->identifier, t->genome_start, translation_index++, index.size());
+                string file_name_clust = fmt::format("{}.clust", file_name);
+                std::ofstream out(file_name_clust);
+                for (vector<ull> clust : clusters)
+                {
+                    for (ull index_location : clust)
+                    {
+                        out << index_location << "\t" << t->genome_start + index_location << endl;
+                    }
+                    out << endl;
+                }
+                out.close();
+            }
+
 
             Fragment* f = new Fragment;
             f->reference_genome = &genome;
@@ -212,11 +248,11 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
                 printf("break\n");
             }
 
-            if (f->repetition_problem())
-            {
-                fmt::print("rejected on the basis of repetition problem\n");
-                continue;
-            }
+            // if (f->repetition_problem())
+            // {
+                // fmt::print("rejected on the basis of repetition problem\n");
+                // continue;
+            // }
 
             #pragma omp critical
             {

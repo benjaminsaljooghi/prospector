@@ -46,6 +46,16 @@ std::map<string, string> CasProfileUtil::get_domain_map()
 	return domain_map;
 }
 
+void CasProfileUtil::print_profiles(vector<CasProfile*> profiles)
+{
+    for (CasProfile* p : profiles)
+    {
+        string id = p->identifier;
+        string domain = CasProfileUtil::domain_table_fetch(p->identifier);
+        fmt::print("{}\t{}\n", id, domain);
+    }   
+}
+
 vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path directory)
 {
 	vector<CasProfile*> profiles;
@@ -65,10 +75,7 @@ vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path d
 			
 		profiles.push_back(profile);
 	}
-	for (size_t i = 0; i < profiles.size(); i++)
-	{
-		fmt::print("loaded: {}   {}\n", profiles[i]->identifier, CasProfileUtil::domain_table_fetch(profiles[i]->identifier));
-	}
+	CasProfileUtil::print_profiles(profiles);
 
 	fmt::print("loaded {} profiles\n", profiles.size());
 	return profiles;
@@ -305,9 +312,9 @@ void CasProfileUtil::serialize()
 
 	auto profiles_pfam = generate_pfams(pfam_dir);
 	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
-	auto profiles_cog = generate_cogs(cog_dir);
+	// auto profiles_cog = generate_cogs(cog_dir);
 
 	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
 	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
-	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
