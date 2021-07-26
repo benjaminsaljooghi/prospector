@@ -234,7 +234,7 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         if (line == "" || line[0] == '-')
             continue;
 
-        auto split = Util::parse(line, "\t");
+        auto split = Util::parse_exact(line, "\t");
         if (split[0] == "symbol")
             continue;
      
@@ -282,7 +282,7 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
             interpretation << gen_ground_str(split);
         
             std::getline(in, line);
-            auto split = Util::parse(line, "\t");
+            auto split = Util::parse_exact(line, "\t");
 
             interpretation << "overlap target\t";
             interpretation << gen_target_str(split);

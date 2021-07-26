@@ -33,6 +33,6 @@ namespace CasProfileUtil
     std::map<string, string> get_domain_map();
     void print_profiles(vector<CasProfile*> profiles);
     vector<CasProfile*> deserialize_profiles(std::filesystem::path);
-    void serialize();
+    void serialize(std::filesystem::path);
 }
 

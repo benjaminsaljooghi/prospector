@@ -205,8 +205,8 @@ struct MultiFragment : public Locus
 namespace Cas
 {
     static const ull upstream_size = 30000;
-    static const ull cluster_metric_min = 15; // lower = more sensitive
-    static const ull max_inter_cluster_dist = 8; // higher = more sensitive
+    static const ull cluster_metric_min = 5; // lower = more sensitive
+    static const ull max_inter_cluster_dist = 15; // higher = more sensitive
 
     vector<Translation*> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);
     vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);

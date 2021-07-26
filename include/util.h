@@ -10,7 +10,9 @@ namespace Util
     static const char stop_c = 'Z';
 
 	std::vector<std::string> parse(std::string str, std::string delim);
-	
+	std::vector<std::string> parse_exact(std::string str, std::string delim);
+
+
 	static const map <string, string> codon_table = {
 		{"TTT", "F"},
 		{"TTC", "F"},

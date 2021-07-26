@@ -93,6 +93,7 @@
         "__split_buffer": "cpp",
         "__tree": "cpp",
         "cinttypes": "cpp",
-        "__atomic_generated": "cpp"
+        "__atomic_generated": "cpp",
+        "*.ipp": "cpp"
     }
 }

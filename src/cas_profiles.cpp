@@ -270,22 +270,26 @@ vector<CasProfile*> generate_tigrfams(std::filesystem::path tigr_dir)
 	return profiles;
 }
 
-vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
+// This needs to be versatile in that it can handle fasta seqs that are both single-line and multi-line
+vector<CasProfile*> generate_from_fasta(std::filesystem::path fasta_dir)
 {
 	vector<CasProfile*> profiles;
+	vector<string> seqs;
 
-	for (const auto& entry : std::filesystem::directory_iterator(cog_dir))
+	for (const auto& entry : std::filesystem::directory_iterator(fasta_dir))
 	{
 		string identifier = entry.path().stem().string();
 
 		if (!domain_map.contains(identifier))
+		{
+			fmt::print("skipping generation of profile {} because the identifier is not in the domain map\n", identifier);
 			continue;
-
+		}
+		
 		std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string(), false);
-		vector<string> seqs;
+
 		seqs.clear();
-		for (auto const& entry : fasta_seqs)
-			seqs.push_back(entry.second);
+		for (auto const& entry: fasta_seqs) seqs.push_back(entry.second);
 
 		CasProfile* profile = profile_factory(identifier, seqs, CasProfileUtil::k);
 		profiles.push_back(profile);
@@ -294,27 +298,36 @@ vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
 	return profiles;
 }
 
+vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
+{
+	return generate_from_fasta(cog_dir);
+}
 
-std::filesystem::path data_root = "/home/ben/crispr/data/";
+// std::filesystem::path path_bin_pro = "/home/ben/crispr/prospector-data/bin_pro/"; // duplicated in main
 
-std::filesystem::path serialization_dir = data_root / "profiles/"; // duplicated in main
-std::filesystem::path pfam_full = data_root / "seed/Pfam-A.full/Pfam-A.full";
-std::filesystem::path pfam_dir = data_root / "seed/PFAMS";
-std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_14.0_SEED";
-std::filesystem::path cog_dir = data_root / "seed/cog/";
-void CasProfileUtil::serialize()
+
+std::filesystem::path makarova_dir = "/home/ben/crispr/prospector-data/raw_pro/makarova/";
+// std::filesystem::path pfam_full = data_root / "seed/Pfam-A.full/Pfam-A.full";
+std::filesystem::path pfam_dir = "/home/ben/crispr/prospector-data/raw_pro/PFAMS/";
+// std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_14.0_SEED";
+std::filesystem::path cog_dir = "/home/ben/crispr/prospector-data/raw_pro/COG/";
+
+void CasProfileUtil::serialize(std::filesystem::path path_bin_pro)
 {	
 	auto serialize_profile = [&](CasProfile* profile) {
-		std::filesystem::path file_name = serialization_dir / profile->identifier;
+		std::filesystem::path file_name = path_bin_pro / profile->identifier;
 		phmap::BinaryOutputArchive archive(file_name.string().c_str());
 		profile->hash_table.dump(archive);
 	};
 
+
+	// auto profiles_makarova = generate_from_fasta(makarova_dir);
 	auto profiles_pfam = generate_pfams(pfam_dir);
 	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
-	// auto profiles_cog = generate_cogs(cog_dir);
+	auto profiles_cog = generate_cogs(cog_dir);
 
+	// std::for_each(profiles_makarova.begin(), profiles_makarova.end(), serialize_profile);
 	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
 	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
-	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }

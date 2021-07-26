@@ -188,7 +188,7 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
                 continue;
 
             // dump index to a file for analysis
-            string file_name = fmt::format("/home/ben/index_dump/{}_{}_{}_{}_{}_{}", CasProfileUtil::domain_table_fetch(profile->identifier), profile->identifier, t->genome_start, t->genome_final, translation_index, index.size());
+            string file_name = fmt::format("/media/ben/temp/crispr_lfs/index_dump/{}_{}_{}_{}_{}_{}", CasProfileUtil::domain_table_fetch(profile->identifier), profile->identifier, t->genome_start, t->genome_final, translation_index, index.size());
             std::ofstream out(file_name);
             for (ull index_location : index)
             {

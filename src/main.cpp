@@ -8,23 +8,20 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 #include "path.h"
+#include <boost/algorithm/string.hpp>
 
 namespace Config
 {
-    std::filesystem::path data_root = "/home/ben/crispr/data/";
-    std::filesystem::path util_root = "/home/ben/crispr/prospector-util/";
+    std::filesystem::path path_data = "/home/ben/crispr/prospector-data";
+    std::filesystem::path path_bin_pro = path_data / "bin_pro";
+    std::filesystem::path path_map_dom = path_data / "map_domain.tsv";
+    std::filesystem::path path_map_typ = path_data / "map_typing.tsv";
+    std::filesystem::path path_genome = "/media/ben/temp/crispr_lfs/genome_sage";
 
-    // required big data
-    std::filesystem::path serialization_dir = data_root / "profiles/";
-    std::filesystem::path genome_dir = data_root / "genome/assembly/";
+    std::filesystem::path path_util = "/home/ben/crispr/prospector-util";
 
-    // required small data
-    std::filesystem::path domain_map_path = util_root / "cas/domain_map.tsv";
-    std::filesystem::path type_table_path = util_root / "cas/typing.tsv";
-    std::filesystem::path results_dir = util_root / "results_prosp/";
-
-    // debug (dev only)
-    std::filesystem::path cartograph_prosp = util_root / "cartograph_prosp.tsv";
+    std::filesystem::path path_results = path_util / "results_prosp";
+    std::filesystem::path path_cartograph = path_util / "cartograph_prosp.tsv"; // debug
 
     bool crispr_proximal_search = true;
 }
@@ -336,6 +333,54 @@ vector<System*> gen_systems(vector<Locus*> loci)
     return filtered_systems;
 }
 
+vector<string> get_all_hmm_files()
+{
+    vector<string> paths;
+
+    // step 1: iterate over the dir:
+    std::filesystem::path directory = "/home/ben/crispr/prospector-data/bin_hmm_makarova";
+
+    // does the split[0] of the stem match the cas_type in a case insensitive way?
+    for (const auto& entry : std::filesystem::directory_iterator(directory))
+	{
+		string filename = entry.path().filename().string();
+        vector<string> extensions = Util::parse(filename, ".");
+        string last_extension = extensions[extensions.size()-1];
+        
+        if (last_extension != "hmm")
+            continue;
+
+        string cas_type_of_file = Util::parse(filename, "_")[0];
+        paths.push_back(entry.path().string());
+    }
+    return paths;
+}
+
+vector<string> get_hmm_files(string cas_type)
+{
+    vector<string> paths;
+
+    // step 1: iterate over the dir:
+    std::filesystem::path directory = "/home/ben/crispr/prospector-data/bin_hmm_makarova";
+
+    // does the split[0] of the stem match the cas_type in a case insensitive way?
+    for (const auto& entry : std::filesystem::directory_iterator(directory))
+	{
+		string filename = entry.path().filename().string();
+        vector<string> extensions = Util::parse(filename, ".");
+        string last_extension = extensions[extensions.size()-1];
+        
+        if (last_extension != "hmm")
+            continue;
+
+        string cas_type_of_file = Util::parse(filename, "_")[0];
+        if (boost::iequals(cas_type_of_file, cas_type))
+        {
+            paths.push_back(entry.path().string());
+        }
+    }
+    return paths;
+}
 
 string get_hmm_file(string hmm_identifier)
 {
@@ -360,16 +405,19 @@ bool singleton_hammer(string& singleton_seq, string hmm_file)
         throw new exception();
     }
 
+
     vector<string> singleton_vec;
     singleton_vec.push_back(singleton_seq);
     string fasta = Util::seqs_to_fasta(singleton_vec);
 
+    std::filesystem::path temp_fasta_file = "/media/ben/temp/crispr_lfs/temp_fasta.txt";
+
     // write candidate sequence to file
-    std::ofstream out("/home/ben/crispr/hmm/temp_fasta.txt");
+    std::ofstream out(temp_fasta_file.string());
     out << fasta;
     out.close();
 
-    string call = fmt::format("hmmscan --tblout tbloutty.txt {} /home/ben/crispr/hmm/temp_fasta.txt > /dev/null", hmm_file);
+    string call = fmt::format("hmmscan --cpu 10 --tblout tbloutty.txt {} {} > /dev/null", hmm_file, temp_fasta_file.string());
     system(call.c_str());
 
      // parse tblout
@@ -395,25 +443,47 @@ bool singleton_hammer(string& singleton_seq, string hmm_file)
     return acceptable_indices.size() > 0;
 }
 
-bool singleton_hammer(Fragment* fragment) {
-    string hmm_file;
+// bool singleton_hammer(Fragment* fragment) {
+//     string hmm_file;
     
-    // attempt an exact match
-    hmm_file = get_hmm_file(fragment->reference_profile->identifier);
-    if (!have_hmm_file(hmm_file)) {
-        // exact match could be found, so this is probably like a COG profile. In which case we get the profile's domain and then we find a suitable HMM for that domain.
+//     // attempt an exact match
+//     hmm_file = get_hmm_file(fragment->reference_profile->identifier);
+//     if (!have_hmm_file(hmm_file)) {
+//         // exact match could be found, so this is probably like a COG profile. In which case we get the profile's domain and then we find a suitable HMM for that domain.
+//     }
 
+//     return singleton_hammer(fragment->protein_sequence, hmm_file);
+// }
+
+bool multimatch_hammer(Fragment* fragment) {
+    string cas_type_of_fragment = CasProfileUtil::domain_table_fetch(fragment->reference_profile->identifier);
+    vector<string> hmm_files = get_hmm_files(cas_type_of_fragment);
+
+    for (string hmm_file : hmm_files) {
+        if (singleton_hammer(fragment->protein_sequence, hmm_file)) {
+            return true;
+        }
     }
-
-    return singleton_hammer(fragment->protein_sequence, hmm_file);
-
+    return false;
 }
 
+// vector<Fragment*> individuated_singleton_methodology(vector<Fragment*> raw_fragments) {
+//     vector<Fragment*> fragments;
+//     for (Fragment* fragment : raw_fragments) {
+//         if (singleton_hammer(fragment)) {
+//             fragments.push_back(fragment);
+//         }
+//         else {
+//             fmt::print("rejecting {} {} {} {} on the basis of hammer\n", fragment->reference_profile->identifier, CasProfileUtil::domain_table_fetch(fragment->reference_profile->identifier), fragment->expanded_genome_begin, fragment->expanded_genome_final);
+//         }
+//     }
+//     return fragments;
+// }
 
-vector<Fragment*> individuated_singleton_methodology(vector<Fragment*> raw_fragments) {
+vector<Fragment*> multimatch_singleton_methodology(vector<Fragment*> raw_fragments) {
     vector<Fragment*> fragments;
     for (Fragment* fragment : raw_fragments) {
-        if (singleton_hammer(fragment)) {
+        if (multimatch_hammer(fragment)) {
             fragments.push_back(fragment);
         }
         else {
@@ -423,15 +493,13 @@ vector<Fragment*> individuated_singleton_methodology(vector<Fragment*> raw_fragm
     return fragments;
 }
 
-
-
 void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
 {
     auto start_prospect = time();
 
     fmt::print("\n\n");
 
-    std::filesystem::path results_path = Config::results_dir / genome_path.stem();    
+    std::filesystem::path results_path = Config::path_results / genome_path.stem();    
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
     std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
@@ -449,8 +517,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     }
     out_gene_debug << fmt::format("END raw fragments\n");
 
-    // vector<Fragment*> fragments = acceptable_indices_filter_methodology(raw_fragments);
-    vector<Fragment*> fragments = individuated_singleton_methodology(raw_fragments);
+    vector<Fragment*> fragments = multimatch_singleton_methodology(raw_fragments);
 
     vector<MultiFragment*> multifragments = gen_multifragments(fragments);
   
@@ -500,7 +567,7 @@ void run(vector<CasProfile*>& profiles)
     unordered_set<string> interest {  };
     ui limiter = 1;
     ui track = 0;
-    for (const auto& entry : std::filesystem::directory_iterator(Config::genome_dir))
+    for (const auto& entry : std::filesystem::directory_iterator(Config::path_genome))
     {
         string filename = entry.path().filename().string();
         // fmt::print("{}\n", filename);
@@ -515,24 +582,153 @@ void run(vector<CasProfile*>& profiles)
     }
 }
 
+struct Hit
+{
+    CasProfile* profile;
+    ui hit_count;
+};
+
+// void hmm_db_experiment()
+// {
+//     vector<string> hmm_files = get_all_hmm_files();
+
+//     std::filesystem::path path_prodigal_proteins = "/home/ben/crispr/prospector-util/my.proteins.faa";
+
+//     map<string, string> proteins = Util::parse_fasta(path_prodigal_proteins, false);
+
+//     map<string, vector<Hit*>> protein_id_to_hits;
+
+//     for (auto & [identifier, sequence] : proteins)
+//     {
+// 		sequence.erase(remove(sequence.begin(), sequence.end(), '*'), sequence.end());
+//     }
+
+//     for (auto & [identifier, sequence] : proteins)
+//     {
+//         fmt::print("{}\n", identifier);
+//         for (string& hmm_file : hmm_files)
+//         {
+//             bool positive = singleton_hammer(sequence, hmm_file);
+//             if (positive) {
+//                 fmt::print("got a positive on {}\n", sequence);
+//             }
+//         }
+//     }
+
+// }
+
+bool claim_validation(string& protein_sequence, string cas_claim)
+{
+    vector<string> hmm_files = get_hmm_files(cas_claim);
+    fmt::print("executing {} hmm files\n", hmm_files.size());
+    for (string hmm_file : hmm_files)
+    {
+        if (singleton_hammer(protein_sequence, hmm_file))
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 
+string hit_assessment(Hit* hit, string& protein_sequence)
+{
+    string cas_claim = CasProfileUtil::domain_table_fetch(hit->profile->identifier);
+    bool validated = claim_validation(protein_sequence, cas_claim);
+    return fmt::format("{} {} {} {}\n", hit->profile->identifier, cas_claim, hit->hit_count, validated);
+    
+}
+
+void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
+{
+    auto start_prodigal = time();
+
+    std::filesystem::path path_prodigal_proteins = "/home/ben/crispr/prospector-util/my.proteins.faa";
+
+    map<string, string> proteins = Util::parse_fasta(path_prodigal_proteins, false);
+
+    map<string, vector<Hit*>> protein_id_to_hits;
+
+    for (auto & [identifier, sequence] : proteins)
+    {
+		sequence.erase(remove(sequence.begin(), sequence.end(), '*'), sequence.end());
+
+        auto kmers = Util::kmerize(sequence, 6);
+        auto kmers_encoded = Util::encode_amino_kmers(kmers, 6);
+
+        vector<Hit*> hits;
+
+        for (signed long p = 0; p < profiles.size(); p++)
+        {
+            CasProfile* profile = profiles[p];
+            // vector<ull> index;
+            ull count = 0;
+            for (ull i = 0; i < kmers_encoded.size(); i++)
+            {
+                bool contains = profile->hash_table.contains(kmers_encoded[i]);
+                if (contains)
+                    count++;
+                    // index.push_back(i);
+            }
+
+            Hit* hit = new Hit;
+            hit->profile = profile;
+            // hit->hit_count = index.size();
+            hit->hit_count = count;
+
+            hits.push_back(hit);
+        }
+
+        // sort hits
+        Util::sort(hits, [](Hit* a, Hit* b) { return a->hit_count > b->hit_count; });
+
+        // store hits
+        protein_id_to_hits[identifier] = hits;
+    }
+
+    start_prodigal = time(start_prodigal, "hit counts");
+
+    std::ofstream outtie("outtie.txt");
+
+    for (auto const& [identifier, hits] : protein_id_to_hits)
+    {
+        string protein_sequence = proteins[identifier];
+        outtie << fmt::format("{}\n", identifier);
+        outtie << hit_assessment(hits[0], protein_sequence);
+        outtie << hit_assessment(hits[1], protein_sequence);
+        outtie << hit_assessment(hits[2], protein_sequence);
+        outtie << "\n\n";
+    }
+
+    start_prodigal = time(start_prodigal, "hmmer");
+
+
+    outtie.close();
+
+
+    start_prodigal = time(start_prodigal, "full prodigal analysis");
+
+
+
+}
 
 int main()
 {
     auto start_main = time();
-    assert_file(Config::domain_map_path);
-    assert_file(Config::type_table_path);
-    assert_file(Config::serialization_dir);
-    assert_file(Config::genome_dir);
-    assert_file(Config::results_dir);
-    CasProfileUtil::load_domain_map(Config::domain_map_path);    
+    assert_file(Config::path_map_dom);
+    assert_file(Config::path_map_typ);
+    assert_file(Config::path_bin_pro);
+    assert_file(Config::path_genome);
+    assert_file(Config::path_results.parent_path());
+    std::filesystem::create_directory(Config::path_results);
+    CasProfileUtil::load_domain_map(Config::path_map_dom);    
 
-    Debug::cartograph_interpreter(Config::cartograph_prosp, Config::genome_dir); return 0;
+    // Debug::cartograph_interpreter(Config::path_cartograph, Config::path_genome); return 0;
 
-    Prospector::device_init();
-    CasProfileUtil::serialize();
-    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::serialization_dir);
+    // Prospector::device_init();
+    // CasProfileUtil::serialize(Config::path_bin_pro);
+    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::path_bin_pro);
     // vector<CasProfile*> profiles_filtered = Debug::cas_filter(profiles, "cas1");
     // vector<CasProfile*> profiles_filtered;
     // for (CasProfile* profile : profiles) {
@@ -543,12 +739,12 @@ int main()
 
     CasProfileUtil::print_profiles(profiles);
 
+    analyze_prodigal_proteins(profiles);
+    // hmm_db_experiment();
 
-    run(profiles);
+    // run(profiles);
 
-
-
-    for (CasProfile* p : profiles) delete p;
+    // for (CasProfile* p : profiles) delete p;
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }
