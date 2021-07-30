@@ -627,6 +627,7 @@ bool claim_validation(string& protein_sequence, string cas_claim)
         {
             return true;
         }
+        return false; // THIS IS EXPERIMENTAL TO JUST SEE PERFORMANCE BEFORE I COLLAPSE ALL THE HMM_FILES INTO A HMM_DB FOR A GIVEN CAS_CLAIM
     }
     return false;
 }
@@ -640,14 +641,8 @@ string hit_assessment(Hit* hit, string& protein_sequence)
     
 }
 
-void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
+map<string, vector<Hit*>> build_hits(map<string, string> proteins, vector<CasProfile*>& profiles)
 {
-    auto start_prodigal = time();
-
-    std::filesystem::path path_prodigal_proteins = "/home/ben/crispr/prospector-util/my.proteins.faa";
-
-    map<string, string> proteins = Util::parse_fasta(path_prodigal_proteins, false);
-
     map<string, vector<Hit*>> protein_id_to_hits;
 
     for (auto & [identifier, sequence] : proteins)
@@ -687,30 +682,59 @@ void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
         protein_id_to_hits[identifier] = hits;
     }
 
-    start_prodigal = time(start_prodigal, "hit counts");
+    return protein_id_to_hits;
+}
 
-    std::ofstream outtie("outtie.txt");
-
+void evaluate_hits(map<string, string> proteins, map<string, vector<Hit*>>& protein_id_to_hits)
+{
+    std::ofstream outfile("outfile.txt");
     for (auto const& [identifier, hits] : protein_id_to_hits)
     {
         string protein_sequence = proteins[identifier];
-        outtie << fmt::format("{}\n", identifier);
-        outtie << hit_assessment(hits[0], protein_sequence);
-        outtie << hit_assessment(hits[1], protein_sequence);
-        outtie << hit_assessment(hits[2], protein_sequence);
-        outtie << "\n\n";
+        outfile << fmt::format("{}\n", identifier);
+        outfile << hit_assessment(hits[0], protein_sequence);
+        outfile << hit_assessment(hits[1], protein_sequence);
+        outfile << hit_assessment(hits[2], protein_sequence);
+        outfile << "\n\n";
+    }
+    outfile.close();
+}
+
+map<string, vector<string>> transform_hits_to_efficient_table(map<string, vector<Hit*>> protein_id_to_hits)
+{
+    map<string, vector<string>> table;
+    for (auto const& [identifier, hits] : protein_id_to_hits)
+    {
+        // for now we assume that the first hit is the thing we are looking for (this is actually incorrect but doesn't matter for now, we can do something else later like build multiple tables or whatever)
+        auto hit = hits[0];
+        // now that we have the first hit, I now just need to put into a table that associates the cas claim (left) with a vector of identifiers (right)
+        string cas_claim = CasProfileUtil::domain_table_fetch(hit->profile->identifier);
+        
+        // if (!table.contains(cas_claim))
+            // table[cas_claim] = vector<string>();
+        
+        table[cas_claim].push_back(identifier);
     }
 
-    start_prodigal = time(start_prodigal, "hmmer");
+    return table;
+}
+
+void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
+{
+    map<string, string> proteins = Util::parse_fasta("/home/ben/crispr/prospector-util/my.proteins.faa", false);
+    map<string, vector<Hit*>> hits = build_hits(proteins, profiles);
+    // perform a hit transform
+    map<string, vector<string>> table = transform_hits_to_efficient_table(hits);
+
+    // now we perform a claim validation here
+    for (auto const& [cas_claim, protein_ids] : table)
+    {
+        // for this claim, we perform a cluster validation
+        // RESUME: but in order for this to work we need to 
+    }
 
 
-    outtie.close();
-
-
-    start_prodigal = time(start_prodigal, "full prodigal analysis");
-
-
-
+    evaluate_hits(proteins, hits);
 }
 
 int main()

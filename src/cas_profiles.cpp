@@ -127,34 +127,18 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 	return profile;
 }
 
-
-vector<string> get_seqs_pfam(std::filesystem::path dir)
+vector<CasProfile*> get_profiles_pfam(map<string, vector<string>>& pfam_id_to_seqs) 
 {
-	aisdgad
+	vector<CasProfile*> profiles;
+	for (auto const& [pfam_id, seqs] : pfam_id_to_seqs)
+	{
+		profiles.push_back(profile_factory(pfam_id, seqs, CasProfileUtil::k));
+	}
+	return profiles;
 }
 
-vector<string> get_seqs_cog(std::filesystem::path dir)
+map<string, vector<string>> get_seqs_pfam(std::filesystem::path dir)
 {
-	adpaiydad
-}
-
-vector<string> get_seqs_tigrfam(std::filesystem::path dir)
-{
-	daigdad;
-}
-
-vector<string> get_seqs_makarova(std::filesystem::path dir)
-{
-	asgdada;
-}
-
-
-vector<CasProfile*> generate_pfams(std::filesystem::path dir)
-{
-	// ifstream input(pfam_full);
-	// if (!input.good())
-		// throw runtime_error("input not good!");
-
 	auto is_seq = [](string& line) {
 		return !(
 			line.starts_with(" ") ||
@@ -167,60 +151,7 @@ vector<CasProfile*> generate_pfams(std::filesystem::path dir)
 			line == "");
 	};
 
-	// vector<string> seq_buffer;
-	// string ac;
-	// ui line_count = 0;
-	// bool engage = false;
-	// string line;
-	// while (getline(input, line))
-	// {
-	// 	if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
-
-	// 	if (line.starts_with("#=GF AC"))
-	// 	{
-	// 		ac = line;
-	// 		ac.erase(0, 10);
-	// 		ac.erase(ac.find_first_of('.'));
-
-	// 		cout << ac << endl;
-	// 		if (domain_map.contains(ac))
-	// 		{
-	// 			engage = true;
-	// 		}
-
-	// 		continue;
-	// 	}
-
-	// 	if (!engage)
-	// 	{
-	// 		continue;
-	// 	}
-
-	// 	if (line.starts_with("//"))
-	// 	{
-	// 		ofstream output(dir / ac);
-
-	// 		for (string& line : seq_buffer)
-	// 		{
-	// 			string sequence = line.substr(line.find_last_of(' ') + 1);
-
-	// 			output << sequence << endl;
-	// 		}
-	// 		output.close();
-
-	// 		seq_buffer.clear();
-	// 		engage = false;
-	// 		continue;
-	// 	}
-
-	// 	if (is_seq(line)) continue;
-	// 	seq_buffer.push_back(line);
-	// }
-
-	// input.close();
-
-	vector<CasProfile*> profiles;
-
+	map<string, vector<string>> id_to_seqs; // this is like PF1234: ">a CGACAGTCAG     >b ACAGCATCGACATCGACA" etc (except they are amino seqs)
     for (const auto& entry : std::filesystem::directory_iterator(dir))
 	{
 		ifstream raw(entry.path().string());
@@ -240,13 +171,30 @@ vector<CasProfile*> generate_pfams(std::filesystem::path dir)
 				sequences.push_back(sequence);
 			}
 		}
-		profiles.push_back(profile_factory(id, sequences, CasProfileUtil::k));
-		fmt::print("{} pfam profiles built\n", profiles.size());
+		id_to_seqs[id] = sequences; 
 	}
-
-
-	return profiles;
+	return id_to_seqs;
 }
+
+
+
+// map<string, vector<string>> get_seqs_from_fasta_dir(std::filesystem::path dir)
+// {
+// 	map<string, vector<string>> alles_seqs; // remember, we are parsing a fasta, but the specific ids in each fasta file do not matter, we want to link the FILE'S NAME (COG123) with a vector of all sequences in the file.
+// 	for (const auto& entry : std::filesystem::directory_iterator(dir))
+// 	{
+// 		string identifier = entry.path().stem().string();
+// 		std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string(), false);
+// 		for (auto const& fast_seq: fasta_seqs)
+// 			alles_seqs[identifier].push_back(fast_seq.second);
+// 	}
+// 	return alles_seqs;
+// }
+
+// vector<string> get_seqs_tigrfam(std::filesystem::path dir)
+// {
+// 	daigdad;
+// }
 
 vector<CasProfile*> generate_tigrfams(std::filesystem::path tigr_dir)
 {
@@ -293,46 +241,31 @@ vector<CasProfile*> generate_tigrfams(std::filesystem::path tigr_dir)
 }
 
 // This needs to be versatile in that it can handle fasta seqs that are both single-line and multi-line
-vector<CasProfile*> generate_from_fasta(std::filesystem::path fasta_dir)
-{
-	vector<CasProfile*> profiles;
-	vector<string> seqs;
+// vector<CasProfile*> generate_from_fasta(std::filesystem::path fasta_dir)
+// {
+	
+// }
 
-	for (const auto& entry : std::filesystem::directory_iterator(fasta_dir))
-	{
-		string identifier = entry.path().stem().string();
-
-		if (!domain_map.contains(identifier))
-		{
-			fmt::print("skipping generation of profile {} because the identifier is not in the domain map\n", identifier);
-			continue;
-		}
-		
-		std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string(), false);
-
-		seqs.clear();
-		for (auto const& entry: fasta_seqs) seqs.push_back(entry.second);
-
-		CasProfile* profile = profile_factory(identifier, seqs, CasProfileUtil::k);
-		profiles.push_back(profile);
-	}
-
-	return profiles;
-}
-
-vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
-{
-	return generate_from_fasta(cog_dir);
-}
+// vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
+// {
+// 	return generate_from_fasta(cog_dir);
+// }
 
 // std::filesystem::path path_bin_pro = "/home/ben/crispr/prospector-data/bin_pro/"; // duplicated in main
-
-
 std::filesystem::path makarova_dir = "/home/ben/crispr/prospector-data/raw_pro/makarova/";
 // std::filesystem::path pfam_full = data_root / "seed/Pfam-A.full/Pfam-A.full";
 std::filesystem::path pfam_dir = "/home/ben/crispr/prospector-data/raw_pro/PFAMS/";
 // std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_14.0_SEED";
 std::filesystem::path cog_dir = "/home/ben/crispr/prospector-data/raw_pro/COG/";
+
+// vector<CasProfile*> generate_profiles_from_master_list_of_all_seqs()
+// {
+// 	if (!domain_map.contains(identifier))
+// 	{
+// 		fmt::print("skipping generation of profile {} because the identifier is not in the domain map\n", identifier);
+// 		continue;
+// 	}
+// }
 
 void CasProfileUtil::serialize(std::filesystem::path path_bin_pro)
 {	
@@ -343,13 +276,24 @@ void CasProfileUtil::serialize(std::filesystem::path path_bin_pro)
 	};
 
 
+	// get all seqs
+	map<string, vector<string>> pfam_seqs = get_seqs_pfam(pfam_dir);
+	// map<string, vector<string>> cog_seqs = get_seqs_from_fasta_dir(cog_dir);
+	// map<string, vector<string>> makarova_seqs = get_seqs_from_fasta_dir(makarova_dir);
+	// map<string, vector<string>> tigrfram_seqs = get_seqs_tigrfam(tigrfam_dir);
+
+	// generate_profiles_from_master_list_of_all_seqs();
+
+
+
 	// auto profiles_makarova = generate_from_fasta(makarova_dir);
-	auto profiles_pfam = generate_pfams(pfam_dir);
+	// auto profiles_pfam = generate_pfams(pfam_dir);
+	auto profiles_pfam = get_profiles_pfam(pfam_seqs);
 	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
-	auto profiles_cog = generate_cogs(cog_dir);
+	// auto profiles_cog = generate_cogs(cog_dir);
 
 	// std::for_each(profiles_makarova.begin(), profiles_makarova.end(), serialize_profile);
 	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
 	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
-	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	// std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
 }
