@@ -202,6 +202,7 @@ map<string, string> Util::parse_fasta(string file_path, bool dna)
 			if (!line.empty())
 			{
 				name = line.substr(1);
+				name.erase(std::remove_if(name.begin(), name.end(), [](char c) { return c == ' '; }), name.end());
 			}
 			content.clear();
 		}
@@ -282,6 +283,18 @@ ull Util::mismatch_count (string repeat)
 	}
 	return _count;
 }
+
+string Util::seqs_to_fasta(map<string, string>& seqs)
+{
+    ostringstream string_stream;
+	for (auto const& [id, seq] : seqs)
+    {
+        string_stream << ">" << id << endl;
+        string_stream << seq << endl;  
+    }
+    return string_stream.str();
+}
+
 string Util::seqs_to_fasta(vector<string>& seqs)
 {
     ostringstream string_stream;

@@ -398,13 +398,41 @@ bool have_hmm_file(string hmm_file)
     return exists;
 }
 
+vector<string> hammer(std::filesystem::path protein_fasta, string hmm_file)
+{
+    string tblout = "tblout.txt";
+
+    string call = fmt::format("hmmscan --cpu 10 --tblout {} {} {} > /dev/null", tblout, hmm_file, protein_fasta.string());
+    system(call.c_str());
+
+    std::ifstream infile(tblout);
+    string line;
+    vector<string> validated_queries;
+
+    while (std::getline(infile, line))
+    {
+        if (line.starts_with("#"))
+            continue;
+
+        vector<string> parse_result = Util::parse(line, " ");
+        string query_name = parse_result[2];
+        double score = std::stod(parse_result[5]);
+        fmt::print("{} {}\n", query_name, score);
+        // validated_queries.push_back(std::stoi(query_name));
+        validated_queries.push_back(query_name);
+    }
+
+    // assert(validated_queries.size() <= 1);
+    // return validated_queries.size() > 0;
+    return validated_queries;
+}
+
 bool singleton_hammer(string& singleton_seq, string hmm_file)
 {
     if (!have_hmm_file(hmm_file))
     {
         throw new exception();
     }
-
 
     vector<string> singleton_vec;
     singleton_vec.push_back(singleton_seq);
@@ -417,30 +445,7 @@ bool singleton_hammer(string& singleton_seq, string hmm_file)
     out << fasta;
     out.close();
 
-    string call = fmt::format("hmmscan --cpu 10 --tblout tbloutty.txt {} {} > /dev/null", hmm_file, temp_fasta_file.string());
-    system(call.c_str());
-
-     // parse tblout
-    std::ifstream infile("tbloutty.txt");    
-    string line;
-    vector<ui> acceptable_indices;
-
-    while (std::getline(infile, line))
-    {
-        // fmt::print("line: {}\n", line);
-        if (line.starts_with("#"))
-            continue;
-
-        vector<string> parse_result = Util::parse(line, " ");
-        string query_name = parse_result[2];
-        double score = std::stod(parse_result[5]);
-        fmt::print("{} {}\n", query_name, score);
-        acceptable_indices.push_back(std::stoi(query_name));
-    }
-
-    // return true;
-    assert(acceptable_indices.size() <= 1);
-    return acceptable_indices.size() > 0;
+    return hammer(temp_fasta_file, hmm_file).size() > 0;
 }
 
 // bool singleton_hammer(Fragment* fragment) {
@@ -617,6 +622,29 @@ struct Hit
 
 // }
 
+
+set<string> claim_validation_fasta(std::filesystem::path protein_fasta, string cas_claim)
+{
+    // string hmm_file = get_hmm_files(cas_claim)[0];
+    vector<string> hmm_files = get_hmm_files(cas_claim);
+    if (hmm_files.size() == 0)
+    {
+        fmt::print("couldn't identify for {}\n", cas_claim);
+        return set<string>();
+    }
+    // string hmm_file = hmm_files[0]; 
+    set<string> valdiation_set;
+    for (string hmm_file : hmm_files)
+    {
+        vector<string> validated_queries = hammer(protein_fasta, hmm_file);
+        for (string query : validated_queries)
+        {
+            valdiation_set.insert(query);
+        }
+    }
+    return valdiation_set;
+}
+
 bool claim_validation(string& protein_sequence, string cas_claim)
 {
     vector<string> hmm_files = get_hmm_files(cas_claim);
@@ -722,19 +750,65 @@ map<string, vector<string>> transform_hits_to_efficient_table(map<string, vector
 void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
 {
     map<string, string> proteins = Util::parse_fasta("/home/ben/crispr/prospector-util/my.proteins.faa", false);
+
+
+
     map<string, vector<Hit*>> hits = build_hits(proteins, profiles);
     // perform a hit transform
     map<string, vector<string>> table = transform_hits_to_efficient_table(hits);
 
+    std::ofstream dump_file("validation_dump.txt");
+
     // now we perform a claim validation here
     for (auto const& [cas_claim, protein_ids] : table)
     {
+        dump_file << fmt::format("CAS CLAIM: {}\n", cas_claim);
+
         // for this claim, we perform a cluster validation
-        // RESUME: but in order for this to work we need to 
+        // but in order for this EXPERIMENT to work we need to do a bt of data generation work:
+        // #1 we must now write the protein_ids that we have on hand to a fasta file. So we need a fasta serialization method.
+        // #2 generate our HMMDBs. Where the Makarova clusters of like "cas1.hmm, cas1.hmm, cas1.hmm" etc all become "cas1db.hmm"
+
+        // #1
+        // get all the sequences
+        // vector<string> seqs;
+        // for (string id : protein_ids)
+        // {
+            // seqs.push_back(proteins[id]);
+        // }
+        // write the sequnces
+        // string fasta = Util::seqs_to_fasta(seqs);
+        map<string, string> proteins_reconstructed;
+        for (string id : protein_ids)
+        {
+            proteins_reconstructed[id] = proteins[id];
+        }
+        string fasta = Util::seqs_to_fasta(proteins_reconstructed);
+        std::filesystem::path temp_fasta_path = "temp_fasta.fasta";
+        std::ofstream outfile(temp_fasta_path);
+        outfile << fasta;
+        outfile.close();
+
+        // #2
+        // we can currently skip this step as an experiment to determine checking all the sequences against singleton hmms. We can compare the timing
+        // of this experiment with the previous approach, but with also using singleton hmms. My point is that in both experiments the hmmdb is optional,
+        // so the comparison is valid.
+
+        // EXPERIMENT
+        // now that we have the files in a fasta, we can run an experimental claims validation function that takes a fasta file rather than a protein string
+        set<string> validated_queries = claim_validation_fasta(temp_fasta_path, cas_claim);
+
+        // dump validated queries here
+        for (string validated_query : validated_queries)
+        {
+            // produce protein sequence
+            string prot_sequence = proteins[validated_query];
+            dump_file << fmt::format("{}\n", validated_query);
+        }
     }
+    dump_file.close();
 
-
-    evaluate_hits(proteins, hits);
+    // evaluate_hits(proteins, hits);
 }
 
 int main()
