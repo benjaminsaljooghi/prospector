@@ -94,6 +94,21 @@
         "__tree": "cpp",
         "cinttypes": "cpp",
         "__atomic_generated": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "rope": "cpp",
+        "csetjmp": "cpp",
+        "any": "cpp",
+        "strstream": "cpp",
+        "cfenv": "cpp",
+        "charconv": "cpp",
+        "complex": "cpp",
+        "forward_list": "cpp",
+        "source_location": "cpp",
+        "slist": "cpp",
+        "future": "cpp",
+        "scoped_allocator": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp",
+        "variant": "cpp"
     }
 }

@@ -356,6 +356,14 @@ vector<string> get_all_hmm_files()
     return paths;
 }
 
+std::filesystem::path get_hmm_db(string cas_claim)
+{
+    std::filesystem::path path = std::filesystem::path("/home/ben/crispr/prospector-data/hmm_db") / fmt::format("{}.db", cas_claim);
+
+    return path;
+}
+
+
 vector<string> get_hmm_files(string cas_type)
 {
     vector<string> paths;
@@ -398,26 +406,59 @@ bool have_hmm_file(string hmm_file)
     return exists;
 }
 
-vector<string> hammer(std::filesystem::path protein_fasta, string hmm_file)
+string hammer(std::filesystem::path protein_fasta, string hmm_file)
 {
     string tblout = "tblout.txt";
-
     string call = fmt::format("hmmscan --cpu 10 --tblout {} {} {} > /dev/null", tblout, hmm_file, protein_fasta.string());
     system(call.c_str());
+    return tblout;
+}
 
+vector<string> hammer_and_analyze_db(std::filesystem::path protein_fasta, std::filesystem::path hmm_db)
+{
+    string tblout = hammer(protein_fasta, hmm_db);
     std::ifstream infile(tblout);
+
     string line;
     vector<string> validated_queries;
 
     while (std::getline(infile, line))
     {
+        // if all the continues hit here, then nothing was found in the file (claim is rejected)
         if (line.starts_with("#"))
             continue;
 
         vector<string> parse_result = Util::parse(line, " ");
         string query_name = parse_result[2];
         double score = std::stod(parse_result[5]);
-        fmt::print("{} {}\n", query_name, score);
+        // fmt::print("{} {}\n", score, query_name);
+        // validated_queries.push_back(std::stoi(query_name));
+        validated_queries.push_back(query_name);
+    }
+
+    // assert(validated_queries.size() <= 1);
+    // return validated_queries.size() > 0;
+    return validated_queries;
+}
+
+vector<string> hammer_and_analyze(std::filesystem::path protein_fasta, string hmm_file)
+{
+    string tblout = hammer(protein_fasta, hmm_file);
+    std::ifstream infile(tblout);
+
+    string line;
+    vector<string> validated_queries;
+
+    while (std::getline(infile, line))
+    {
+        // if all the continues hit here, then nothing was found in the file (claim is rejected)
+        if (line.starts_with("#"))
+            continue;
+
+        vector<string> parse_result = Util::parse(line, " ");
+        string query_name = parse_result[2];
+        double score = std::stod(parse_result[5]);
+        // fmt::print("{} {}\n", score, query_name);
         // validated_queries.push_back(std::stoi(query_name));
         validated_queries.push_back(query_name);
     }
@@ -623,25 +664,46 @@ struct Hit
 // }
 
 
+set<string> claim_validation_fasta_db(std::filesystem::path protein_fasta, string cas_claim)
+{
+    // string hmm_file = get_hmm_files(cas_claim)[0];
+    std::filesystem::path hmm_db = get_hmm_db(cas_claim);
+    set<string> valdiation_set;
+    fmt::print("executing validation against {}\n", hmm_db.string());
+    auto start_time = time();
+    vector<string> validated_queries = hammer_and_analyze_db(protein_fasta, hmm_db);
+    for (string query : validated_queries)
+    {
+        valdiation_set.insert(query);
+    }
+    auto end_time = time(start_time, "yoyoyo");
+    return valdiation_set;
+}
+
 set<string> claim_validation_fasta(std::filesystem::path protein_fasta, string cas_claim)
 {
     // string hmm_file = get_hmm_files(cas_claim)[0];
     vector<string> hmm_files = get_hmm_files(cas_claim);
     if (hmm_files.size() == 0)
     {
-        fmt::print("couldn't identify for {}\n", cas_claim);
+        fmt::print("couldn't find hmm files for {}\n", cas_claim);
         return set<string>();
     }
     // string hmm_file = hmm_files[0]; 
+    auto start_time = time();
+
     set<string> valdiation_set;
     for (string hmm_file : hmm_files)
     {
-        vector<string> validated_queries = hammer(protein_fasta, hmm_file);
+        fmt::print("executing validation against {}\n", hmm_file);
+        vector<string> validated_queries = hammer_and_analyze(protein_fasta, hmm_file);
         for (string query : validated_queries)
         {
             valdiation_set.insert(query);
         }
     }
+    auto end_time = time(start_time, "yoyoyo");
+
     return valdiation_set;
 }
 
@@ -751,8 +813,6 @@ void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
 {
     map<string, string> proteins = Util::parse_fasta("/home/ben/crispr/prospector-util/my.proteins.faa", false);
 
-
-
     map<string, vector<Hit*>> hits = build_hits(proteins, profiles);
     // perform a hit transform
     map<string, vector<string>> table = transform_hits_to_efficient_table(hits);
@@ -763,6 +823,9 @@ void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
     for (auto const& [cas_claim, protein_ids] : table)
     {
         dump_file << fmt::format("CAS CLAIM: {}\n", cas_claim);
+
+        if (cas_claim != "cas1")
+            continue;
 
         // for this claim, we perform a cluster validation
         // but in order for this EXPERIMENT to work we need to do a bt of data generation work:
@@ -796,7 +859,8 @@ void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
 
         // EXPERIMENT
         // now that we have the files in a fasta, we can run an experimental claims validation function that takes a fasta file rather than a protein string
-        set<string> validated_queries = claim_validation_fasta(temp_fasta_path, cas_claim);
+        // set<string> validated_queries = claim_validation_fasta(temp_fasta_path, cas_claim);
+        set<string> validated_queries = claim_validation_fasta_db(temp_fasta_path, cas_claim);
 
         // dump validated queries here
         for (string validated_query : validated_queries)

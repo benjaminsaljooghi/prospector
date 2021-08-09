@@ -222,7 +222,11 @@ namespace Util
 
 	
 	ull mismatch_count(string);
+
+	string seqs_to_fasta(map<string, string>&);
 	string seqs_to_fasta(vector<string>&);
+	
+	
 	vector<string> kmerize(string seq, ui k);
 
 	kmer encode_amino_kmer(const string& kmer);
