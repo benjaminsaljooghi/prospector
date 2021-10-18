@@ -185,153 +185,153 @@ namespace Config
 //}
 
 
-struct System
-{
-    vector<Locus*> loci;
-    string type;
+// struct System
+// {
+//     vector<Locus*> loci;
+//     string type;
 
-    ull crispr_count()
-    {
-        ull count = 0;
-        for (Locus* l : loci)
-        {
-            if (l->is_crispr())
-                count++;
-        }
-        return count;
-    }
+//     ull crispr_count()
+//     {
+//         ull count = 0;
+//         for (Locus* l : loci)
+//         {
+//             if (l->is_crispr())
+//                 count++;
+//         }
+//         return count;
+//     }
 
-    ull cas_count()
-    {
-        ull count = 0;
-        for (Locus* l : loci)
-        {
-            if (!l->is_crispr())
-                count++;
-        }
-        return count;
-    }
+//     ull cas_count()
+//     {
+//         ull count = 0;
+//         for (Locus* l : loci)
+//         {
+//             if (!l->is_crispr())
+//                 count++;
+//         }
+//         return count;
+//     }
 
-    void sort_loci()
-    {
-        std::sort(this->loci.begin(), this->loci.end(), [](Locus* a, Locus* b) { return a->get_start() - b->get_start(); });
-    }
+//     void sort_loci()
+//     {
+//         std::sort(this->loci.begin(), this->loci.end(), [](Locus* a, Locus* b) { return a->get_start() - b->get_start(); });
+//     }
 
-    ull get_start()
-    {
-        Locus* first = this->loci[0];
-        return first->get_start();
-    }
+//     ull get_start()
+//     {
+//         Locus* first = this->loci[0];
+//         return first->get_start();
+//     }
 
-    ull get_final()
-    {
-        Locus* last = this->loci[this->loci.size()-1];
-        return last->get_final();
-    }
+//     ull get_final()
+//     {
+//         Locus* last = this->loci[this->loci.size()-1];
+//         return last->get_final();
+//     }
 
-    string to_string_summary()
-    {
-        std::ostringstream out;
-        for (Locus* l : this->loci)
-            out << l->to_string_summary() << endl;
-        return out.str();        
-    }
+//     string to_string_summary()
+//     {
+//         std::ostringstream out;
+//         for (Locus* l : this->loci)
+//             out << l->to_string_summary() << endl;
+//         return out.str();        
+//     }
 
-    string to_string_debug()
-    {
-        std::ostringstream out;
-        for (Locus* l : this->loci)
-            out << l->to_string_debug() << endl;
-        return out.str();        
-    }
+//     string to_string_debug()
+//     {
+//         std::ostringstream out;
+//         for (Locus* l : this->loci)
+//             out << l->to_string_debug() << endl;
+//         return out.str();        
+//     }
 
-    bool legitimate_system()
-    {
-        return this->cas_count() >= 2;
-    }
+//     bool legitimate_system()
+//     {
+//         return this->cas_count() >= 2;
+//     }
 
-};
+// };
 
 
-vector<MultiFragment*> gen_multifragments(vector<Fragment*> fragments)
-{
-    vector<MultiFragment*> multifragments;
-    for (ui i = 0; i < fragments.size(); i++)
-    {
-        fmt::print("{}: {}\n", i, CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier));
+// vector<MultiFragment*> gen_multifragments(vector<Fragment*> fragments)
+// {
+//     vector<MultiFragment*> multifragments;
+//     for (ui i = 0; i < fragments.size(); i++)
+//     {
+//         fmt::print("{}: {}\n", i, CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier));
 
-        fmt::print("multifragment {}\n", i);
-        MultiFragment* multifragment = new MultiFragment;
-        multifragment->fragments.push_back(fragments[i]);
+//         fmt::print("multifragment {}\n", i);
+//         MultiFragment* multifragment = new MultiFragment;
+//         multifragment->fragments.push_back(fragments[i]);
 
-        for (ui j = i + 1; j < fragments.size(); j++)
-        {
-            //fmt::print("multifragment comparison {}\n", j);
-            //if (fragments[i]->expanded_genome_begin == fragments[j]->expanded_genome_begin &&
-                //fragments[i]->expanded_genome_final == fragments[j]->expanded_genome_final)
+//         for (ui j = i + 1; j < fragments.size(); j++)
+//         {
+//             //fmt::print("multifragment comparison {}\n", j);
+//             //if (fragments[i]->expanded_genome_begin == fragments[j]->expanded_genome_begin &&
+//                 //fragments[i]->expanded_genome_final == fragments[j]->expanded_genome_final)
 
-            bool any_overlap = Util::any_overlap(fragments[i]->genome_begin, fragments[i]->genome_final,
-                                                fragments[j]->genome_begin, fragments[j]->genome_final);
+//             bool any_overlap = Util::any_overlap(fragments[i]->genome_begin, fragments[i]->genome_final,
+//                                                 fragments[j]->genome_begin, fragments[j]->genome_final);
 
-            string first = CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier);
-            string second = CasProfileUtil::domain_table_fetch(fragments[j]->reference_profile->identifier);
+//             string first = CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier);
+//             string second = CasProfileUtil::domain_table_fetch(fragments[j]->reference_profile->identifier);
 
-            bool domain_overlap = (first.find(second) != string::npos) || (second.find(first) != string::npos);
+//             bool domain_overlap = (first.find(second) != string::npos) || (second.find(first) != string::npos);
 
-            if (any_overlap && domain_overlap)
-            {
-                multifragment->fragments.push_back(fragments[j]);
-                i = j;
-            }
-        }
+//             if (any_overlap && domain_overlap)
+//             {
+//                 multifragment->fragments.push_back(fragments[j]);
+//                 i = j;
+//             }
+//         }
 
-        multifragments.push_back(multifragment);
-    }
-    return multifragments;
-}
+//         multifragments.push_back(multifragment);
+//     }
+//     return multifragments;
+// }
 
-vector<System*> gen_systems(vector<Locus*> loci)
-{
-    vector<System*> systems;
+// vector<System*> gen_systems(vector<Locus*> loci)
+// {
+//     vector<System*> systems;
 
-    if (loci.size() == 0)
-        return systems;
+//     if (loci.size() == 0)
+//         return systems;
 
-    System* current = new System;
-    current->loci.push_back(loci[0]);
-    for (size_t i = 1; i < loci.size(); i++)
-    {
-        if (loci[i]->get_start() < current->get_final() + 30000)
-        {
-            current->loci.push_back(loci[i]);
-        }
-        else
-        {
-            systems.push_back(current);
-            current = new System;
-            current->loci.push_back(loci[i]);
-        }
-    }
+//     System* current = new System;
+//     current->loci.push_back(loci[0]);
+//     for (size_t i = 1; i < loci.size(); i++)
+//     {
+//         if (loci[i]->get_start() < current->get_final() + 30000)
+//         {
+//             current->loci.push_back(loci[i]);
+//         }
+//         else
+//         {
+//             systems.push_back(current);
+//             current = new System;
+//             current->loci.push_back(loci[i]);
+//         }
+//     }
 
-    systems.push_back(current);
+//     systems.push_back(current);
 
-    vector<System*> filtered_systems;
+//     vector<System*> filtered_systems;
 
-    for (System* s : systems)
-    {
-        if (s->legitimate_system())
-        // if (true)
-        {
-            filtered_systems.push_back(s);
-        }
-        else
-        {
-            delete s;
-        }
-    }
+//     for (System* s : systems)
+//     {
+//         if (s->legitimate_system())
+//         // if (true)
+//         {
+//             filtered_systems.push_back(s);
+//         }
+//         else
+//         {
+//             delete s;
+//         }
+//     }
 
-    return filtered_systems;
-}
+//     return filtered_systems;
+// }
 
 vector<string> get_all_hmm_files()
 {
@@ -359,7 +359,6 @@ vector<string> get_all_hmm_files()
 std::filesystem::path get_hmm_db(string cas_claim)
 {
     std::filesystem::path path = std::filesystem::path("/home/ben/crispr/prospector-data/hmm_db") / fmt::format("{}.db", cas_claim);
-
     return path;
 }
 
@@ -431,13 +430,9 @@ vector<string> hammer_and_analyze_db(std::filesystem::path protein_fasta, std::f
         vector<string> parse_result = Util::parse(line, " ");
         string query_name = parse_result[2];
         double score = std::stod(parse_result[5]);
-        // fmt::print("{} {}\n", score, query_name);
-        // validated_queries.push_back(std::stoi(query_name));
         validated_queries.push_back(query_name);
     }
 
-    // assert(validated_queries.size() <= 1);
-    // return validated_queries.size() > 0;
     return validated_queries;
 }
 
@@ -539,64 +534,64 @@ vector<Fragment*> multimatch_singleton_methodology(vector<Fragment*> raw_fragmen
     return fragments;
 }
 
-void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
-{
-    auto start_prospect = time();
+// void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
+// {
+//     auto start_prospect = time();
 
-    fmt::print("\n\n");
+//     fmt::print("\n\n");
 
-    std::filesystem::path results_path = Config::path_results / genome_path.stem();    
-    std::filesystem::create_directory(results_path);
-    std::ofstream out_gene(results_path / "out_gene.txt");
-    std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
+//     std::filesystem::path results_path = Config::path_results / genome_path.stem();    
+//     std::filesystem::create_directory(results_path);
+//     std::ofstream out_gene(results_path / "out_gene.txt");
+//     std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
 
-    string genome = Util::load_genome(genome_path);
+//     string genome = Util::load_genome(genome_path);
 
-    vector<Crispr*> crisprs = Array::get_crisprs(genome);
-    vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
-    vector<Fragment*> raw_fragments = Cas::cas(profiles, translations, genome);
+//     vector<Crispr*> crisprs = Array::get_crisprs(genome);
+//     vector<Translation*> translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
+//     vector<Fragment*> raw_fragments = Cas::cas(profiles, translations, genome);
 
-    out_gene_debug << fmt::format("BEGIN raw fragments\n");
-    for (Fragment* f : raw_fragments)
-    {
-        out_gene_debug << f->to_string_debug() << endl;   
-    }
-    out_gene_debug << fmt::format("END raw fragments\n");
+//     out_gene_debug << fmt::format("BEGIN raw fragments\n");
+//     for (Fragment* f : raw_fragments)
+//     {
+//         out_gene_debug << f->to_string_debug() << endl;   
+//     }
+//     out_gene_debug << fmt::format("END raw fragments\n");
 
-    vector<Fragment*> fragments = multimatch_singleton_methodology(raw_fragments);
+//     vector<Fragment*> fragments = multimatch_singleton_methodology(raw_fragments);
 
-    vector<MultiFragment*> multifragments = gen_multifragments(fragments);
+//     vector<MultiFragment*> multifragments = gen_multifragments(fragments);
   
-    std::vector<Locus*> loci;
+//     std::vector<Locus*> loci;
 
-    for (Crispr* c : crisprs)
-        loci.push_back(c);
+//     for (Crispr* c : crisprs)
+//         loci.push_back(c);
 
-    for (MultiFragment* f : multifragments)
-        loci.push_back(f);
+//     for (MultiFragment* f : multifragments)
+//         loci.push_back(f);
 
-    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
+//     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
 
-    vector<System*> systems = gen_systems(loci);
+//     vector<System*> systems = gen_systems(loci);
 
-    for (System* system : systems)
-    {
-        out_gene << system->to_string_summary();
-        // out_gene_debug << system->to_string_debug() << endl;
-    }    
+//     for (System* system : systems)
+//     {
+//         out_gene << system->to_string_summary();
+//         // out_gene_debug << system->to_string_debug() << endl;
+//     }    
 
-    for (Crispr* c : crisprs) delete c;
-    for (Translation* t : translations) delete t;
-    for (MultiFragment* m : multifragments) delete m;
-    for (System* s : systems) delete s;
+//     for (Crispr* c : crisprs) delete c;
+//     for (Translation* t : translations) delete t;
+//     for (MultiFragment* m : multifragments) delete m;
+//     for (System* s : systems) delete s;
 
-    auto timed_prospect = time_diff(start_prospect, time());
+//     auto timed_prospect = time_diff(start_prospect, time());
 
-    out_gene << fmt::format("// finished in {} ms", timed_prospect);
+//     out_gene << fmt::format("// finished in {} ms", timed_prospect);
 
-    out_gene.close();
-    out_gene_debug.close();
-}
+//     out_gene.close();
+//     out_gene_debug.close();
+// }
 
 void assert_file(std::filesystem::path path)
 {
@@ -607,26 +602,26 @@ void assert_file(std::filesystem::path path)
     }
 }
 
-void run(vector<CasProfile*>& profiles)
-{
-    // interest "GCA_002139875.1_ASM213987v1_genomic.fna"
-    unordered_set<string> interest {  };
-    ui limiter = 1;
-    ui track = 0;
-    for (const auto& entry : std::filesystem::directory_iterator(Config::path_genome))
-    {
-        string filename = entry.path().filename().string();
-        // fmt::print("{}\n", filename);
-        if (interest.empty() || (!interest.empty() && interest.contains(filename)))
-        {
-            prospect_genome(profiles, entry);
-        }
+// void run(vector<CasProfile*>& profiles)
+// {
+//     // interest "GCA_002139875.1_ASM213987v1_genomic.fna"
+//     unordered_set<string> interest {  };
+//     ui limiter = 1;
+//     ui track = 0;
+//     for (const auto& entry : std::filesystem::directory_iterator(Config::path_genome))
+//     {
+//         string filename = entry.path().filename().string();
+//         // fmt::print("{}\n", filename);
+//         if (interest.empty() || (!interest.empty() && interest.contains(filename)))
+//         {
+//             prospect_genome(profiles, entry);
+//         }
 
-        if (++track == limiter) {
-            break;
-        }
-    }
-}
+//         if (++track == limiter) {
+//             break;
+//         }
+//     }
+// }
 
 struct Hit
 {
@@ -676,7 +671,7 @@ set<string> claim_validation_fasta_db(std::filesystem::path protein_fasta, strin
     {
         valdiation_set.insert(query);
     }
-    auto end_time = time(start_time, "yoyoyo");
+    auto end_time = time(start_time, "claim validation");
     return valdiation_set;
 }
 
@@ -809,70 +804,45 @@ map<string, vector<string>> transform_hits_to_efficient_table(map<string, vector
     return table;
 }
 
-void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
+map<string, vector<string>> build_hit_table(map<string, string>& proteins, vector<CasProfile*>& profiles)
 {
-    map<string, string> proteins = Util::parse_fasta("/home/ben/crispr/prospector-util/my.proteins.faa", false);
-
     map<string, vector<Hit*>> hits = build_hits(proteins, profiles);
-    // perform a hit transform
-    map<string, vector<string>> table = transform_hits_to_efficient_table(hits);
+    map<string, vector<string>> hit_table = transform_hits_to_efficient_table(hits);
+    return hit_table;
+}
 
-    std::ofstream dump_file("validation_dump.txt");
 
-    // now we perform a claim validation here
-    for (auto const& [cas_claim, protein_ids] : table)
+void validate_claim_table(map<string, vector<string>> claim_table, map<string, string> protein_table)
+{
+    std::ofstream validation_dump("validation_dump.txt");
+    for (auto const& [cas_claim, protein_ids] : claim_table)
     {
-        dump_file << fmt::format("CAS CLAIM: {}\n", cas_claim);
+        validation_dump << fmt::format("CAS CLAIM: {}\n", cas_claim);
 
         if (cas_claim != "cas1")
             continue;
 
-        // for this claim, we perform a cluster validation
-        // but in order for this EXPERIMENT to work we need to do a bt of data generation work:
-        // #1 we must now write the protein_ids that we have on hand to a fasta file. So we need a fasta serialization method.
-        // #2 generate our HMMDBs. Where the Makarova clusters of like "cas1.hmm, cas1.hmm, cas1.hmm" etc all become "cas1db.hmm"
-
-        // #1
-        // get all the sequences
-        // vector<string> seqs;
-        // for (string id : protein_ids)
-        // {
-            // seqs.push_back(proteins[id]);
-        // }
-        // write the sequnces
-        // string fasta = Util::seqs_to_fasta(seqs);
-        map<string, string> proteins_reconstructed;
+        map<string, string> claimed_proteins;
         for (string id : protein_ids)
         {
-            proteins_reconstructed[id] = proteins[id];
+            claimed_proteins[id] = protein_table[id];
         }
-        string fasta = Util::seqs_to_fasta(proteins_reconstructed);
+        string fasta = Util::seqs_to_fasta(claimed_proteins);
         std::filesystem::path temp_fasta_path = "temp_fasta.fasta";
         std::ofstream outfile(temp_fasta_path);
         outfile << fasta;
         outfile.close();
 
-        // #2
-        // we can currently skip this step as an experiment to determine checking all the sequences against singleton hmms. We can compare the timing
-        // of this experiment with the previous approach, but with also using singleton hmms. My point is that in both experiments the hmmdb is optional,
-        // so the comparison is valid.
-
-        // EXPERIMENT
-        // now that we have the files in a fasta, we can run an experimental claims validation function that takes a fasta file rather than a protein string
-        // set<string> validated_queries = claim_validation_fasta(temp_fasta_path, cas_claim);
         set<string> validated_queries = claim_validation_fasta_db(temp_fasta_path, cas_claim);
 
-        // dump validated queries here
         for (string validated_query : validated_queries)
         {
-            // produce protein sequence
-            string prot_sequence = proteins[validated_query];
-            dump_file << fmt::format("{}\n", validated_query);
+            string prot_sequence = protein_table[validated_query];
+            validation_dump << fmt::format("{}\n", validated_query);
         }
     }
-    dump_file.close();
+    validation_dump.close();
 
-    // evaluate_hits(proteins, hits);
 }
 
 int main()
@@ -901,7 +871,9 @@ int main()
 
     CasProfileUtil::print_profiles(profiles);
 
-    analyze_prodigal_proteins(profiles);
+    map<string, string> proteins = Util::parse_fasta("/home/ben/crispr/prospector-util/my.proteins.faa", false);
+    auto hit_table = build_hit_table(proteins, profiles);
+    validate_claim_table(hit_table, proteins);
     // hmm_db_experiment();
 
     // run(profiles);
