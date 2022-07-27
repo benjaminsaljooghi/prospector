@@ -229,5 +229,5 @@ namespace Util
 
 	vector<kmer> encode_amino_kmers(vector<string> kmers, ull k);
 
-    //map<string, string> load_genomes(string dir);
+    void assert_file(std::filesystem::path path);
 }

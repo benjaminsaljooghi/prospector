@@ -4,28 +4,11 @@
 #include "prospector.h"
 #include "cas.h"
 #include "time_util.h"
-#include "debug.h"
 #include "cas_profiles.h"
 #include "array_discovery.h"
 #include "path.h"
 #include <boost/algorithm/string.hpp>
-
-namespace Config
-{
-    std::filesystem::path path_data = "/home/ben/crispr/prospector-data";
-    std::filesystem::path path_bin_pro = path_data / "bin_pro";
-    std::filesystem::path path_map_dom = path_data / "map_domain.tsv";
-    std::filesystem::path path_map_typ = path_data / "map_typing.tsv";
-    std::filesystem::path path_genome = "/media/ben/temp/crispr_lfs/genome_sage";
-
-    std::filesystem::path path_util = "/home/ben/crispr/prospector-util";
-
-    std::filesystem::path path_results = path_util / "results_prosp";
-    std::filesystem::path path_cartograph = path_util / "cartograph_prosp.tsv"; // debug
-
-    bool crispr_proximal_search = true;
-}
-
+#include "config.h"
 
 // // hardcoded against cas1 for now
 // vector<ui> hammer(vector<Fragment*> fragments) {
@@ -517,17 +500,16 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     }
     out_gene_debug << fmt::format("END raw fragments\n");
 
-    vector<Fragment*> fragments = multimatch_singleton_methodology(raw_fragments);
-
-    vector<MultiFragment*> multifragments = gen_multifragments(fragments);
+//    vector<Fragment*> fragments = multimatch_singleton_methodology(raw_fragments);
+//    vector<MultiFragment*> multifragments = gen_multifragments(fragments);
   
     std::vector<Locus*> loci;
 
     for (Crispr* c : crisprs)
         loci.push_back(c);
 
-    for (MultiFragment* f : multifragments)
-        loci.push_back(f);
+//    for (MultiFragment* f : multifragments)
+//        loci.push_back(f);
 
     std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
 
@@ -536,12 +518,12 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     for (System* system : systems)
     {
         out_gene << system->to_string_summary();
-        // out_gene_debug << system->to_string_debug() << endl;
-    }    
+         out_gene_debug << system->to_string_debug() << endl;
+    }
 
     for (Crispr* c : crisprs) delete c;
     for (Translation* t : translations) delete t;
-    for (MultiFragment* m : multifragments) delete m;
+//    for (MultiFragment* m : multifragments) delete m;
     for (System* s : systems) delete s;
 
     auto timed_prospect = time_diff(start_prospect, time());
@@ -550,15 +532,6 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
     out_gene.close();
     out_gene_debug.close();
-}
-
-void assert_file(std::filesystem::path path)
-{
-    if (!std::filesystem::exists(path))
-    {
-        fmt::print("path does not exist: {}\n", path.string());
-        exit(1);
-    }
 }
 
 void run(vector<CasProfile*>& profiles)
@@ -570,7 +543,7 @@ void run(vector<CasProfile*>& profiles)
     for (const auto& entry : std::filesystem::directory_iterator(Config::path_genome))
     {
         string filename = entry.path().filename().string();
-        // fmt::print("{}\n", filename);
+
         if (interest.empty() || (!interest.empty() && interest.contains(filename)))
         {
             prospect_genome(profiles, entry);
@@ -606,7 +579,7 @@ struct Hit
 //     for (auto & [identifier, sequence] : proteins)
 //     {
 //         fmt::print("{}\n", identifier);
-//         for (string& hmm_file : hmm_files)
+//         for (string& hmm_file : hmm_files)F
 //         {
 //             bool positive = singleton_hammer(sequence, hmm_file);
 //             if (positive) {
@@ -703,48 +676,27 @@ void analyze_prodigal_proteins(vector<CasProfile*>& profiles)
 
     start_prodigal = time(start_prodigal, "hmmer");
 
-
     outtie.close();
 
-
     start_prodigal = time(start_prodigal, "full prodigal analysis");
-
-
-
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    Config::parse_program_args(argc, argv);
+
     auto start_main = time();
-    assert_file(Config::path_map_dom);
-    assert_file(Config::path_map_typ);
-    assert_file(Config::path_bin_pro);
-    assert_file(Config::path_genome);
-    assert_file(Config::path_results.parent_path());
-    std::filesystem::create_directory(Config::path_results);
-    CasProfileUtil::load_domain_map(Config::path_map_dom);    
 
-    // Debug::cartograph_interpreter(Config::path_cartograph, Config::path_genome); return 0;
+    CasProfileUtil::load_domain_map(Config::path_map_dom);
 
-    // Prospector::device_init();
-    // CasProfileUtil::serialize(Config::path_bin_pro);
+    if (Config::skip_serialisation == 0) CasProfileUtil::serialize(Config::path_bin_pro);
     vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::path_bin_pro);
-    // vector<CasProfile*> profiles_filtered = Debug::cas_filter(profiles, "cas1");
-    // vector<CasProfile*> profiles_filtered;
-    // for (CasProfile* profile : profiles) {
-    //     if (profile->identifier.starts_with("PF") || profile->identifier.starts_with("TIGR")) {
-    //         profiles_filtered.push_back(profile);
-    //     }
-    // }
+    Prospector::device_init();
 
-    CasProfileUtil::print_profiles(profiles);
+    run(profiles);
 
-    analyze_prodigal_proteins(profiles);
-    // hmm_db_experiment();
+    for (CasProfile* p : profiles) delete p;
 
-    // run(profiles);
-
-    // for (CasProfile* p : profiles) delete p;
     start_main = time(start_main, "main");
     return 0;                                                                                                           
 }

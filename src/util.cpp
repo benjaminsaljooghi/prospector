@@ -320,15 +320,10 @@ vector<kmer> Util::encode_amino_kmers(vector<string> kmers, ull k)
 	return encoded;
 }
 
-
-
-//map<string, string> Util::load_genomes(string dir)
-//{
-//	auto start = time();
-//    map<string, string> genomes;
-//    for (const auto& entry : filesystem::directory_iterator(dir))
-//        genomes[entry.path().stem().string()] = (load_genome(entry.path().string()));
-//	start = time(start, "genome load");
-//	return genomes;
-//}
-//
+void Util::assert_file(std::filesystem::path path)
+{
+    if (!std::filesystem::exists(path))
+    {
+        throw std::filesystem::filesystem_error("Could not locate filepath: ", path, error_code());
+    }
+}
