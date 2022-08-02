@@ -19,6 +19,8 @@ namespace Config
 
     int crispr_proximal_search = 0;
     int skip_serialisation = 0;
+    int cas_only = 0;
+    int dump_indices = 0;
 
     /**
      * Program Arguments
@@ -28,6 +30,8 @@ namespace Config
      * [OPTIONAL] --out=/path/to/output_folder/     : Path to folder where all Prospector output will be stored, defaults to ./prospector_output/
      * [OPTIONAL] --skipSer                         : skip serialisation of profiles
      * [OPTIONAL] --proxSearch                      : Use the CRISPR Proximal Search method for finding Cas genes
+     * [OPTIONAL] --casOnly                         : Only perform Cas detection, skipping CRISPR detection
+     * [OPTIONAL] --dumpIndices                     : Dump each Cas detection index to file, in the output folder prospector_output/index_dump/
      */
     static struct option long_options[] = {
             {"prof", required_argument, nullptr,'p' },
@@ -36,6 +40,8 @@ namespace Config
             {"out", required_argument,nullptr,'o' },
             {"skipSer", no_argument, &skip_serialisation,1},
             {"proxSearch", no_argument, &crispr_proximal_search,1 },
+            {"casOnly", no_argument, &cas_only,1 },
+            {"dumpIndices", no_argument, &dump_indices,1 },
             {0, 0, 0,0 },
     };
 }
@@ -49,7 +55,9 @@ void print_help_message()
                "[REQUIRED] --genome=/path/to/genome_folder/  : Path to folder containing genomes for analysis\n"
                "[OPTIONAL] --out=/path/to/output_folder/     : Path to folder where all Prospector output will be stored, defaults to ./prospector_output/\n"
                "[OPTIONAL] --skipSer                         : skip serialisation of profiles\n"
-               "[OPTIONAL] --proxSearch                      : Use the CRISPR Proximal Search method for finding Cas genes\n");
+               "[OPTIONAL] --proxSearch                      : Use the CRISPR Proximal Search method for finding Cas genes\n"
+               "[OPTIONAL] --casOnly                         : Only perform Cas detection, skipping CRISPR detection\n"
+               "[OPTIONAL] --dumpIndices                     : Dump each Cas detection index to file, in the output folder prospector_output/index_dump/\n");
 }
 
 void Config::parse_program_args(int argc, char *argv[])
@@ -61,7 +69,6 @@ void Config::parse_program_args(int argc, char *argv[])
             case 'h':
                 print_help_message();
                 exit(0);
-                break;
             case 'p' :
                 Config::path_cas_profiles = optarg;
                 break;
