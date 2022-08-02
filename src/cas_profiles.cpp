@@ -128,28 +128,6 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 	return profile;
 }
 
-
-//vector<string> get_seqs_pfam(std::filesystem::path dir)
-//{
-//	aisdgad
-//}
-//
-//vector<string> get_seqs_cog(std::filesystem::path dir)
-//{
-//	adpaiydad
-//}
-//
-//vector<string> get_seqs_tigrfam(std::filesystem::path dir)
-//{
-//	daigdad;
-//}
-//
-//vector<string> get_seqs_makarova(std::filesystem::path dir)
-//{
-//	asgdada;
-//}
-
-
 vector<CasProfile*> generate_pfams(std::filesystem::path dir)
 {
 	// ifstream input(pfam_full);

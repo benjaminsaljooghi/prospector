@@ -11,7 +11,6 @@
 #include <chrono>
 #include <stdio.h>
 #include "time_util.h"
-#include <string>
 
 
 #ifdef __CUDACC__
@@ -31,7 +30,6 @@
 #define GRID 32
 #define BLOCK 256
 
-const int difference = ((int) 'a') - ((int) 'A');
 
 cudaError_t checkCudaAlways(cudaError_t result)
 {
@@ -94,7 +92,7 @@ __global__ void compute_encoding(const char* genome, kmer* encoding, ull genome_
 Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ull genome_size)
 {
 
-    Prospector::Encoding encoding{};
+    Prospector::Encoding encoding;
 
     cudaError er;
     
@@ -130,15 +128,16 @@ __device__ uc difference_gpu(const ui& _a, const ui& _b)
     return __popc(comp);
 }
 
-__global__ void compute_qmap_small(const ui* encoding, const ui encoding_size, uc* qmap) {
+__global__ void compute_qmap_small(const ui* encoding, const ui encoding_size, uc* qmap)
+{
     const ui thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     const ui stride = blockDim.x * gridDim.x;
 
-    for (ui query = thread_id;
-         query < encoding_size - 200; query += stride) // TODO: replace 200 with MAP_SIZE or parameter map_size
+    for (ui query = thread_id; query < encoding_size - 200; query += stride) // TODO: replace 200 with MAP_SIZE or parameter map_size
     {
         ui query_enc = encoding[query];
-        for (ui i = 0; i < Prospector::map_size_small; i++) {
+        for (ui i = 0; i < Prospector::map_size_small; i++)
+        {
             ui t = encoding[query + Prospector::k_start + Prospector::spacer_skip + i];
             qmap[(query * Prospector::map_size_small) + i] = difference_gpu(query_enc, t);
         }
