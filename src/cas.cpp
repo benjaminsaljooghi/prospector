@@ -1,4 +1,5 @@
 #include "cas.h"
+#include "config.h"
 
 static unordered_set<string> alternate_starts_pos { "GTG", "TTG" };
 static unordered_set<string> alternate_starts_neg { "CAC", "CAA" };
@@ -166,10 +167,9 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
 
     vector<Fragment*> fragments;
 
-    // #pragma omp parallel for
-    for (signed long p = 0; p < profiles.size(); p++)
+    #pragma omp parallel for
+    for (auto profile : profiles)
     {
-        CasProfile* profile = profiles[p];
         ui translation_index = -1;
         for (Translation* t : translations)
         {
@@ -188,29 +188,26 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
                 continue;
 
             // dump index to a file for analysis
-            string file_name = fmt::format("/media/ben/temp/crispr_lfs/index_dump/{}_{}_{}_{}_{}_{}", CasProfileUtil::domain_table_fetch(profile->identifier), profile->identifier, t->genome_start, t->genome_final, translation_index, index.size());
-            std::ofstream out(file_name);
-            for (ull index_location : index)
-            {
-                out << index_location << "\t" << t->genome_start + index_location << endl;
-            }
-            out.close();
+            string file_name = Config::path_output / fmt::format("index_dump/{}_{}_{}_{}_{}_{}", CasProfileUtil::domain_table_fetch(profile->identifier), profile->identifier, t->genome_start, t->genome_final, translation_index, index.size());
 
-            // std::ofstream out("/home/ben/hmm/temp_fasta.txt");
-            // out << fasta;
-            // out.close();
+            if (Config::dump_indices) {
+                std::ofstream out(file_name);
+                for (ull index_location : index)
+                {
+                    out << index_location << "\t" << t->genome_start + index_location << endl;
+                }
+                out.close();
+            }
 
             vector<vector<ull>> clusters = cluster_index(index);
             if (!good_clusters(clusters))
             {
                 continue;
             }
-            else
+            else if (Config::dump_indices)
             {
-
                 fmt::print("accepted {}\n", file_name);
-    
-                // string file_name = fmt::format("/home/ben/index_dump/{}_{}_{}_{}_clust.txt", profile->identifier, t->genome_start, translation_index++, index.size());
+
                 string file_name_clust = fmt::format("{}.clust", file_name);
                 std::ofstream out(file_name_clust);
                 for (vector<ull> clust : clusters)
@@ -245,7 +242,6 @@ vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& 
             if (f->genome_begin < 0)
             {
                 std::exit(1);
-                printf("break\n");
             }
 
             // if (f->repetition_problem())
@@ -407,7 +403,6 @@ vector <Translation*> Cas::get_sixframe(const string& genome, ull genome_start, 
 
     return sixframe;
 }
-
 
 vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vector<Crispr*>& crisprs)
 {

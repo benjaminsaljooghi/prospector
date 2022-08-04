@@ -1,5 +1,6 @@
 #include "cas_profiles.h"
 #include "path.h"
+#include "config.h"
 
 static std::map<string, string> domain_map;
 
@@ -126,28 +127,6 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 
 	return profile;
 }
-
-
-vector<string> get_seqs_pfam(std::filesystem::path dir)
-{
-	aisdgad
-}
-
-vector<string> get_seqs_cog(std::filesystem::path dir)
-{
-	adpaiydad
-}
-
-vector<string> get_seqs_tigrfam(std::filesystem::path dir)
-{
-	daigdad;
-}
-
-vector<string> get_seqs_makarova(std::filesystem::path dir)
-{
-	asgdada;
-}
-
 
 vector<CasProfile*> generate_pfams(std::filesystem::path dir)
 {
@@ -325,15 +304,6 @@ vector<CasProfile*> generate_cogs(std::filesystem::path cog_dir)
 	return generate_from_fasta(cog_dir);
 }
 
-// std::filesystem::path path_bin_pro = "/home/ben/crispr/prospector-data/bin_pro/"; // duplicated in main
-
-
-std::filesystem::path makarova_dir = "/home/ben/crispr/prospector-data/raw_pro/makarova/";
-// std::filesystem::path pfam_full = data_root / "seed/Pfam-A.full/Pfam-A.full";
-std::filesystem::path pfam_dir = "/home/ben/crispr/prospector-data/raw_pro/PFAMS/";
-// std::filesystem::path tigrfam_dir = data_root / "seed/TIGRFAMs_14.0_SEED";
-std::filesystem::path cog_dir = "/home/ben/crispr/prospector-data/raw_pro/COG/";
-
 void CasProfileUtil::serialize(std::filesystem::path path_bin_pro)
 {	
 	auto serialize_profile = [&](CasProfile* profile) {
@@ -342,14 +312,6 @@ void CasProfileUtil::serialize(std::filesystem::path path_bin_pro)
 		profile->hash_table.dump(archive);
 	};
 
-
-	// auto profiles_makarova = generate_from_fasta(makarova_dir);
-	auto profiles_pfam = generate_pfams(pfam_dir);
-	// auto profiles_tigrfams = generate_tigrfams(tigrfam_dir);
-	auto profiles_cog = generate_cogs(cog_dir);
-
-	// std::for_each(profiles_makarova.begin(), profiles_makarova.end(), serialize_profile);
-	std::for_each(profiles_pfam.begin(), profiles_pfam.end(), serialize_profile);
-	// std::for_each(profiles_tigrfams.begin(), profiles_tigrfams.end(), serialize_profile);
-	std::for_each(profiles_cog.begin(), profiles_cog.end(), serialize_profile);
+	auto profiles = generate_from_fasta(Config::path_cas_profiles);
+	std::for_each(profiles.begin(), profiles.end(), serialize_profile);
 }

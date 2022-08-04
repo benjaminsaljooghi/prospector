@@ -72,7 +72,7 @@ vector<Crispr*> prospector_main(string& genome)
             vector<ull> proximals{ query };
             ull target = query + k + Prospector::spacer_min;
 
-            while (++target - ( proximals[proximals.size()-1] + k) <= Prospector::spacer_max && target + k < genome.size())
+            while (++target - (proximals[proximals.size()-1] + k) <= Prospector::spacer_max && target + k < genome.size())
             {
                 
                 //auto diff = Util::difference_cpu(encoding.h[query], encoding.h[target]);
@@ -126,6 +126,7 @@ vector<Crispr*> prospector_main(string& genome)
                 all_crisprs.push_back(crispr);
             }
         }
+
     }
 
     Prospector::free_encoding(encoding);
