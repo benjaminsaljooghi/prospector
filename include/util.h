@@ -212,7 +212,7 @@ namespace Util
 		string str = fmt::format("sort {} items", iterable.size());
 	}
 
-	string load_genome(std::filesystem::path);
+	map<string, string> load_genome(std::filesystem::path);
 	map<string, string> parse_fasta(string, bool);
 	//string parse_fasta_single(string);
 

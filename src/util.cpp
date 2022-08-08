@@ -98,7 +98,7 @@ bool Util::any_overlap(ull a_start, ull a_final, ull b_start, ull b_final)
 }
 
 
-string Util::load_genome(std::filesystem::path path)
+map<string, string> Util::load_genome(std::filesystem::path path)
 {
 
 	fmt::print("reading {}\n", path.string());
@@ -109,8 +109,8 @@ string Util::load_genome(std::filesystem::path path)
 		throw runtime_error("input not good!");
 	}
 
-
 	auto fasta = parse_fasta(path.string(), true);
+    return fasta;
 
 	// string seq = "";
 	string max_name = "";
@@ -125,7 +125,7 @@ string Util::load_genome(std::filesystem::path path)
 	}
 
 	// fmt::print("genome seq count is: {}\n", i);
-	return fasta[max_name];
+//	return fasta[max_name];
 	// return seq;
 
 	auto check_line = [](string& line) {
@@ -182,7 +182,6 @@ map<string, string> Util::parse_fasta(string file_path, bool dna)
 		throw runtime_error("input not good!");
 	}
 
-
 	map<string, string> seqs;
 	string line, name, content;
 	while (getline(input, line))
@@ -201,7 +200,7 @@ map<string, string> Util::parse_fasta(string file_path, bool dna)
 			}
 			if (!line.empty())
 			{
-				name = line.substr(1);
+				name = line.substr(1, line.find(' ') - 1);
 			}
 			content.clear();
 		}
@@ -231,7 +230,8 @@ map<string, string> Util::parse_fasta(string file_path, bool dna)
 		seqs[name] = content;
 	}
 
-	// done(start);
+    fmt::print("Found genome: {}\n", name);
+
 	return seqs;
 }
 

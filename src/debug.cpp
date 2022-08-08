@@ -2,23 +2,27 @@
 
 void Debug::visualize_map(string genome_path)
 {
-    string genome = Util::load_genome(genome_path);
-    Prospector::Encoding encoding = Prospector::get_genome_encoding(genome.c_str(), genome.size());
+    map<string, string> genome = Util::load_genome(genome_path);
 
-    ui query = 1011498;
-    auto k = 32; 
-    for (ui i = 0; i < 50000; i++)
-    {
-        ui target = query + i;
-        
-        auto diff = Util::difference_cpu(encoding.h[query], encoding.h[target]);
-        auto query_str = genome.substr(query, k);
-        auto target_str = genome.substr(target, k);
-        auto mutant = Array::mutant(genome.c_str(), encoding.h, k, query, target, Prospector::repeat_tolerance_ratio_sensitive);
+    for (auto const& [genom_id, genome_sequence] : genome) {
+        Prospector::Encoding encoding = Prospector::get_genome_encoding(genome_sequence.c_str(), genome.size());
 
-        if (mutant)
-            fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);
+        ui query = 1011498;
+        auto k = 32;
+        for (ui i = 0; i < 50000; i++)
+        {
+            ui target = query + i;
+
+            auto diff = Util::difference_cpu(encoding.h[query], encoding.h[target]);
+            auto query_str = genome_sequence.substr(query, k);
+            auto target_str = genome_sequence.substr(target, k);
+            auto mutant = Array::mutant(genome_sequence.c_str(), encoding.h, k, query, target, Prospector::repeat_tolerance_ratio_sensitive);
+
+            if (mutant)
+                fmt::print("{} -> {} {} {} {} {}\n", query_str, target, target_str, target + k, diff, mutant);
+        }
     }
+
     exit(0);
 }
 
@@ -72,7 +76,10 @@ vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ull start, ull fin
 
 void Debug::genome_substr(const string& genome_path, ull genome_start, ull genome_final)
 {
-    fmt::print("{}\n", Util::load_genome(genome_path).substr(genome_start, genome_final - genome_start));
+    map<string, string> genome = Util::load_genome(genome_path);
+    for (auto const& [genome_id, genome_sequence] : genome) {
+        fmt::print("{}\n",genome_sequence.substr(genome_start, genome_final - genome_start));
+    }
     exit(0); 
 }
 
@@ -97,9 +104,11 @@ string Debug::translation_test(const string& genome, ull genome_start, ull genom
 
 void Debug::translation_print(const string& genome_path, ull genome_start, ull genome_final, bool pos, ull debug_aminos)
 {
-    string genome = Util::load_genome(genome_path);
-    string translation = Debug::translation_test(genome, genome_start, genome_final, pos, debug_aminos);
-    fmt::print("debug: {}..{} {}\n", genome_start, genome_final, translation);
+    map<string, string> genome = Util::load_genome(genome_path);
+    for (auto const& [genome_id, genome_sequence] : genome) {
+        string translation = Debug::translation_test(genome_sequence, genome_start, genome_final, pos, debug_aminos);
+        fmt::print("debug: {}..{} {}\n", genome_start, genome_final, translation);
+    }
     exit(0);
 }
 
@@ -119,45 +128,44 @@ void Debug::cas_detect(std::filesystem::path genome_path, ull genome_start, ull 
     string filename = "cas_detection_report.txt";
     std::ofstream file(filename.c_str());
 
-    
-    string genome = Util::load_genome(genome_path);
+    map<string, string> genome = Util::load_genome(genome_path);
 
-    vector<Translation*> triframe = Cas::get_triframe(genome, genome_start, genome_final, pos); // focus 0 because reaons, okay?
-    Translation* translation = triframe[0];
+    for (auto const& [genome_id, genome_sequence] : genome) {
+        vector<Translation *> triframe = Cas::get_triframe(genome_sequence, genome_start, genome_final,
+                                                           pos); // focus 0 because reaons, okay?
+        Translation *translation = triframe[0];
 
-    for (CasProfile* profile : profiles)
-    {
-        file << fmt::format("------------------------------------------\n");
-        file << fmt::format("{} : {}\n", profile->identifier, CasProfileUtil::domain_table_fetch(profile->identifier));
-        int i = 0;
-        // for (Translation* translation : triframe)
-        // {
+        for (CasProfile *profile: profiles) {
+            file << fmt::format("------------------------------------------\n");
+            file << fmt::format("{} : {}\n", profile->identifier,
+                                CasProfileUtil::domain_table_fetch(profile->identifier));
+            int i = 0;
+
             file << fmt::format("\n\n\nframe {}\n", i++);
             file << fmt::format("translation raw: {}\n", translation->raw);
-            
+
             file << fmt::format("containment info:\n");
             int j = 0;
-            for (auto kmer : translation->pure_kmerized)
-            {
+            for (auto kmer: translation->pure_kmerized) {
                 auto enco = Util::encode_amino_kmer(kmer);
                 bool contains = profile->hash_table.contains(enco);
                 file << fmt::format("{} : {} : {}\n", kmer, contains, j++);
             }
 
-            vector<CasProfile*> collected_profiles;
-            vector<Translation*> collected_translations;
-            
+            vector<CasProfile *> collected_profiles;
+            vector<Translation *> collected_translations;
+
             collected_profiles.push_back(profile);
             collected_translations.push_back(translation);
 
-            vector<Fragment*> fragments = Cas::cas(collected_profiles, collected_translations, genome);
+            vector<Fragment *> fragments = Cas::cas(collected_profiles, collected_translations,
+                                                    const_cast<string &>(genome_sequence));
             file << fmt::format("fragment info:\n");
             for (int i = 0; i < fragments.size(); i++)
                 file << fmt::format("{}\n", fragments[i]->to_string_debug());
 
             file << fmt::format("---------------------\n");
-
-        // }
+        }
     }
 
 
@@ -193,19 +201,21 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         
     string line;
     string genome_accession = "";
-    string genome = "";
+    map<string,string> genome;
 
     string interpretation_path = "cartograph_interpretation.txt";
     std::ofstream interpretation(interpretation_path.c_str());
 
     auto gen_debug_str = [&genome](string domains, string signals, ull begin, ull final, string strand) {
-        auto a = genome.substr(begin, final - begin);
-        auto b = domains == "CRISPR" ? "" : Debug::translation_test(genome, begin, final, strand == "+", 0);
-
         std::ostringstream stream;
-        stream << fmt::format("\t{}\t{}\t{}..{}\t{}\t{}\n", domains, signals, begin, final, b.size(), strand);
-        stream << "\t" << a << "\n";
-        stream << "\t" << b << "\n";
+        for (auto const& [genome_id, genome_sequence] : genome) {
+            auto a = genome_sequence.substr(begin, final - begin);
+            auto b = domains == "CRISPR" ? "" : Debug::translation_test(genome_sequence, begin, final, strand == "+", 0);
+
+            stream << fmt::format("\t{}\t{}\t{}..{}\t{}\t{}\n", domains, signals, begin, final, b.size(), strand);
+            stream << "\t" << a << "\n";
+            stream << "\t" << b << "\n";
+        }
         return stream.str();
     };
 

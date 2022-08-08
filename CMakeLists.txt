@@ -40,7 +40,9 @@ set_property(TARGET exec PROPERTY CXX_STANDARD 20)
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
     SET(OPENMP OpenMP::OpenMP_CXX)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
-
 
 target_link_libraries(exec util prospector ${Boost_LIBRARIES} ${OPENMP})
