@@ -36,6 +36,7 @@ set_property(TARGET prospector PROPERTY CXX_STANDARD 17)
 
 add_executable(exec "src/main.cpp" include/config.h include/system.h)
 set_property(TARGET exec PROPERTY CXX_STANDARD 20)
+set_target_properties(exec PROPERTIES OUTPUT_NAME "prospector")
 
 find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
