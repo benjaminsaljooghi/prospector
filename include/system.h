@@ -52,17 +52,19 @@ struct System
         return last->get_final();
     }
 
-    string to_string_summary()
+    string to_string_summary(string& genome_id)
     {
         std::ostringstream out;
+        out << '>' << genome_id << endl;
         for (Locus* l : this->loci)
             out << l->to_string_summary() << endl;
         return out.str();
     }
 
-    string to_string_debug()
+    string to_string_debug(string& genome_id)
     {
         std::ostringstream out;
+        out << '>' << genome_id << endl;
         for (Locus* l : this->loci)
             out << l->to_string_debug() << endl;
         return out.str();

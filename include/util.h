@@ -5,8 +5,9 @@
 
 namespace Util
 {
+    using GenomeIdSequenceMap = map<string, string>;
 
-	static const string stop = "Z";
+    static const string stop = "Z";
     static const char stop_c = 'Z';
 
 	std::vector<std::string> parse(std::string str, std::string delim);
@@ -212,8 +213,8 @@ namespace Util
 		string str = fmt::format("sort {} items", iterable.size());
 	}
 
-	string load_genome(std::filesystem::path);
-	map<string, string> parse_fasta(string, bool);
+	map<string, string> load_genome(const std::filesystem::path&);
+	map<string, string> parse_fasta(const string&, bool);
 	//string parse_fasta_single(string);
 
 	char complement(char nuc);

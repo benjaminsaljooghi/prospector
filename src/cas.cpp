@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "openmp-use-default-none"
 #include "cas.h"
 #include "config.h"
 
@@ -164,7 +166,6 @@ bool fragment_contains(const Fragment* a, const Fragment* b)
 
 vector<Fragment*> Cas::cas(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome)
 {
-
     vector<Fragment*> fragments;
 
     #pragma omp parallel for
@@ -449,3 +450,5 @@ vector<Translation*> Cas::crispr_proximal_translations(const string& genome, vec
 
 
 
+
+#pragma clang diagnostic pop

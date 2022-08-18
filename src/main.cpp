@@ -97,43 +97,53 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     std::ofstream out_gene(results_path / "out_gene.txt");
     std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
 
-    string genome = Util::load_genome(genome_path);
+    Util::GenomeIdSequenceMap genome_map = Util::load_genome(genome_path);
 
-    vector<Translation*> translations;
-    vector<Crispr*> crisprs;
-
-    if (Config::cas_only) {
-        translations = Cas::get_sixframe(genome, 0, genome.length()-1);
-    } else {
-        crisprs = Array::get_crisprs(genome);
-        translations = Config::crispr_proximal_search ? Cas::crispr_proximal_translations(genome, crisprs) : Cas::get_sixframe(genome, 0, genome.length()-1);
-    }
-
-    vector<Fragment*> fragments = Cas::cas(profiles, translations, genome);
-    vector<MultiFragment*> multifragments = gen_multifragments(fragments);
-  
-    std::vector<Locus*> loci;
-
-    for (Crispr* c : crisprs)
-        loci.push_back(c);
-
-    for (MultiFragment* f : multifragments)
-        loci.push_back(f);
-
-    std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
-
-    vector<System*> systems = gen_systems(loci);
-
-    for (System* system : systems)
+    for (auto const& [genome_id, genome_sequence] : genome_map)
     {
-        out_gene << system->to_string_summary();
-        out_gene_debug << system->to_string_debug() << endl;
-    }
+        vector<Translation*> translations;
+        vector<Crispr*> crisprs;
 
-    for (Crispr* c : crisprs) delete c;
-    for (Translation* t : translations) delete t;
-    for (MultiFragment* m : multifragments) delete m;
-    for (System* s : systems) delete s;
+        if (Config::cas_only) {
+            fmt::print("Acquiring translations for {}...\n", genome_id);
+            translations = Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+        } else {
+            fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
+            crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
+            translations = Config::crispr_proximal_search ?
+                    Cas::crispr_proximal_translations(genome_sequence, crisprs) :
+                    Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+        }
+
+        fmt::print("Detecting Cas genes for {}...\n", genome_id);
+        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
+        vector<MultiFragment*> multifragments = gen_multifragments(fragments);
+
+        fmt::print("Collating results for {}...\n", genome_id);
+        std::vector<Locus*> loci;
+
+        for (Crispr* c : crisprs)
+            loci.push_back(c);
+
+        for (MultiFragment* f : multifragments)
+            loci.push_back(f);
+
+        std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
+
+        vector<System*> systems = gen_systems(loci);
+
+        fmt::print("Writing results for {} to file...\n", genome_id);
+        for (System* system : systems)
+        {
+            out_gene << system->to_string_summary(const_cast<string &>(genome_id));
+            out_gene_debug << system->to_string_debug(const_cast<string &>(genome_id)) << endl;
+        }
+
+        for (Crispr* c : crisprs) delete c;
+        for (Translation* t : translations) delete t;
+        for (MultiFragment* m : multifragments) delete m;
+        for (System* s : systems) delete s;
+    }
 
     auto timed_prospect = time_diff(start_prospect, time());
 
