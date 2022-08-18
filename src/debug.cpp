@@ -2,7 +2,7 @@
 
 void Debug::visualize_map(string genome_path)
 {
-    map<string, string> genome = Util::load_genome(genome_path);
+    Util::GenomeIdSequenceMap genome = Util::load_genome(genome_path);
 
     for (auto const& [genom_id, genome_sequence] : genome) {
         Prospector::Encoding encoding = Prospector::get_genome_encoding(genome_sequence.c_str(), genome.size());
@@ -76,7 +76,7 @@ vector<Crispr*> Debug::crispr_filter(vector<Crispr*> crisprs, ull start, ull fin
 
 void Debug::genome_substr(const string& genome_path, ull genome_start, ull genome_final)
 {
-    map<string, string> genome = Util::load_genome(genome_path);
+    Util::GenomeIdSequenceMap genome = Util::load_genome(genome_path);
     for (auto const& [genome_id, genome_sequence] : genome) {
         fmt::print("{}\n",genome_sequence.substr(genome_start, genome_final - genome_start));
     }
@@ -104,7 +104,7 @@ string Debug::translation_test(const string& genome, ull genome_start, ull genom
 
 void Debug::translation_print(const string& genome_path, ull genome_start, ull genome_final, bool pos, ull debug_aminos)
 {
-    map<string, string> genome = Util::load_genome(genome_path);
+    Util::GenomeIdSequenceMap genome = Util::load_genome(genome_path);
     for (auto const& [genome_id, genome_sequence] : genome) {
         string translation = Debug::translation_test(genome_sequence, genome_start, genome_final, pos, debug_aminos);
         fmt::print("debug: {}..{} {}\n", genome_start, genome_final, translation);
@@ -128,7 +128,7 @@ void Debug::cas_detect(std::filesystem::path genome_path, ull genome_start, ull 
     string filename = "cas_detection_report.txt";
     std::ofstream file(filename.c_str());
 
-    map<string, string> genome = Util::load_genome(genome_path);
+    Util::GenomeIdSequenceMap genome = Util::load_genome(genome_path);
 
     for (auto const& [genome_id, genome_sequence] : genome) {
         vector<Translation *> triframe = Cas::get_triframe(genome_sequence, genome_start, genome_final,
@@ -167,9 +167,6 @@ void Debug::cas_detect(std::filesystem::path genome_path, ull genome_start, ull 
             file << fmt::format("---------------------\n");
         }
     }
-
-
-
 }
 
 void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull final)
@@ -189,9 +186,6 @@ void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull star
     exit(0);
 }
 
-
-
-
 void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::path genome_dir)
 {
     std::ifstream in(path);
@@ -201,7 +195,7 @@ void Debug::cartograph_interpreter(std::filesystem::path path, std::filesystem::
         
     string line;
     string genome_accession = "";
-    map<string,string> genome;
+    Util::GenomeIdSequenceMap genome;
 
     string interpretation_path = "cartograph_interpretation.txt";
     std::ofstream interpretation(interpretation_path.c_str());

@@ -97,7 +97,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     std::ofstream out_gene(results_path / "out_gene.txt");
     std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
 
-    auto genome_map = Util::load_genome(genome_path);
+    Util::GenomeIdSequenceMap genome_map = Util::load_genome(genome_path);
 
     for (auto const& [genome_id, genome_sequence] : genome_map)
     {

@@ -3,9 +3,6 @@
 
 std::vector<std::string> Util::parse(std::string str, std::string delim)
 {
-	//std::string s = "scott>=tiger>=mushroom";
-	//std::string delimiter = ">=";
-
 	std::vector < std::string> tokens;
 
 	size_t pos = 0;
@@ -27,14 +24,10 @@ std::vector<std::string> Util::parse(std::string str, std::string delim)
 	}
 	tokens.push_back(str);
 	return tokens;
-	//std::cout << s << std::endl;
 }
 
 std::vector<std::string> Util::parse_exact(std::string str, std::string delim)
 {
-	//std::string s = "scott>=tiger>=mushroom";
-	//std::string delimiter = ">=";
-
 	std::vector < std::string> tokens;
 
 	size_t pos = 0;
@@ -49,7 +42,6 @@ std::vector<std::string> Util::parse_exact(std::string str, std::string delim)
 	}
 	tokens.push_back(str);
 	return tokens;
-	//std::cout << s << std::endl;
 }
 
 
@@ -60,7 +52,6 @@ ui Util::difference_cpu(const ui& _a, const ui& _b)
 	ui oddBits = _xor & 0x5555555555555555ull;
 	ui comp = (evenBits >> 1) | oddBits;
 	return __builtin_popcount(comp);
-	//return std::popcount(comp);
 }
 
 string Util::translate_domain(const string& domain)
@@ -98,84 +89,23 @@ bool Util::any_overlap(ull a_start, ull a_final, ull b_start, ull b_final)
 }
 
 
-map<string, string> Util::load_genome(std::filesystem::path path)
+Util::GenomeIdSequenceMap Util::load_genome(const std::filesystem::path& path)
 {
-
-	fmt::print("reading {}\n", path.string());
+	fmt::print("Reading {}...\n", path.string());
 
 	ifstream input(path);
 	if (!input.good())
 	{
-		throw runtime_error("input not good!");
+		throw runtime_error("Input file is not good!");
 	}
 
-	auto fasta = parse_fasta(path.string(), true);
-    return fasta;
-
-	// string seq = "";
-	string max_name = "";
-	int max_length = 0;
-	for (auto const& [name, sequence] : fasta)
-	{
-		if (sequence.length() > max_length)
-		{
-			max_length = sequence.length();
-			max_name = name;
-		}
-	}
-
-	// fmt::print("genome seq count is: {}\n", i);
-//	return fasta[max_name];
-	// return seq;
-
-	auto check_line = [](string& line) {
-		assert(line.find(' ') == string::npos);
-		assert(line.find("\r") == string::npos);
-	};
-
-	string line;
-	string name;
-
-	
-	string content;
-	// getline(input, line);
-	// assert(line.starts_with('>'));
-	// name = line.substr(1);
-	
-	// while (true)
-	// {
-		// getline(input, line);
-
-		// if (line.empty() || line[0] == '>')
-		// {
-			//content.erase(std::remove(content.begin(), content.end(), 'N'), content.end());
-			//content.erase(std::remove(content.begin(), content.end(), 'R'), content.end());
-			//content.erase(std::remove(content.begin(), content.end(), 'Y'), content.end());
-			//content.erase(std::remove(content.begin(), content.end(), 'K'), content.end());
-			//content.erase(std::remove(content.begin(), content.end(), 'W'), content.end());
-			//content.erase(std::remove(content.begin(), content.end(), 'M'), content.end());
-			//content.erase(std::remove(content.begin(), content.end(), 'S'), content.end());
-			
-			
-			
-			// content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
-			// return content;
-		// }
-
-		// check_line(line);
-		// content += line;
-		// fmt::print("hello world\n");
-	// }
-
-	assert(false);
+    return parse_fasta(path.string(), true);
 }
 
 // dna = true for dna
 // dna = false for amino
-map<string, string> Util::parse_fasta(string file_path, bool dna)
+Util::GenomeIdSequenceMap Util::parse_fasta(const string& file_path, bool dna)
 {
-	// printf("reading %s... ", file_path.c_str());
-	// auto start = time();
 	ifstream input(file_path);
 	if (!input.good())
 	{
@@ -200,6 +130,9 @@ map<string, string> Util::parse_fasta(string file_path, bool dna)
 			}
 			if (!line.empty())
 			{
+                // Genome name formatted like '>GENOME_ID <genome_sequence>'.
+                // Find first occurrence of ' ' and remove it by subtracting 1.
+                // Start search at position 1 to remove '>' from the name.
 				name = line.substr(1, line.find(' ') - 1);
 			}
 			content.clear();
@@ -229,8 +162,6 @@ map<string, string> Util::parse_fasta(string file_path, bool dna)
 
 		seqs[name] = content;
 	}
-
-    fmt::print("Found genome: {}\n", name);
 
 	return seqs;
 }
