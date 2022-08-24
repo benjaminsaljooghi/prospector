@@ -1,29 +1,16 @@
 #include "prospector.h"
-#include "cuda_include.h"
+#include "cuda_helpers.h"
 #include <cassert>
 #include <cstdio>
 
-
-cudaError_t checkCudaAlways(cudaError_t result)
+__device__ int __popc (ui x);
+__device__ uc difference_gpu(const ui& _a, const ui& _b)
 {
-    if (result != cudaSuccess)
-    {
-        fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
-    }
-    return result;
-}
-
-cudaError_t checkCuda(cudaError_t result)
-{
-#if DEBUG == 1
-    checkCudaAlways(result);
-#endif
-    return result;
-}
-
-void cudaWait()
-{
-    checkCuda ( cudaDeviceSynchronize() );
+    ui _xor = (_a ^ _b);
+    ui evenBits = _xor & 0xAAAAAAAAAAAAAAAAull;
+    ui oddBits = _xor & 0x5555555555555555ull;
+    ui comp = (evenBits >> 1) | oddBits;
+    return __popc(comp);
 }
 
 __device__ ui scheme(const char c)
@@ -89,16 +76,6 @@ Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ull gen
     cudaFree(d_genome);
 
     return encoding;
-}
-
-__device__ int __popc (ui x);
-__device__ uc difference_gpu(const ui& _a, const ui& _b)
-{
-    ui _xor = (_a ^ _b);
-    ui evenBits = _xor & 0xAAAAAAAAAAAAAAAAull;
-    ui oddBits = _xor & 0x5555555555555555ull;
-    ui comp = (evenBits >> 1) | oddBits;
-    return __popc(comp);
 }
 
 __global__ void compute_qmap_small(const ui* encoding, const ui encoding_size, uc* qmap)

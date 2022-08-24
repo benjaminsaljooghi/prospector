@@ -21,4 +21,8 @@
 #define GRID 32
 #define BLOCK 256
 
+cudaError_t checkCudaAlways(cudaError_t result);
+cudaError_t checkCuda(cudaError_t result);
+void cudaWait();
+
 #endif //PROSPECTOR_CUDA_H

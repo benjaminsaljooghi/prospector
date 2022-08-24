@@ -13,15 +13,11 @@ struct CasProfile
 {
     string identifier;
     phmap::flat_hash_set<kmer> hash_table;
-    
     ui length_median;
     double length_mean;
     ui length_min;
     ui length_max;
-
 };
-
-
 
 namespace CasProfileUtil
 {
@@ -35,4 +31,3 @@ namespace CasProfileUtil
     vector<CasProfile*> deserialize_profiles(std::filesystem::path);
     void serialize(std::filesystem::path);
 }
-
