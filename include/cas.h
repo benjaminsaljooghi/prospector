@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "stdafx.h"
@@ -6,13 +5,11 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 
-
 #include "util.h"
 #include "crispr.h"
 #include "cas_profiles.h"
 #include "debug.h"
 #include "locus.h"
-
 
 namespace fs = std::filesystem;
 
@@ -200,8 +197,6 @@ struct MultiFragment : public Locus
     }
 };
 
-
-
 namespace Cas
 {
     static const ull upstream_size = 30000;
@@ -212,5 +207,6 @@ namespace Cas
     vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);
     vector<Translation*> crispr_proximal_translations(const string& genome, vector<Crispr*>&);
     vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
+    vector<Fragment*> cas_gpu(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
 }
 

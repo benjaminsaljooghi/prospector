@@ -444,3 +444,79 @@
 //
 //    start_prodigal = time(start_prodigal, "full prodigal analysis");
 //}
+
+
+//Gene* gene_from_fragments(vector<Fragment*>& fragments)
+//{
+//    sort(fragments.begin(), fragments.end(), [](const Fragment* a, const Fragment* b) { return a->genome_begin < b->genome_begin;  });
+//
+//    Gene* g = new Gene;
+//    g->gn = fragments[0]->reference_profile->gn;
+//    g->fragments = fragments;
+//    return g;
+//}
+
+//vector<Gene> best_genes(vector<Gene> genes)
+//{
+//    map<string, Gene> types;
+//    for (const Gene& gene : genes)
+//    {
+//        auto gn = gene.fragments[0].reference_profile->gn;
+//        if (types.contains(gn) && gene.size() <= types.at(gn).size())
+//            continue;
+//        types[gn] = gene;
+//    }
+//    vector<Gene> __genes;
+//    for (auto pairing : types)
+//        __genes.push_back(pairing.second);
+//
+//    return __genes;
+//}
+
+//vector<Gene*> genes_from_fragments(vector<Fragment*>& fragments)
+//{
+//    map<string, vector<Fragment*>> gene_fragments;
+//    for (Fragment* a : fragments)
+//        gene_fragments[a->reference_profile->gn].push_back(a);
+//
+//    vector<Gene*> genes;
+//    for (auto gene : gene_fragments)
+//    {
+//        genes.push_back(gene_from_fragments(gene.second));
+//    }
+//
+//    //genes = best_genes(genes);
+//    sort(genes.begin(), genes.end(), [](Gene* a, Gene* b) { return a->fragments[0]->genome_begin < b->fragments[0]->genome_begin; } );
+//
+//    return genes;
+//}
+
+
+//map<string, vector<Gene*>> Cas::assemble_genes(const vector<Crispr*>& crisprs, const vector<Fragment*>& fragments)
+//{
+//    //map<string, Crispr> crispr_map;
+//
+//    map<string, vector<Fragment*>> crispr_fragments;
+//    map<string, vector<Gene*>> crispr_genes;
+//
+//
+//    for (const Crispr* c : crisprs)
+//    {
+//        string c_string = c->identifier_string();
+//        for (Fragment* f : fragments)
+//        {
+//            if (f->reference_crispr->start == c->start && f->reference_crispr->k == c->k)
+//            {
+//                crispr_fragments[c_string].push_back(f);
+//            }
+//        }
+//    }
+//
+//    for (auto [c_string, fragments] : crispr_fragments)
+//    {
+//        crispr_genes[c_string] = genes_from_fragments(fragments);
+//    }
+//
+//    return crispr_genes;
+//}
+

@@ -7,7 +7,6 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 #include "path.h"
-#include <boost/algorithm/string.hpp>
 #include "config.h"
 #include "system.h"
 
@@ -116,7 +115,9 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         }
 
         fmt::print("Detecting Cas genes for {}...\n", genome_id);
-        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
+//        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
+        vector<Fragment*> fragments = Cas::cas_gpu(profiles, translations, const_cast<string &>(genome_sequence));
+
         vector<MultiFragment*> multifragments = gen_multifragments(fragments);
 
         fmt::print("Collating results for {}...\n", genome_id);

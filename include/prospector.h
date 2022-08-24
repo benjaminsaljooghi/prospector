@@ -1,10 +1,8 @@
-
 #pragma once
 
 typedef long long ll;
 typedef unsigned int ui;
 typedef unsigned int kmer;
-//typedef signed long int li;
 typedef unsigned long long ull;
 typedef unsigned char uc;
 

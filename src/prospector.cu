@@ -1,34 +1,7 @@
-
-
 #include "prospector.h"
-
-#include "cuda.h"
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-#include "cuda_fp16.h"
-
+#include "cuda_include.h"
 #include <cassert>
-#include <chrono>
-#include <stdio.h>
-#include "time_util.h"
-
-
-#ifdef __CUDACC__
-#define CUDA_CALLABLE_MEMBER __host__ __device__
-#define KERNEL_ARGS2(grid, block) <<< grid, block >>>
-#define KERNEL_ARGS3(grid, block, sh_mem) <<< grid, block, sh_mem >>>
-#define KERNEL_ARGS4(grid, block, sh_mem, stream) <<< grid, block, sh_mem, stream >>>
-#else
-#define CUDA_CALLABLE_MEMBER
-#define KERNEL_ARGS2(grid, block)
-#define KERNEL_ARGS3(grid, block, sh_mem)
-#define KERNEL_ARGS4(grid, block, sh_mem, stream)
-#endif
-
-
-#define DEBUG 1
-#define GRID 32
-#define BLOCK 256
+#include <cstdio>
 
 
 cudaError_t checkCudaAlways(cudaError_t result)
@@ -92,7 +65,7 @@ __global__ void compute_encoding(const char* genome, kmer* encoding, ull genome_
 Prospector::Encoding Prospector::get_genome_encoding(const char* genome, ull genome_size)
 {
 
-    Prospector::Encoding encoding;
+    Prospector::Encoding encoding{};
 
     cudaError er;
     

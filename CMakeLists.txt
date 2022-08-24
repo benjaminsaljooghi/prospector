@@ -1,11 +1,7 @@
-project(prospector)
-
 cmake_minimum_required (VERSION 3.19)
-
 set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 SET(CMAKE_CUDA_ARCHITECTURES 52)
-
-enable_language("CUDA")
+project(prospector LANGUAGES CUDA CXX)
 
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
     set(CMAKE_CUDA_STANDARD 17)
@@ -28,13 +24,13 @@ include_directories(include)
 include_directories(lib)
 
 
-add_library(util "src/cas.cpp" "src/array_discovery.cpp" "src/cas_profiles.cpp" "src/crispr.cpp" "src/debug.cpp" "src/util.cpp" src/config.cpp)
+add_library(util src/cas.cpp src/array_discovery.cpp src/cas_profiles.cpp src/crispr.cpp src/debug.cpp src/util.cpp src/config.cpp src/cas_helpers.cpp)
 set_property(TARGET util PROPERTY CXX_STANDARD 20)
 
-add_library(prospector "src/prospector.cu")
-set_property(TARGET prospector PROPERTY CXX_STANDARD 17)
+add_library(prospector src/prospector.cu src/cas.cu)
+set_property(TARGET prospector PROPERTY CXX_STANDARD 20)
 
-add_executable(exec "src/main.cpp" include/config.h include/system.h)
+add_executable(exec src/main.cpp include/config.h include/system.h)
 set_property(TARGET exec PROPERTY CXX_STANDARD 20)
 set_target_properties(exec PROPERTIES OUTPUT_NAME "prospector")
 

@@ -102,6 +102,11 @@ Util::GenomeIdSequenceMap Util::load_genome(const std::filesystem::path& path)
     return parse_fasta(path.string(), true);
 }
 
+void remove_rna(string& content)
+{
+    content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
+}
+
 // dna = true for dna
 // dna = false for amino
 Util::GenomeIdSequenceMap Util::parse_fasta(const string& file_path, bool dna)
@@ -116,26 +121,28 @@ Util::GenomeIdSequenceMap Util::parse_fasta(const string& file_path, bool dna)
 	string line, name, content;
 	while (getline(input, line))
 	{
-
 		if (line.empty() || line[0] == '>') // Identifier marker
 		{
 			if (!name.empty())
 			{
 				// Get what we read from the last entry
-				if (dna)
-					content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
-				seqs[name] = content;
-				
+				if (dna) remove_rna(content);
+                seqs[name] = content;
+
 				name.clear();
 			}
-			if (!line.empty())
+
+			if (line[0] == '>')
 			{
                 // Genome name formatted like '>GENOME_ID <genome_sequence>'.
                 // Find first occurrence of ' ' and remove it by subtracting 1.
                 // Start search at position 1 to remove '>' from the name.
 				name = line.substr(1, line.find(' ') - 1);
+
+                if (!seqs[name].empty()) fmt::print("Duplicate genome found in file: {}\n", name);
 			}
-			content.clear();
+
+            content.clear();
 		}
 		else if (!name.empty())
 		{
@@ -144,6 +151,7 @@ Util::GenomeIdSequenceMap Util::parse_fasta(const string& file_path, bool dna)
 				name.clear();
 				content.clear();
 			}
+
 			if (line.find("\r") != string::npos)
 			{
 				throw runtime_error("File contains carriage returns (CRLF). Please reformat to LF.");
@@ -154,12 +162,11 @@ Util::GenomeIdSequenceMap Util::parse_fasta(const string& file_path, bool dna)
 			}
 		}
 	}
+
 	if (!name.empty())
 	{
-		// Get what we read from the last 
-		if (dna)
-			content.erase(std::remove_if(content.begin(), content.end(), [](char c) { return !(c == 'A' || c == 'C' || c == 'G' || c == 'T'); }), content.end());
-
+		// Get what we read from the last
+		if (dna) remove_rna(content);
 		seqs[name] = content;
 	}
 
