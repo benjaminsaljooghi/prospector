@@ -3,51 +3,76 @@
 #include "config.h"
 #include "vector"
 
-struct CudaCasData {
-    ull id;
-//    phmap::flat_hash_set<kmer> hash_table;
-};
-
-__global__ void detect_cas_genes(CudaCasData *data, ::size_t size)
+__global__ void detect_cas_genes(ui* profile_coords, ui* kmers)
 {
     ull i = threadIdx.x + blockDim.x * blockIdx.x;
-    printf("ID: %llu with size %lu\n", i, size);
-
-    printf("Current value of data->id: %llu\n", data[i].id);
-    data[i].id = i * i;
-    printf("After, value of data->id is: %llu\n", data[i].id);
+    printf("This profile starts at: %u\n", profile_coords[i]);
 }
 
+::size_t allocate_kmers_on_gpu(vector<CasProfile*>& profiles, ui *&h_kmers, ui *&d_kmers, ui *&h_profile_coords, ui *&d_profile_coords) {
+    ::size_t n_profiles = profiles.size();
 
-vector<Fragment*> Cas::cas_gpu(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome)
-{
-    ull num_profiles = 5; // profiles.size();
-    ull bytes = num_profiles * sizeof(CudaCasData);
+    ::size_t total_kmers = 0;
+    for (const auto &item: profiles)
+    {
+        total_kmers += item->hash_table.size();
+    }
 
-//    auto *profile_arr = static_cast<CudaCasData *>(malloc(bytes));
-//
-//    for (int i = 0; i < num_profiles - 1; i++) {
-//        profile_arr[i].id = i;
-//    }
+    ull kmers_bytes = total_kmers * sizeof(ui);
+    ull profile_locs_bytes = n_profiles * sizeof(ui);
 
-    CudaCasData *h_profiles, *d_profiles;
-    h_profiles = (CudaCasData*) malloc(bytes);
-    h_profiles[0].id = 0;
-    h_profiles[1].id = 1;
-    h_profiles[2].id = 2;
-    h_profiles[3].id = 3;
-    h_profiles[4].id = 4;
+    h_kmers = (ui*) malloc(kmers_bytes);
+    h_profile_coords = (ui*) malloc(profile_locs_bytes);
 
-    checkCuda(cudaMalloc(&d_profiles, bytes));
-    checkCuda(cudaMemcpy(d_profiles, h_profiles, bytes, cudaMemcpyHostToDevice));
+    ui n_kmers = 0;
+    for (int i = 0; i < profiles.size(); i++)
+    {
+        auto hash_table = profiles[i]->hash_table;
 
-    detect_cas_genes<<<1, num_profiles>>>(d_profiles, num_profiles);
+        // Store current index of kmer in profile coords array, so we know where this profile starts
+        h_profile_coords[i] = n_kmers;
 
-    checkCuda(cudaMemcpy(h_profiles, d_profiles, bytes, cudaMemcpyDeviceToHost));
+        for (auto const& hash: hash_table)
+        {
+            h_kmers[n_kmers] = hash;
+            n_kmers++;
+        }
+    }
+
+    // Allocate and copy kmer array
+    checkCuda(cudaMalloc(&d_kmers, kmers_bytes));
+    checkCuda(cudaMemcpy(d_kmers, h_kmers, kmers_bytes, cudaMemcpyHostToDevice));
+
+    // Allocate and copy profile coords array
+    checkCuda(cudaMalloc(&d_profile_coords, profile_locs_bytes));
+    checkCuda(cudaMemcpy(d_profile_coords, h_profile_coords, profile_locs_bytes, cudaMemcpyHostToDevice));
 
     cudaWait();
 
-    cudaFree(d_profiles);
+    return n_profiles;
+}
+
+vector<Fragment*> Cas::cas_gpu(vector<CasProfile*>& profiles, vector<Translation*>& translations, string& genome)
+{
+    // Steps:
+    // 1. get all kmers from each profile (DONE)
+    // 2. get all kmers from each translation
+    // 3. perform comparison on gpu
+
+    ui *h_kmers, *d_kmers;
+    ui *h_profile_coords, *d_profile_coords;
+
+    ::size_t n_profiles = allocate_kmers_on_gpu(profiles, h_kmers, d_kmers, h_profile_coords, d_profile_coords);
+
+    detect_cas_genes<<<1, n_profiles>>>(d_profile_coords, d_kmers);
+
+    cudaWait();
+
+    cudaFree(d_kmers);
+    cudaFree(d_profile_coords);
+
+    free(h_kmers);
+    free(h_profile_coords);
 
     return {};
 
