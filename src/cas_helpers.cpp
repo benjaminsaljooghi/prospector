@@ -148,4 +148,3 @@ bool fragment_contains(const Fragment* a, const Fragment* b)
 {
     return a->clust_begin > b->clust_begin && a->clust_final < b->clust_final;
 }
-
