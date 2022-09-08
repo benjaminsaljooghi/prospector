@@ -12,7 +12,7 @@
 struct CasProfile
 {
     string identifier;
-    phmap::flat_hash_set<kmer> hash_table;
+    phmap::flat_hash_map<kmer, ull> hash_table;
     ui length_median;
     double length_mean;
     ui length_min;

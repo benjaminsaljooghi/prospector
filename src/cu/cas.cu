@@ -2,16 +2,56 @@
 #include "cas_helpers.h"
 #include "config.h"
 
+#define MAX_MISMATCHES 10
+
 __global__ void
 detect_cas_genes(
-        ui n_profiles, ui *profile_coords, ui *profile_kmers,
-        ui n_translations, ui *translation_coords, ui *translation_kmers
+        ui n_profiles, ui n_profile_kmers, const ui *profile_coords, const ui *profile_kmers,
+        ui n_translations, ui n_translation_kmers, const ui *translation_coords, const ui *translation_kmers
 ) {
-    ui profile_coord = threadIdx.x + blockDim.x * blockIdx.x;
-    ui translation_coord = blockIdx.x;
+    ui profile_coord = blockIdx.x;
+    ui translation_coord = threadIdx.x;
 
     if (profile_coord < n_profiles && translation_coord < n_translations) {
-        // TODO: Compare KMERS!
+        ui translation_start_index = translation_coords[translation_coord];
+        ui translation_end_index =
+                translation_coord + 1 >= n_translations ? n_translation_kmers : translation_coords[translation_coord +
+                                                                                                   1];
+        ui translation_size = translation_end_index - translation_start_index;
+
+        ui profile_start_index = profile_coords[profile_coord];
+        ui profile_end_index = profile_coord + 1 >= n_profiles ? n_profile_kmers : profile_coords[profile_coord + 1];
+        ui profile_size = profile_end_index - profile_start_index;
+
+        if (profile_size > translation_size) return;
+
+        ui iterations = translation_size - profile_size;
+
+        for (ui iteration = 0; iteration < iterations; iteration++) {
+            ui n_mismatch = 0;
+
+            for (ui i = profile_start_index; i < profile_end_index; i++) {
+                for (ui j = translation_start_index + iteration;
+                     j < translation_start_index + profile_size + iteration; j++) {
+                    if (j > n_translation_kmers) break;
+
+                    if (profile_kmers[i] != translation_kmers[j]) {
+                        n_mismatch++;
+                    }
+
+                    printf("%u : %u\n", translation_kmers[j], profile_kmers[i]);
+
+                    if (n_mismatch > MAX_MISMATCHES) break;
+                }
+
+                if (n_mismatch > MAX_MISMATCHES) break;
+            }
+
+            if (n_mismatch < MAX_MISMATCHES) {
+                printf("Between %u and %u, there were %u mismatches.\n", translation_start_index + iteration,
+                       translation_start_index + profile_size + iteration, n_mismatch);
+            }
+        }
     }
 }
 
@@ -27,23 +67,29 @@ vector<Fragment *> Cas::cas_gpu(vector<CasProfile *> &profiles, vector<Translati
     kmer *h_translation_kmers, *d_translation_kmers;
     ui *h_translation_coords, *d_translation_coords;
 
-    ::size_t n_profiles = allocate_profiles_on_gpu(
+    AllocationInfo profile_alloc_info = allocate_profiles_on_gpu(
             profiles,
             h_profile_kmers, d_profile_kmers,
             h_profile_coords, d_profile_coords);
 
-    ::size_t n_translations = allocate_translations_on_gpu(
+    AllocationInfo translation_alloc_info = allocate_translations_on_gpu(
             translations,
             h_translation_kmers, d_translation_kmers,
             h_translation_coords, d_translation_coords);
 
-    ui numBlocks = n_translations;
-    ui numThreadsPerBlock = ceil((double) n_profiles / (double) n_translations);
+    ui n_profiles = profile_alloc_info.n_objects;
+    ui n_profile_kmers = profile_alloc_info.n_kmers;
+
+    ui n_translations = translation_alloc_info.n_objects;
+    ui n_translation_kmers = translation_alloc_info.n_kmers;
+
+    ui numBlocks = n_profiles;
+    ui numThreadsPerBlock = n_translations;
 
     // Perform GPU Kmer comparison operations
     detect_cas_genes<<<numBlocks, numThreadsPerBlock>>>(
-            n_profiles, d_profile_coords, d_profile_kmers,
-            n_translations, d_translation_coords, d_translation_kmers
+            n_profiles, n_profile_kmers, d_profile_coords, d_profile_kmers,
+            n_translations, n_translation_kmers, d_translation_coords, d_translation_kmers
     );
 
     cudaWait();
@@ -157,49 +203,4 @@ vector<Fragment *> Cas::cas_gpu(vector<CasProfile *> &profiles, vector<Translati
 //    std::sort(filtered_fragments.begin(), filtered_fragments.end(), [](Fragment* a, Fragment* b) {return a->expanded_genome_begin < b->expanded_genome_begin; });
 //
 //    return filtered_fragments;
-}
-
-::size_t allocate_profiles_on_gpu(
-        vector<CasProfile *> &profiles,
-        ui *&h_profile_kmers, ui *&d_profile_kmers,
-        ui *&h_profile_coords, ui *&d_profile_coords) {
-    ::size_t n_profiles = profiles.size();
-
-    ::size_t total_kmers = 0;
-    for (const auto &profile: profiles) {
-        total_kmers += profile->hash_table.size();
-    }
-
-    ull kmers_bytes = total_kmers * sizeof(ui);
-    ull profile_locs_bytes = n_profiles * sizeof(ui);
-
-    h_profile_kmers = (ui *) malloc(kmers_bytes);
-    h_profile_coords = (ui *) malloc(profile_locs_bytes);
-
-    printf("Total bytes for profiles: %llu\n", kmers_bytes + profile_locs_bytes);
-
-    ui n_kmers = 0;
-    for (int i = 0; i < profiles.size(); i++) {
-        auto hash_table = profiles[i]->hash_table;
-
-        // Store current index of kmer in profile coords array, so we know where this profile starts
-        h_profile_coords[i] = n_kmers;
-
-        for (auto const &hash: hash_table) {
-            h_profile_kmers[n_kmers] = hash;
-            n_kmers++;
-        }
-    }
-
-    // Allocate and copy kmer array
-    checkCuda(cudaMalloc(&d_profile_kmers, kmers_bytes));
-    checkCuda(cudaMemcpy(d_profile_kmers, h_profile_kmers, kmers_bytes, cudaMemcpyHostToDevice));
-
-    // Allocate and copy profile coords array
-    checkCuda(cudaMalloc(&d_profile_coords, profile_locs_bytes));
-    checkCuda(cudaMemcpy(d_profile_coords, h_profile_coords, profile_locs_bytes, cudaMemcpyHostToDevice));
-
-    cudaWait();
-
-    return n_profiles;
 }

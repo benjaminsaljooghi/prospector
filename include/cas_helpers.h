@@ -36,12 +36,17 @@ bool fragment_equivalent(const Fragment* a, const Fragment* b);
 
 bool fragment_contains(const Fragment* a, const Fragment* b);
 
-::size_t allocate_profiles_on_gpu(
+struct AllocationInfo {
+    ui n_kmers;
+    ui n_objects;
+};
+
+AllocationInfo allocate_profiles_on_gpu(
         vector<CasProfile *> &profiles,
         ui *&h_profile_kmers, ui *&d_profile_kmers,
         ui *&h_profile_coords, ui *&d_profile_coords);
 
-::size_t allocate_translations_on_gpu(
+AllocationInfo allocate_translations_on_gpu(
         vector<Translation *> &translations,
         kmer *&h_translation_kmers, kmer *&d_translation_kmers,
         ui *&h_translation_coords, ui *&d_translation_coords);

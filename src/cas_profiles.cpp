@@ -76,7 +76,6 @@ vector<CasProfile*> CasProfileUtil::deserialize_profiles(std::filesystem::path d
 			
 		profiles.push_back(profile);
 	}
-//	CasProfileUtil::print_profiles(profiles);
 
 	fmt::print("loaded {} profiles\n", profiles.size());
 	return profiles;
@@ -86,6 +85,9 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 {
 	CasProfile* profile = new CasProfile;
 	profile->identifier = id;
+
+    ull kmer_pos = 0;
+
 	for (string& seq : sequences)
 	{	
 		// clean seq
@@ -103,7 +105,7 @@ CasProfile* profile_factory(string id, vector<string> sequences, ull k)
 			try
 			{
 				ui kmer_enc = Util::encode_amino_kmer(kmer);
-				profile->hash_table.insert(kmer_enc);
+				profile->hash_table[kmer_enc] = kmer_pos++;
 			}
 			catch(const std::exception& e)
 			{
