@@ -27,12 +27,8 @@ AllocationInfo allocate_profiles_on_gpu(
         // Store current index of kmer in profile coords array, so we know where this profile starts
         h_profile_coords[i] = n_kmers;
 
-        for (auto const &hash: hash_table) {
-            kmer k = hash.first;
-            ull index = hash.second;
-
-            h_profile_kmers[index] = k;
-            n_kmers++;
+        for (auto const &k: hash_table) {
+            h_profile_kmers[n_kmers++] = k;
         }
     }
 

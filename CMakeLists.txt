@@ -20,15 +20,24 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
+include(cmake/CPM.cmake)
+
+CPMAddPackage(
+        NAME warpcore
+        GITHUB_REPOSITORY sleeepyjack/warpcore
+        GIT_TAG 1.0.0-alpha.1
+)
+
 include_directories(include)
 include_directories(lib)
-
 
 add_library(util src/cas.cpp src/array_discovery.cpp src/cas_profiles.cpp src/crispr.cpp src/debug.cpp src/util.cpp src/config.cpp src/cas_helpers.cpp)
 set_property(TARGET util PROPERTY CXX_STANDARD 20)
 
 add_library(prospector src/cu/prospector.cu src/cu/cas.cu src/cu/cuda_helpers.cu src/cu/cas_helpers.cu)
 set_property(TARGET prospector PROPERTY CXX_STANDARD 20)
+target_compile_options(prospector PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+target_link_libraries(prospector warpcore) # add warpcore to .cu files
 
 add_executable(exec src/main.cpp include/config.h include/system.h)
 set_property(TARGET exec PROPERTY CXX_STANDARD 20)

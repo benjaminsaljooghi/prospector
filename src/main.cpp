@@ -10,29 +10,25 @@
 #include "config.h"
 #include "system.h"
 
-vector<MultiFragment*> gen_multifragments(vector<Fragment*> fragments)
-{
-    vector<MultiFragment*> multifragments;
-    for (ui i = 0; i < fragments.size(); i++)
-    {
+vector<MultiFragment *> gen_multifragments(vector<Fragment *> fragments) {
+    vector<MultiFragment *> multifragments;
+    for (ui i = 0; i < fragments.size(); i++) {
         fmt::print("{}: {}\n", i, CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier));
 
         fmt::print("multifragment {}\n", i);
-        MultiFragment* multifragment = new MultiFragment;
+        MultiFragment *multifragment = new MultiFragment;
         multifragment->fragments.push_back(fragments[i]);
 
-        for (ui j = i + 1; j < fragments.size(); j++)
-        {
+        for (ui j = i + 1; j < fragments.size(); j++) {
             bool any_overlap = Util::any_overlap(fragments[i]->genome_begin, fragments[i]->genome_final,
-                                                fragments[j]->genome_begin, fragments[j]->genome_final);
+                                                 fragments[j]->genome_begin, fragments[j]->genome_final);
 
             string first = CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier);
             string second = CasProfileUtil::domain_table_fetch(fragments[j]->reference_profile->identifier);
 
             bool domain_overlap = (first.find(second) != string::npos) || (second.find(first) != string::npos);
 
-            if (any_overlap && domain_overlap)
-            {
+            if (any_overlap && domain_overlap) {
                 multifragment->fragments.push_back(fragments[j]);
                 i = j;
             }
@@ -43,23 +39,18 @@ vector<MultiFragment*> gen_multifragments(vector<Fragment*> fragments)
     return multifragments;
 }
 
-vector<System*> gen_systems(vector<Locus*> loci)
-{
-    vector<System*> systems;
+vector<System *> gen_systems(vector<Locus *> loci) {
+    vector<System *> systems;
 
     if (loci.size() == 0)
         return systems;
 
-    System* current = new System;
+    System *current = new System;
     current->loci.push_back(loci[0]);
-    for (size_t i = 1; i < loci.size(); i++)
-    {
-        if (loci[i]->get_start() < current->get_final() + 30000)
-        {
+    for (size_t i = 1; i < loci.size(); i++) {
+        if (loci[i]->get_start() < current->get_final() + 30000) {
             current->loci.push_back(loci[i]);
-        }
-        else
-        {
+        } else {
             systems.push_back(current);
             current = new System;
             current->loci.push_back(loci[i]);
@@ -68,16 +59,12 @@ vector<System*> gen_systems(vector<Locus*> loci)
 
     systems.push_back(current);
 
-    vector<System*> filtered_systems;
+    vector<System *> filtered_systems;
 
-    for (System* s : systems)
-    {
-        if (s->legitimate_system())
-        {
+    for (System *s: systems) {
+        if (s->legitimate_system()) {
             filtered_systems.push_back(s);
-        }
-        else
-        {
+        } else {
             delete s;
         }
     }
@@ -85,65 +72,62 @@ vector<System*> gen_systems(vector<Locus*> loci)
     return filtered_systems;
 }
 
-void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome_path)
-{
+void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genome_path) {
     auto start_prospect = time();
 
     fmt::print("\n\n");
 
-    std::filesystem::path results_path = Config::path_results / genome_path.stem();    
+    std::filesystem::path results_path = Config::path_results / genome_path.stem();
     std::filesystem::create_directory(results_path);
     std::ofstream out_gene(results_path / "out_gene.txt");
     std::ofstream out_gene_debug(results_path / "out_gene_debug.txt");
 
     Util::GenomeIdSequenceMap genome_map = Util::load_genome(genome_path);
 
-    for (auto const& [genome_id, genome_sequence] : genome_map)
-    {
-        vector<Translation*> translations;
-        vector<Crispr*> crisprs;
+    for (auto const &[genome_id, genome_sequence]: genome_map) {
+        vector<Translation *> translations;
+        vector<Crispr *> crisprs;
 
         if (Config::cas_only) {
             fmt::print("Acquiring translations for {}...\n", genome_id);
-            translations = Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+            translations = Cas::get_sixframe(genome_sequence, 0, genome_sequence.length() - 1);
         } else {
             fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
             crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
             translations = Config::crispr_proximal_search ?
-                    Cas::crispr_proximal_translations(genome_sequence, crisprs) :
-                    Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+                           Cas::crispr_proximal_translations(genome_sequence, crisprs) :
+                           Cas::get_sixframe(genome_sequence, 0, genome_sequence.length() - 1);
         }
 
         fmt::print("Detecting Cas genes for {}...\n", genome_id);
 //        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
-        vector<Fragment*> fragments = Cas::cas_gpu(profiles, translations, const_cast<string &>(genome_sequence));
+        vector<Fragment *> fragments = Cas::cas_gpu(profiles, translations, const_cast<string &>(genome_sequence));
 
-        vector<MultiFragment*> multifragments = gen_multifragments(fragments);
+        vector<MultiFragment *> multifragments = gen_multifragments(fragments);
 
         fmt::print("Collating results for {}...\n", genome_id);
-        std::vector<Locus*> loci;
+        std::vector<Locus *> loci;
 
-        for (Crispr* c : crisprs)
+        for (Crispr *c: crisprs)
             loci.push_back(c);
 
-        for (MultiFragment* f : multifragments)
+        for (MultiFragment *f: multifragments)
             loci.push_back(f);
 
-        std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
+        std::sort(loci.begin(), loci.end(), [](Locus *a, Locus *b) { return a->get_start() < b->get_start(); });
 
-        vector<System*> systems = gen_systems(loci);
+        vector<System *> systems = gen_systems(loci);
 
         fmt::print("Writing results for {} to file...\n", genome_id);
-        for (System* system : systems)
-        {
+        for (System *system: systems) {
             out_gene << system->to_string_summary(const_cast<string &>(genome_id));
             out_gene_debug << system->to_string_debug(const_cast<string &>(genome_id)) << endl;
         }
 
-        for (Crispr* c : crisprs) delete c;
-        for (Translation* t : translations) delete t;
-        for (MultiFragment* m : multifragments) delete m;
-        for (System* s : systems) delete s;
+        for (Crispr *c: crisprs) delete c;
+        for (Translation *t: translations) delete t;
+        for (MultiFragment *m: multifragments) delete m;
+        for (System *s: systems) delete s;
     }
 
     auto timed_prospect = time_diff(start_prospect, time());
@@ -154,17 +138,14 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
     out_gene_debug.close();
 }
 
-void run(vector<CasProfile*>& profiles)
-{
-    unordered_set<string> interest {};
+void run(vector<CasProfile *> &profiles) {
+    unordered_set<string> interest{};
     ui limiter = 1;
     ui track = 0;
-    for (const auto& entry : std::filesystem::directory_iterator(Config::path_genome))
-    {
+    for (const auto &entry: std::filesystem::directory_iterator(Config::path_genome)) {
         string filename = entry.path().filename().string();
 
-        if (interest.empty() || (!interest.empty() && interest.contains(filename)))
-        {
+        if (interest.empty() || (!interest.empty() && interest.contains(filename))) {
             prospect_genome(profiles, entry);
         }
 
@@ -174,8 +155,7 @@ void run(vector<CasProfile*>& profiles)
     }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     Config::parse_program_args(argc, argv);
 
     auto start_main = time();
@@ -183,13 +163,13 @@ int main(int argc, char *argv[])
     CasProfileUtil::load_domain_map(Config::path_map_dom);
 
     if (Config::skip_serialisation == 0) CasProfileUtil::serialize(Config::path_bin_pro);
-    vector<CasProfile*> profiles = CasProfileUtil::deserialize_profiles(Config::path_bin_pro);
+    vector<CasProfile *> profiles = CasProfileUtil::deserialize_profiles(Config::path_bin_pro);
     Prospector::device_init();
 
     run(profiles);
 
-    for (CasProfile* p : profiles) delete p;
+    for (CasProfile *p: profiles) delete p;
 
     start_main = time(start_main, "main");
-    return 0;                                                                                                           
+    return 0;
 }

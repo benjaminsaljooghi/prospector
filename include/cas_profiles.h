@@ -9,10 +9,16 @@
 #include "phmap/phmap.h"
 #include "phmap/phmap_dump.h"
 
+#define KMER_SIZE 6
+
 struct CasProfile
 {
     string identifier;
-    phmap::flat_hash_map<kmer, ull> hash_table;
+    phmap::flat_hash_set<kmer> hash_table;
+
+    vector<uint64_t> binary_kmers;
+    vector<uint64_t> binary_masks;
+
     ui length_median;
     double length_mean;
     ui length_min;
@@ -21,7 +27,7 @@ struct CasProfile
 
 namespace CasProfileUtil
 {
-    static const ull k = 6; // k * encoding size cannot exceed word size.
+    static const ull k = KMER_SIZE; // k * encoding size cannot exceed word size.
     void load_domain_map(std::filesystem::path path);
     bool domain_table_contains(string);
     string domain_table_fetch(string);
