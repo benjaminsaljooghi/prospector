@@ -1,5 +1,6 @@
 
 #include "util.h"
+#include "cas_profiles.h"
 
 std::vector<std::string> Util::parse(std::string str, std::string delim)
 {
@@ -264,4 +265,49 @@ void Util::assert_file(std::filesystem::path path)
     {
         throw std::filesystem::filesystem_error("Could not locate filepath: ", path, error_code());
     }
+}
+
+string Util::kmer_mask_init() {
+    string mask;
+
+    for (int i = 0; i < 8 * CasProfileUtil::k; i++) {
+        mask += '1';
+    }
+
+    return mask;
+}
+
+Util::KmerBinaryRepresentation Util::kmer_to_binary(string &k_str) {
+    std::vector<ui> mask_indices;
+    string bin_kmer_mask = kmer_mask_init();
+    uint64_t kmer_int = 0, kmer_mask;
+    size_t dont_care_char_pos = 0;
+
+    // Convert kmer chars to ints and concatenate as binary numbers
+    for (int i = 0; i < CasProfileUtil::k; i++) {
+        kmer_int = (kmer_int << 8) + k_str[i];
+    }
+
+    // Extract all indices in the kmer where the character '-' exists
+    while ((dont_care_char_pos = k_str.find('-', dont_care_char_pos + !mask_indices.empty())) != std::string::npos)
+        mask_indices.push_back(dont_care_char_pos);
+
+    // Fill all bits with 0 where '-' bits are
+    for (ui &mask_i: mask_indices)
+        for (int i = 0; i < 8; i++)
+            bin_kmer_mask[mask_i * 8 + i] = '0';
+
+    kmer_mask = strtol(bin_kmer_mask.c_str(), nullptr, 2);
+
+    return {kmer_int, kmer_mask};
+}
+
+vector<uint64_t> Util::kmers_to_binary(vector<string> &kmers) {
+    vector<uint64_t> binary_kmers;
+
+    for (auto &k: kmers) {
+        binary_kmers.push_back(kmer_to_binary(k).k);
+    }
+
+    return binary_kmers;
 }

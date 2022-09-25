@@ -52,3 +52,4 @@ typedef unsigned long long ull;
 typedef long long ll;
 typedef unsigned int ui;
 typedef unsigned int kmer;
+typedef unsigned long ul;

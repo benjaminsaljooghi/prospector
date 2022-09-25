@@ -24,6 +24,8 @@ struct Translation
     vector<string> pure_kmerized;
     vector<kmer> pure_kmerized_encoded;
     vector<ull> pure_mapping;
+
+    vector<uint64_t> binary_kmers;
 };
 
 struct Fragment

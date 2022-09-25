@@ -3,31 +3,29 @@
 
 AllocationInfo allocate_profiles_on_gpu(
         vector<CasProfile *> &profiles,
-        ui *&h_profile_kmers, ui *&d_profile_kmers,
+        uint64_t *&h_profile_kmers, uint64_t *&d_profile_kmers,
         ui *&h_profile_coords, ui *&d_profile_coords) {
-    ::size_t n_profiles = profiles.size();
+    size_t n_profiles = profiles.size();
 
-    ::size_t total_kmers = 0;
+    size_t total_kmers = 0;
     for (const auto &profile: profiles) {
-        total_kmers += profile->hash_table.size();
+        total_kmers += profile->binary_kmers.size();
     }
 
     ull kmers_bytes = total_kmers * sizeof(ui);
     ull profile_locs_bytes = n_profiles * sizeof(ui);
 
-    h_profile_kmers = (ui *) malloc(kmers_bytes);
+    h_profile_kmers = (uint64_t *) malloc(kmers_bytes);
     h_profile_coords = (ui *) malloc(profile_locs_bytes);
 
     printf("Total bytes for profiles: %llu\n", kmers_bytes + profile_locs_bytes);
 
     ui n_kmers = 0;
     for (int i = 0; i < profiles.size(); i++) {
-        auto hash_table = profiles[i]->hash_table;
-
         // Store current index of kmer in profile coords array, so we know where this profile starts
         h_profile_coords[i] = n_kmers;
 
-        for (auto const &k: hash_table) {
+        for (auto const &k: profiles[i]->binary_kmers) {
             h_profile_kmers[n_kmers++] = k;
         }
     }
@@ -51,13 +49,13 @@ AllocationInfo allocate_profiles_on_gpu(
 
 AllocationInfo allocate_translations_on_gpu(
         vector<Translation *> &translations,
-        kmer *&h_translation_kmers, kmer *&d_translation_kmers,
+        uint64_t *&h_translation_kmers, uint64_t *&d_translation_kmers,
         ui *&h_translation_coords, ui *&d_translation_coords) {
     ::size_t n_translations = translations.size();
 
     ::size_t total_kmers = 0;
     for (const auto &translation: translations) {
-        total_kmers += translation->pure_kmerized_encoded.size();
+        total_kmers += translation->binary_kmers.size();
     }
 
     ull kmers_bytes = total_kmers * sizeof(kmer);
@@ -65,14 +63,14 @@ AllocationInfo allocate_translations_on_gpu(
 
     printf("Total bytes for translations: %llu\n", kmers_bytes + translation_locs_bytes);
 
-    h_translation_kmers = (ui *) malloc(kmers_bytes);
+    h_translation_kmers = (uint64_t *) malloc(kmers_bytes);
     h_translation_coords = (ui *) malloc(translation_locs_bytes);
 
     ui n_kmers = 0;
     for (int i = 0; i < translations.size(); i++) {
         h_translation_coords[i] = n_kmers;
 
-        for (kmer &k: translations[i]->pure_kmerized_encoded) {
+        for (auto &k: translations[i]->binary_kmers) {
             h_translation_kmers[n_kmers] = k;
             n_kmers++;
         }

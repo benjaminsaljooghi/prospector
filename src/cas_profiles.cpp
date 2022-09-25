@@ -1,6 +1,7 @@
 #include "cas_profiles.h"
 #include "path.h"
 #include "config.h"
+#include "kmer.h"
 
 static std::map<string, string> domain_map;
 
@@ -28,14 +29,6 @@ string CasProfileUtil::domain_table_fetch(string name) {
     }
     return it->second;
 }
-
-// bool CasProfileUtil::domain_contained(string query_domain)
-// {
-// 	for (auto const& [identifer, domain] : domain_map)
-// 		if (domain.find(query_domain) != string::npos)
-// 			return true;
-// 	return false;
-// }
 
 std::map<string, string> CasProfileUtil::get_domain_map() {
     return domain_map;
@@ -70,46 +63,6 @@ vector<CasProfile *> CasProfileUtil::deserialize_profiles(std::filesystem::path 
     return profiles;
 }
 
-struct KmerBinaryRepresentation {
-    uint64_t k;
-    uint64_t mask;
-};
-
-string kmer_mask_init() {
-    string mask;
-
-    for (int i = 0; i < 8 * CasProfileUtil::k; i++) {
-        mask += '1';
-    }
-
-    return mask;
-}
-
-KmerBinaryRepresentation kmer_to_binary_string(string &k_str) {
-    std::vector<ui> mask_indices;
-    string bin_kmer_mask = kmer_mask_init();
-    uint64_t kmer_int = 0, kmer_mask;
-    size_t dont_care_char_pos = 0;
-
-    // Convert kmer chars to ints and concatenate as binary numbers
-    for (int i = 0; i < CasProfileUtil::k; i++) {
-        kmer_int = (kmer_int << 8) + k_str[i];
-    }
-
-    // Extract all indices in the kmer where the character '-' exists
-    while ((dont_care_char_pos = k_str.find('-', dont_care_char_pos + !mask_indices.empty())) != std::string::npos)
-        mask_indices.push_back(dont_care_char_pos);
-
-    // Fill all bits with 0 where '-' bits are
-    for (ui &mask_i: mask_indices)
-        for (int i = 0; i < 8; i++)
-            bin_kmer_mask[mask_i * 8 + i] = '0';
-
-    kmer_mask = strtol(bin_kmer_mask.c_str(), nullptr, 2);
-
-    return {kmer_int, kmer_mask};
-}
-
 CasProfile *profile_factory(const string &id, vector<string> sequences, ull k) {
     auto *profile = new CasProfile;
     profile->identifier = id;
@@ -127,7 +80,7 @@ CasProfile *profile_factory(const string &id, vector<string> sequences, ull k) {
                 continue;
 
             try {
-                KmerBinaryRepresentation b_kmer = kmer_to_binary_string(kmer);
+                auto b_kmer = Util::kmer_to_binary(kmer);
 
                 profile->binary_kmers.push_back(b_kmer.k);
                 profile->binary_masks.push_back(b_kmer.mask);

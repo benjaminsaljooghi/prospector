@@ -149,6 +149,9 @@ vector<Translation*> Cas::get_triframe(const string& genome, ull genome_start, u
 		}
         translation->pure_kmerized = Util::kmerize(translation->pure, CasProfileUtil::k);
         translation->pure_kmerized_encoded = Util::encode_amino_kmers(translation->pure_kmerized, CasProfileUtil::k);
+
+        translation->binary_kmers = Util::kmers_to_binary(translation->pure_kmerized);
+
         translations.push_back(translation);
     }
     return translations;

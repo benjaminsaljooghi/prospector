@@ -231,4 +231,13 @@ namespace Util
 	vector<kmer> encode_amino_kmers(vector<string> kmers, ull k);
 
     void assert_file(std::filesystem::path path);
+
+    struct KmerBinaryRepresentation {
+        uint64_t k;
+        uint64_t mask;
+    };
+
+    std::string kmer_mask_init();
+    KmerBinaryRepresentation kmer_to_binary(std::string &k_str);
+    vector<uint64_t> kmers_to_binary(vector<string> &kmers);
 }
