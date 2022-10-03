@@ -22,3 +22,4 @@ void cudaWait()
 {
     checkCuda ( cudaDeviceSynchronize() );
 }
+

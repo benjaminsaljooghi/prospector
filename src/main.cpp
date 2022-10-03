@@ -10,6 +10,9 @@
 #include "config.h"
 #include "system.h"
 
+#define MAX_MISMATCHES 500
+
+
 vector<MultiFragment *> gen_multifragments(vector<Fragment *> fragments) {
     vector<MultiFragment *> multifragments;
     for (ui i = 0; i < fragments.size(); i++) {
@@ -72,6 +75,16 @@ vector<System *> gen_systems(vector<Locus *> loci) {
     return filtered_systems;
 }
 
+void print_int_kmer(uint64_t k) {
+    for (uint64_t i = 0; i < 8 * 6; i += 8) {
+        uint64_t offset = (uint64_t) 0xFF << i;
+        uint64_t c = ((k & offset) >> i);
+        printf("%c", (char) c);
+    }
+
+    printf("\n");
+}
+
 void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genome_path) {
     auto start_prospect = time();
 
@@ -100,6 +113,53 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
         }
 
         fmt::print("Detecting Cas genes for {}...\n", genome_id);
+
+        for (auto &p: profiles) {
+            if (p->identifier == "COG3513") {
+#pragma omp parallel for
+                for (auto &t: translations) {
+                    ui least_mismatches = UINT_MAX;
+                    ui profile_size = p->binary_kmers.size();
+                    ui trans_size = t->binary_kmers.size();
+
+                    ui iterations = trans_size - profile_size;
+
+                    for (ui iteration = 0; iteration < iterations; iteration++) {
+                        ui n_mismatch = 0;
+
+                        for (ui i = 0; i < profile_size; i++) {
+                            if (i + iteration > trans_size) break;
+
+                            uint64_t p_k = p->binary_kmers[i];
+                            uint64_t p_mask = p->binary_masks[i];
+                            uint64_t t_k = t->binary_kmers[i + iteration];
+
+                            uint64_t p_k_masked = p_k & p_mask;
+                            uint64_t t_k_masked = t_k & p_mask;
+
+                            if (p_k_masked != t_k_masked) {
+                                n_mismatch++;
+                            }
+
+//                            if (n_mismatch > MAX_MISMATCHES) break;
+                        }
+
+                        if (n_mismatch < least_mismatches) least_mismatches = n_mismatch;
+
+                        if (n_mismatch < MAX_MISMATCHES) {
+                            printf("Between %u and %u, there were %u mismatches.\n",
+                                   iteration,
+                                   profile_size + iteration, n_mismatch);
+                        }
+                    }
+
+                    fmt::print("Profile size is (in kmers): {}. Least mismatches for translation was {}...\n",
+                               profile_size, least_mismatches);
+                }
+            }
+        }
+
+        break;
 //        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
         vector<Fragment *> fragments = Cas::cas_gpu(profiles, translations, const_cast<string &>(genome_sequence));
 

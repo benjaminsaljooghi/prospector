@@ -4,6 +4,7 @@
 #define PROSPECTOR_CUDA_H
 
 #include "cuda.h"
+#include <stdafx.h>
 
 #ifdef __CUDACC__
 #define CUDA_CALLABLE_MEMBER __host__ __device__
@@ -22,7 +23,9 @@
 #define BLOCK 256
 
 cudaError_t checkCudaAlways(cudaError_t result);
+
 cudaError_t checkCuda(cudaError_t result);
+
 void cudaWait();
 
 #endif //PROSPECTOR_CUDA_H

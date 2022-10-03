@@ -1,7 +1,7 @@
 #include "cas_profiles.h"
 #include "path.h"
 #include "config.h"
-#include "kmer.h"
+#include <boost/algorithm/string.hpp>
 
 static std::map<string, string> domain_map;
 
@@ -42,14 +42,65 @@ void CasProfileUtil::print_profiles(vector<CasProfile *> profiles) {
     }
 }
 
+void writeBinaryFile(const string &fileName, vector<uint64_t> arr) {
+    ofstream f{fileName, ios::out};
+    f.seekp(0);
+    for (auto &k: arr)
+        f << k << ' ';
+    f.close();
+}
+
+vector<uint64_t> readBinaryFile(const string &fileName) {
+    std::vector<uint64_t> ret;
+
+    ifstream infile;
+    infile.open(fileName, ios::in);
+    std::string line;
+
+    while (std::getline(infile, line)) {
+        char *ptr; // declare a ptr pointer
+        ptr = strtok((char *) line.c_str(), " "); // use strtok() function to separate string using comma (,) delimiter.
+        // use while loop to check ptr is not null
+        while (ptr != NULL) {
+            ret.push_back(stoll(ptr, nullptr, 10));
+            ptr = strtok(NULL, " ");
+        }
+    }
+
+    infile.close();
+
+    return ret;
+}
+
 vector<CasProfile *> CasProfileUtil::deserialize_profiles(std::filesystem::path directory) {
     vector<CasProfile *> profiles;
     for (const auto &entry: std::filesystem::directory_iterator(directory)) {
+        if (entry.path().string().find("_mask") != string::npos) continue;
+
+        CasProfile *profile = new CasProfile;
+
         string file_path = entry.path().string();
         phmap::BinaryInputArchive archive(file_path.c_str());
-        CasProfile *profile = new CasProfile;
-        profile->hash_table.load(archive);
+//        profile->hash_table.load(archive);
         profile->identifier = entry.path().stem().string();
+
+        profile->binary_kmers = readBinaryFile(file_path);
+
+        //// DEBUG, PRINTING THE FIRST KMER IN REVERSE
+        if (profile->identifier == "COG3513") {
+            uint64_t bruh = profile->binary_kmers[0];
+
+            for (uint64_t i = 8; i < 8 * 6; i += 8) {
+                uint64_t offset = (uint64_t) 0xFF << i;
+                uint64_t yuh = ((bruh & offset) >> i);
+                printf("%c", (char) yuh);
+            }
+
+            printf("\n");
+        }
+
+
+        profile->binary_masks = readBinaryFile(file_path + "_mask");
 
         if (!CasProfileUtil::domain_table_contains(profile->identifier)) {
             fmt::print("deserialization of {} skipped due to domain table containment failure\n", profile->identifier);
@@ -85,15 +136,13 @@ CasProfile *profile_factory(const string &id, vector<string> sequences, ull k) {
                 profile->binary_kmers.push_back(b_kmer.k);
                 profile->binary_masks.push_back(b_kmer.mask);
 
-                ui kmer_enc = Util::encode_amino_kmer(kmer);
-                profile->hash_table.insert(kmer_enc);
+//                ui kmer_enc = Util::encode_amino_kmer(kmer);
+//                profile->hash_table.insert(kmer_enc);
             }
             catch (const std::exception &e) {
                 std::cerr << e.what() << '\n';
             }
         }
-
-        break; // Only consider first sequence
     }
 
     double sum = 0;
@@ -115,141 +164,11 @@ CasProfile *profile_factory(const string &id, vector<string> sequences, ull k) {
     return profile;
 }
 
-vector<CasProfile *> generate_pfams(std::filesystem::path dir) {
-    // ifstream input(pfam_full);
-    // if (!input.good())
-    // throw runtime_error("input not good!");
-
-    auto is_seq = [](string &line) {
-        return !(
-                line.starts_with(" ") ||
-                line.starts_with("#=GF") ||
-                line.starts_with("#=GS") ||
-                line.starts_with("#=GC") ||
-                line.starts_with("#=GR") ||
-                line.starts_with("# STOCKHOLM 1.0") ||
-                line.starts_with("//") ||
-                line == "");
-    };
-
-    // vector<string> seq_buffer;
-    // string ac;
-    // ui line_count = 0;
-    // bool engage = false;
-    // string line;
-    // while (getline(input, line))
-    // {
-    // 	if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
-
-    // 	if (line.starts_with("#=GF AC"))
-    // 	{
-    // 		ac = line;
-    // 		ac.erase(0, 10);
-    // 		ac.erase(ac.find_first_of('.'));
-
-    // 		cout << ac << endl;
-    // 		if (domain_map.contains(ac))
-    // 		{
-    // 			engage = true;
-    // 		}
-
-    // 		continue;
-    // 	}
-
-    // 	if (!engage)
-    // 	{
-    // 		continue;
-    // 	}
-
-    // 	if (line.starts_with("//"))
-    // 	{
-    // 		ofstream output(dir / ac);
-
-    // 		for (string& line : seq_buffer)
-    // 		{
-    // 			string sequence = line.substr(line.find_last_of(' ') + 1);
-
-    // 			output << sequence << endl;
-    // 		}
-    // 		output.close();
-
-    // 		seq_buffer.clear();
-    // 		engage = false;
-    // 		continue;
-    // 	}
-
-    // 	if (is_seq(line)) continue;
-    // 	seq_buffer.push_back(line);
-    // }
-
-    // input.close();
-
-    vector<CasProfile *> profiles;
-
-    for (const auto &entry: std::filesystem::directory_iterator(dir)) {
-        ifstream raw(entry.path().string());
-
-        if (!raw.good())
-            throw runtime_error("input not good!");
-
-        string line;
-        string id = entry.path().stem().string();
-        vector<string> sequences;
-
-        while (getline(raw, line)) {
-            if (is_seq(line)) {
-                string sequence = line.substr(line.find_last_of(' ') + 1);
-                sequences.push_back(sequence);
-            }
-        }
-        profiles.push_back(profile_factory(id, sequences, CasProfileUtil::k));
-        fmt::print("{} pfam profiles built\n", profiles.size());
-    }
-
-
-    return profiles;
+void lower_case_string(string &str) {
+    std::transform(str.begin(), str.end(), str.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
 }
 
-vector<CasProfile *> generate_tigrfams(std::filesystem::path tigr_dir) {
-    auto stockholm_to_profile = [](std::filesystem::path stockholm, string identifier) {
-        ifstream file(stockholm);
-        if (!file.good())
-            throw runtime_error("input not good!");
-
-        std::unordered_set<char> skip{'#', '/'};
-
-        vector<string> sequences;
-        string line;
-        while (getline(file, line)) {
-            if (skip.contains(line[0]))
-                continue;
-
-            string sequence = line.substr(line.find_last_of(' ') + 1);
-            sequences.push_back(sequence);
-        }
-
-        return profile_factory(identifier, sequences, CasProfileUtil::k);
-    };
-
-    vector<CasProfile *> profiles;
-
-    for (const auto &entry: std::filesystem::directory_iterator(tigr_dir)) {
-
-        string identifier = entry.path().filename().string();
-
-        if (identifier.ends_with(".SEED"))
-            identifier = identifier.substr(0, 9);
-
-        if (!domain_map.contains(identifier))
-            continue;
-
-        CasProfile *profile = stockholm_to_profile(entry.path(), identifier);
-        profiles.push_back(profile);
-        fmt::print("built: {}\n", profile->identifier);
-        fmt::print("{} tigrfam profiles built\n", profiles.size());
-    }
-    return profiles;
-}
 
 // This needs to be versatile in that it can handle fasta seqs that are both single-line and multi-line
 vector<CasProfile *> generate_from_fasta(std::filesystem::path fasta_dir) {
@@ -268,7 +187,14 @@ vector<CasProfile *> generate_from_fasta(std::filesystem::path fasta_dir) {
         std::map<string, string> fasta_seqs = Util::parse_fasta(entry.path().string(), false);
 
         seqs.clear();
-        for (auto const &seq: fasta_seqs) seqs.push_back(seq.second);
+        for (auto const &seq: fasta_seqs) {
+            string id = seq.first;
+            boost::algorithm::to_lower(id);
+
+            // We only want consensus sequence
+            if (id.find("consensus") != string::npos)
+                seqs.push_back(seq.second);
+        }
 
         CasProfile *profile = profile_factory(identifier, seqs, CasProfileUtil::k);
         profiles.push_back(profile);
@@ -277,17 +203,14 @@ vector<CasProfile *> generate_from_fasta(std::filesystem::path fasta_dir) {
     return profiles;
 }
 
-vector<CasProfile *> generate_cogs(std::filesystem::path cog_dir) {
-    return generate_from_fasta(cog_dir);
-}
-
 void CasProfileUtil::serialize(std::filesystem::path path_bin_pro) {
     auto serialize_profile = [&](CasProfile *profile) {
         std::filesystem::path file_name = path_bin_pro / profile->identifier;
-        phmap::BinaryOutputArchive archive(file_name.string().c_str());
-        profile->hash_table.dump(archive);
+//        phmap::BinaryOutputArchive archive(file_name.string().c_str());
+//        profile->hash_table.dump(archive);
 
-        // TODO: Dump binary kmers and masks to file!
+        writeBinaryFile(file_name, profile->binary_kmers);
+        writeBinaryFile(file_name += "_mask", profile->binary_masks);
     };
 
     auto profiles = generate_from_fasta(Config::path_cas_profiles);
