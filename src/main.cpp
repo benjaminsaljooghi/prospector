@@ -14,7 +14,7 @@
 
 
 vector<MultiFragment *> gen_multifragments(vector<Fragment *> fragments) {
-    vector<MultiFragment *> multifragments;
+    vector < MultiFragment * > multifragments;
     for (ui i = 0; i < fragments.size(); i++) {
         fmt::print("{}: {}\n", i, CasProfileUtil::domain_table_fetch(fragments[i]->reference_profile->identifier));
 
@@ -43,7 +43,7 @@ vector<MultiFragment *> gen_multifragments(vector<Fragment *> fragments) {
 }
 
 vector<System *> gen_systems(vector<Locus *> loci) {
-    vector<System *> systems;
+    vector < System * > systems;
 
     if (loci.size() == 0)
         return systems;
@@ -62,7 +62,7 @@ vector<System *> gen_systems(vector<Locus *> loci) {
 
     systems.push_back(current);
 
-    vector<System *> filtered_systems;
+    vector < System * > filtered_systems;
 
     for (System *s: systems) {
         if (s->legitimate_system()) {
@@ -76,7 +76,7 @@ vector<System *> gen_systems(vector<Locus *> loci) {
 }
 
 void print_int_kmer(uint64_t k) {
-    for (uint64_t i = 0; i < 8 * 6; i += 8) {
+    for (uint64_t i = 0; i < 8 * CasProfileUtil::k; i += 8) {
         uint64_t offset = (uint64_t) 0xFF << i;
         uint64_t c = ((k & offset) >> i);
         printf("%c", (char) c);
@@ -98,8 +98,8 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
     Util::GenomeIdSequenceMap genome_map = Util::load_genome(genome_path);
 
     for (auto const &[genome_id, genome_sequence]: genome_map) {
-        vector<Translation *> translations;
-        vector<Crispr *> crisprs;
+        vector < Translation * > translations;
+        vector < Crispr * > crisprs;
 
         if (Config::cas_only) {
             fmt::print("Acquiring translations for {}...\n", genome_id);
@@ -114,56 +114,68 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
 
         fmt::print("Detecting Cas genes for {}...\n", genome_id);
 
-        for (auto &p: profiles) {
-            if (p->identifier == "COG3513") {
+        double highest_accuracy = 0.0;
+        string best_profile = "NONE";
+
 #pragma omp parallel for
-                for (auto &t: translations) {
-                    ui least_mismatches = UINT_MAX;
-                    ui profile_size = p->binary_kmers.size();
-                    ui trans_size = t->binary_kmers.size();
+        for (auto &p: profiles) {
+//            if (p->identifier == "COG3513") {
+            for (auto &t: translations) {
+                ui profile_size = p->binary_kmers.size();
+                ui trans_size = t->binary_kmers.size();
 
-                    ui iterations = trans_size - profile_size;
+                ui iterations = trans_size - profile_size;
 
-                    for (ui iteration = 0; iteration < iterations; iteration++) {
-                        ui n_mismatch = 0;
+                for (ui iteration = 0; iteration < iterations; iteration++) {
+                    ui n_mismatch = 0;
 
-                        for (ui i = 0; i < profile_size; i++) {
-                            if (i + iteration > trans_size) break;
+                    for (ui i = 0; i < profile_size; i++) {
+                        if (i + iteration > trans_size) break;
 
-                            uint64_t p_k = p->binary_kmers[i];
-                            uint64_t p_mask = p->binary_masks[i];
-                            uint64_t t_k = t->binary_kmers[i + iteration];
+                        uint64_t p_k = p->binary_kmers[i];
+                        uint64_t p_mask = p->binary_masks[i];
+                        uint64_t t_k = t->binary_kmers[i + iteration];
 
-                            uint64_t p_k_masked = p_k & p_mask;
-                            uint64_t t_k_masked = t_k & p_mask;
+                        uint64_t p_k_masked = p_k & p_mask;
+                        uint64_t t_k_masked = t_k & p_mask;
 
-                            if (p_k_masked != t_k_masked) {
-                                n_mismatch++;
-                            }
+
+                        if (p_k_masked != t_k_masked) {
+                            n_mismatch++;
+                        }
+
 
 //                            if (n_mismatch > MAX_MISMATCHES) break;
-                        }
-
-                        if (n_mismatch < least_mismatches) least_mismatches = n_mismatch;
-
-                        if (n_mismatch < MAX_MISMATCHES) {
-                            printf("Between %u and %u, there were %u mismatches.\n",
-                                   iteration,
-                                   profile_size + iteration, n_mismatch);
-                        }
                     }
 
-                    fmt::print("Profile size is (in kmers): {}. Least mismatches for translation was {}...\n",
-                               profile_size, least_mismatches);
+                    double accuracy = ((double) profile_size - (double) n_mismatch) / (double) profile_size;
+
+#pragma omp critical
+                    if (accuracy > highest_accuracy) {
+                        highest_accuracy = accuracy;
+                        best_profile = p->identifier;
+                    }
+
+//                    if (n_mismatch < MAX_MISMATCHES) {
+//                        printf("Between %u and %u, there were %u mismatches.\n",
+//                               iteration,
+//                               profile_size + iteration, n_mismatch);
+//                    }
                 }
+
+//                fmt::print("Profile size is (in kmers): {}. Least mismatches for translation was {}...\n",
+//                           profile_size, least_mismatches);
             }
+//            }
         }
+
+        fmt::print("{} had the best performance with {}% accuracy!\n", best_profile, highest_accuracy);
 
         break;
 //        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
-        vector<Fragment *> fragments = Cas::cas_gpu(profiles, translations, const_cast<string &>(genome_sequence));
+        vector < Fragment * > fragments = Cas::cas_gpu(profiles, translations, const_cast<string &>(genome_sequence));
 
-        vector<MultiFragment *> multifragments = gen_multifragments(fragments);
+        vector < MultiFragment * > multifragments = gen_multifragments(fragments);
 
         fmt::print("Collating results for {}...\n", genome_id);
         std::vector<Locus *> loci;
@@ -176,7 +188,7 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
 
         std::sort(loci.begin(), loci.end(), [](Locus *a, Locus *b) { return a->get_start() < b->get_start(); });
 
-        vector<System *> systems = gen_systems(loci);
+        vector < System * > systems = gen_systems(loci);
 
         fmt::print("Writing results for {} to file...\n", genome_id);
         for (System *system: systems) {
@@ -199,7 +211,7 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
 }
 
 void run(vector<CasProfile *> &profiles) {
-    unordered_set<string> interest{};
+    unordered_set <string> interest{};
     ui limiter = 1;
     ui track = 0;
     for (const auto &entry: std::filesystem::directory_iterator(Config::path_genome)) {
@@ -223,7 +235,7 @@ int main(int argc, char *argv[]) {
     CasProfileUtil::load_domain_map(Config::path_map_dom);
 
     if (Config::skip_serialisation == 0) CasProfileUtil::serialize(Config::path_bin_pro);
-    vector<CasProfile *> profiles = CasProfileUtil::deserialize_profiles(Config::path_bin_pro);
+    vector < CasProfile * > profiles = CasProfileUtil::deserialize_profiles(Config::path_bin_pro);
     Prospector::device_init();
 
     run(profiles);

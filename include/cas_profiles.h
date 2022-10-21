@@ -9,7 +9,7 @@
 #include "phmap/phmap.h"
 #include "phmap/phmap_dump.h"
 
-#define KMER_SIZE 6
+#define KMER_SIZE 3
 
 struct CasProfile
 {

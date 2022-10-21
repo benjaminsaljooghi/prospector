@@ -85,21 +85,6 @@ vector<CasProfile *> CasProfileUtil::deserialize_profiles(std::filesystem::path 
         profile->identifier = entry.path().stem().string();
 
         profile->binary_kmers = readBinaryFile(file_path);
-
-        //// DEBUG, PRINTING THE FIRST KMER IN REVERSE
-        if (profile->identifier == "COG3513") {
-            uint64_t bruh = profile->binary_kmers[0];
-
-            for (uint64_t i = 8; i < 8 * 6; i += 8) {
-                uint64_t offset = (uint64_t) 0xFF << i;
-                uint64_t yuh = ((bruh & offset) >> i);
-                printf("%c", (char) yuh);
-            }
-
-            printf("\n");
-        }
-
-
         profile->binary_masks = readBinaryFile(file_path + "_mask");
 
         if (!CasProfileUtil::domain_table_contains(profile->identifier)) {
