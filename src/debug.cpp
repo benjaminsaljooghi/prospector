@@ -123,51 +123,51 @@ void Debug::triframe_print(const string& genome, ull genome_start, ull genome_fi
 }
 
 // useful for debugging both false positives and false negatives
-void Debug::cas_detect(std::filesystem::path genome_path, ull genome_start, ull genome_final, bool pos, vector<CasProfile*> profiles)
-{
-    string filename = "cas_detection_report.txt";
-    std::ofstream file(filename.c_str());
-
-    Util::GenomeIdSequenceMap genome = Util::load_genome(genome_path);
-
-    for (auto const& [genome_id, genome_sequence] : genome) {
-        vector<Translation *> triframe = Cas::get_triframe(genome_sequence, genome_start, genome_final,
-                                                           pos); // focus 0 because reaons, okay?
-        Translation *translation = triframe[0];
-
-        for (CasProfile *profile: profiles) {
-            file << fmt::format("------------------------------------------\n");
-            file << fmt::format("{} : {}\n", profile->identifier,
-                                CasProfileUtil::domain_table_fetch(profile->identifier));
-            int i = 0;
-
-            file << fmt::format("\n\n\nframe {}\n", i++);
-            file << fmt::format("translation raw: {}\n", translation->raw);
-
-            file << fmt::format("containment info:\n");
-            int j = 0;
-            for (auto kmer: translation->pure_kmerized) {
-                auto enco = Util::encode_amino_kmer(kmer);
-                bool contains = profile->hash_table.contains(enco);
-                file << fmt::format("{} : {} : {}\n", kmer, contains, j++);
-            }
-
-            vector<CasProfile *> collected_profiles;
-            vector<Translation *> collected_translations;
-
-            collected_profiles.push_back(profile);
-            collected_translations.push_back(translation);
-
-            vector<Fragment *> fragments = Cas::cas(collected_profiles, collected_translations,
-                                                    const_cast<string &>(genome_sequence));
-            file << fmt::format("fragment info:\n");
-            for (int i = 0; i < fragments.size(); i++)
-                file << fmt::format("{}\n", fragments[i]->to_string_debug());
-
-            file << fmt::format("---------------------\n");
-        }
-    }
-}
+//void Debug::cas_detect(std::filesystem::path genome_path, ull genome_start, ull genome_final, bool pos, vector<CasProfile*> profiles)
+//{
+//    string filename = "cas_detection_report.txt";
+//    std::ofstream file(filename.c_str());
+//
+//    Util::GenomeIdSequenceMap genome = Util::load_genome(genome_path);
+//
+//    for (auto const& [genome_id, genome_sequence] : genome) {
+//        vector<Translation *> triframe = Cas::get_triframe(genome_sequence, genome_start, genome_final,
+//                                                           pos); // focus 0 because reaons, okay?
+//        Translation *translation = triframe[0];
+//
+//        for (CasProfile *profile: profiles) {
+//            file << fmt::format("------------------------------------------\n");
+//            file << fmt::format("{} : {}\n", profile->identifier,
+//                                CasProfileUtil::domain_table_fetch(profile->identifier));
+//            int i = 0;
+//
+//            file << fmt::format("\n\n\nframe {}\n", i++);
+//            file << fmt::format("translation raw: {}\n", translation->raw);
+//
+//            file << fmt::format("containment info:\n");
+//            int j = 0;
+//            for (auto kmer: translation->pure_kmerized) {
+//                auto enco = Util::encode_amino_kmer(kmer);
+//                bool contains = profile->hash_table.contains(enco);
+//                file << fmt::format("{} : {} : {}\n", kmer, contains, j++);
+//            }
+//
+//            vector<CasProfile *> collected_profiles;
+//            vector<Translation *> collected_translations;
+//
+//            collected_profiles.push_back(profile);
+//            collected_translations.push_back(translation);
+//
+//            vector<Fragment *> fragments = Cas::cas(collected_profiles, collected_translations,
+//                                                    const_cast<string &>(genome_sequence));
+//            file << fmt::format("fragment info:\n");
+//            for (int i = 0; i < fragments.size(); i++)
+//                file << fmt::format("{}\n", fragments[i]->to_string_debug());
+//
+//            file << fmt::format("---------------------\n");
+//        }
+//    }
+//}
 
 void Debug::crispr_print(vector<Crispr*> crisprs, const string& genome, ull start, ull final)
 {

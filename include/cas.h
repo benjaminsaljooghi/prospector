@@ -16,6 +16,13 @@
 
 namespace fs = std::filesystem;
 
+struct Prediction {
+    double score;
+    size_t start;
+    size_t end;
+    string id;
+};
+
 struct Translation
 {
     Crispr* reference_crispr;
@@ -211,6 +218,6 @@ namespace Cas
     vector<Translation*> get_triframe(const string& genome, ull genome_start, ull genome_final, bool pos);
     vector<Translation*> get_sixframe(const string& genome, ull genome_start, ull genome_final);
     vector<Translation*> crispr_proximal_translations(const string& genome, vector<Crispr*>&);
-    vector<Fragment*> cas(vector<CasProfile*>& cas_profiles, vector<Translation*>&, string&);
+    vector<Prediction> cas(vector<CasProfile*>& cas_profiles, string&);
 }
 

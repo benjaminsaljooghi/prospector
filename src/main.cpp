@@ -105,19 +105,21 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         vector<Crispr*> crisprs;
 
         if (Config::cas_only) {
-            fmt::print("Acquiring translations for {}...\n", genome_id);
-            translations = Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+//            fmt::print("Acquiring translations for {}...\n", genome_id);
+//            translations = Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
         } else {
             fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
             crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
-            translations = Config::crispr_proximal_search ?
-                    Cas::crispr_proximal_translations(genome_sequence, crisprs) :
-                    Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+//            translations = Config::crispr_proximal_search ?
+//                    Cas::crispr_proximal_translations(genome_sequence, crisprs) :
+//                    Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
         }
 
         fmt::print("Detecting Cas genes for {}...\n", genome_id);
-        vector<Fragment*> fragments = Cas::cas(profiles, translations, const_cast<string &>(genome_sequence));
-        vector<MultiFragment*> multifragments = gen_multifragments(fragments);
+//        vector<Fragment*> fragments = Cas::cas(profiles, const_cast<string &>(genome_sequence));
+        auto predictions = Cas::cas(profiles, const_cast<string &>(genome_sequence));
+
+//        vector<MultiFragment*> multifragments = gen_multifragments(fragments);
 
         fmt::print("Collating results for {}...\n", genome_id);
         std::vector<Locus*> loci;
@@ -125,8 +127,8 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         for (Crispr* c : crisprs)
             loci.push_back(c);
 
-        for (MultiFragment* f : multifragments)
-            loci.push_back(f);
+//        for (MultiFragment* f : multifragments)
+//            loci.push_back(f);
 
         std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
 
@@ -141,7 +143,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
         for (Crispr* c : crisprs) delete c;
         for (Translation* t : translations) delete t;
-        for (MultiFragment* m : multifragments) delete m;
+//        for (MultiFragment* m : multifragments) delete m;
         for (System* s : systems) delete s;
     }
 
@@ -155,6 +157,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
 void run(vector<CasProfile*>& profiles)
 {
+
     unordered_set<string> interest {};
     ui limiter = 1;
     ui track = 0;
