@@ -145,44 +145,48 @@ bool fragment_contains(const Fragment *a, const Fragment *b) {
     return a->clust_begin > b->clust_begin && a->clust_final < b->clust_final;
 }
 
-vector<Prediction> collapse_predictions(vector<Prediction> predictions) {
-    vector<Prediction> collapsed_predictions;
+vector<Prediction *> collapse_predictions(vector<Prediction *> predictions) {
+    vector<Prediction *> collapsed_predictions;
+    if (predictions.empty()) return collapsed_predictions;
 
-    std::sort(predictions.begin(), predictions.end(),
-              [](auto &a, auto &b) { return a.start < b.start; });
+    // Sort predictions by start bp, ascending
+    std::sort(predictions.begin(), predictions.end(), [](auto &a, auto &b) { return a->start < b->start; });
 
     int skip;
     for (int i = 0; i < predictions.size() - 1; i += skip) {
         skip = 1;
         auto p1 = predictions[i];
         auto p2 = predictions[i + 1];
+        double total_score = p1->score;
 
-        while (p1.id == p2.id) {
-            // Both predictions have the same Cas family (but potentially different profiles
+        while (p1->id == p2->id && (i + skip + 1) < predictions.size()) {
+            // Both predictions have the same Cas family (but potentially different profiles)
             // They can be 'collapsed' into a single prediction over a given domain
             p1 = predictions[i + skip];
             p2 = predictions[i + skip + 1];
+
+            total_score += p1->score;
             skip++;
         }
 
-        collapsed_predictions.push_back({
-                                                .score = (predictions[i].score + predictions[i + skip - 1].score) / 2,
-                                                .start = predictions[i].start,
-                                                .end = predictions[i + skip - 1].end,
-                                                .id = predictions[i].id
-                                        });
+        auto *p = new Prediction;
+        p->score = total_score / skip;
+        p->start = predictions[i]->start;
+        p->end = predictions[i + skip - 1]->end;
+        p->id = predictions[i]->id;
+
+        collapsed_predictions.push_back(p);
     }
 
     return collapsed_predictions;
 }
 
-vector<Prediction> Cas::cas(vector<CasProfile *> &profiles, string &genome) {
+vector<Prediction *> Cas::predict_cas(vector<CasProfile *> &profiles, string &genome, ull offset) {
     // Load frequency map
     FrequencyMap frequency_map;
     frequency_map.load();
 
-    phmap::flat_hash_map<size_t, Prediction> predicted_regions_map;
-
+    phmap::flat_hash_map<size_t, Prediction *> predicted_regions_map;
     size_t iterations = genome.size() / Config::cas_chunk_length;
 
 #pragma omp parallel for
@@ -197,29 +201,41 @@ vector<Prediction> Cas::cas(vector<CasProfile *> &profiles, string &genome) {
         // For each profile, count the number of (weighted) kmers in the genome chunk
         for (auto &profile: profiles) {
             double score = 0.0;
+
             for (auto &t: translations)
                 for (auto &km: t->pure_kmerized_encoded)
                     if (profile->hash_table.contains(km)) score += frequency_map.freq_map[km];
 
-            bool should_save_score =
-                    !predicted_regions_map.contains(start) || predicted_regions_map[start].score < score;
+#pragma omp critical
+            {
+                bool should_save_score =
+                        !predicted_regions_map.contains(start) || predicted_regions_map[start]->score < score;
 
-            if (score > Config::cas_threshold && should_save_score)
-                predicted_regions_map[start] = {
-                        .score =  score,
-                        .start = start,
-                        .end = end,
-                        .id = CasProfileUtil::domain_table_fetch(profile->identifier)
-                };
+                // Store predictions by the region they started in
+                if (score > Config::cas_threshold && should_save_score) {
+                    auto *p = new Prediction;
+                    p->score = score;
+                    p->start = start + offset;
+                    p->end = end + offset;
+                    p->id = CasProfileUtil::domain_table_fetch(profile->identifier);
+
+                    predicted_regions_map[start] = p;
+                }
+            };
         }
     }
 
     // Convert from map to a list
-    vector<Prediction> predictions;
+    vector<Prediction *> predictions;
     for (auto &p: predicted_regions_map) predictions.push_back(p.second);
 
     // Merge chunk predictions into larger chunks
-    return collapse_predictions(predictions);
+    auto collapsed_pred = collapse_predictions(predictions);
+
+    // Cleanup old predictions
+    for (Prediction* p : predictions) delete p;
+
+    return collapsed_pred;
 }
 
 vector<Fragment *> old_cas(vector<CasProfile *> &profiles, vector<Translation *> &translations, string &genome) {
@@ -365,7 +381,6 @@ vector<Translation *> Cas::get_sixframe(const string &genome, ull genome_start, 
 
 vector<Translation *> Cas::crispr_proximal_translations(const string &genome, vector<Crispr *> &crisprs) {
     vector<Translation *> translations;
-
 
     std::sort(crisprs.begin(), crisprs.end(), [](Crispr *a, Crispr *b) { return a->genome_start < b->genome_start; });
     const ull min_translation_size = 20;

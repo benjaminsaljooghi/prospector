@@ -1,6 +1,5 @@
 #pragma once
 
-
 struct Locus
 {
 	virtual ull get_start() = 0;
@@ -14,7 +13,4 @@ struct Locus
 	{
 		// pure virtual destructors must have a body for linking
 	}
-
-
 };
-

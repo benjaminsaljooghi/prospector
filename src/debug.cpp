@@ -57,7 +57,7 @@ vector<CasProfile*> Debug::cas_filter(vector<CasProfile*> profiles, string subse
 {
     std::map<string, string> domain_map = CasProfileUtil::get_domain_map();
     vector<CasProfile*> filtered_profiles = Util::filter(profiles, [&](CasProfile* p) {return CasProfileUtil::domain_table_fetch(p->identifier).find(subset_domain_query) != string::npos; });
-    fmt::print("filtered cas profiles:\n");
+    fmt::print("filtered predict_cas profiles:\n");
     for (CasProfile* p : filtered_profiles)
     {
         string id = p->identifier;
@@ -158,7 +158,7 @@ void Debug::triframe_print(const string& genome, ull genome_start, ull genome_fi
 //            collected_profiles.push_back(profile);
 //            collected_translations.push_back(translation);
 //
-//            vector<Fragment *> fragments = Cas::cas(collected_profiles, collected_translations,
+//            vector<Fragment *> fragments = Cas::predict_cas(collected_profiles, collected_translations,
 //                                                    const_cast<string &>(genome_sequence));
 //            file << fmt::format("fragment info:\n");
 //            for (int i = 0; i < fragments.size(); i++)

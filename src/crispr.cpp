@@ -159,96 +159,10 @@ void Crispr::update(const string& genome)
 	this->overall_heuristic = conservation_repeats - subtraction;
 }
 
-
-//void Crispr::print_generic(const string& genome, function<void(string)>& print_spacer) const
-//{
-//	// header
-//	printf("%d - %d %d\n\n", start, end, k);
-//	printf("\t%fh %fr %fs %fv\n\n", overall_heuristic, conservation_repeats, conservation_spacers2, spacer_variance);
-//
-//	// repeats
-//	printf("\trepeats (%zd)\n", repeats.size());
-//	printf("\tspacers (%zd)\n", spacers.size());
-//
-//	for (ull i = 0; i < repeats.size(); i++)
-//	{
-//		string repeat = repeats[i];
-//
-//		int mismatches = Util::mismatch_count(repeat);
-//		int matches = repeat.length() / 2 - mismatches;
-//		double score = (double) matches / (double) (repeat.length() / 2);
-//
-//		int start = genome_indices[i];
-//		int end = start + k - 1;
-//
-//		int dist = i == 0 ? 0 : genome_indices[i] - (genome_indices[i-1] + k);
-//		
-//		printf("\t\t");
-//		printf("%d/%zd", matches, repeat.length()/2);
-//		printf(" %d %s %d", start, repeat.c_str(), end);
-//		printf(" %d", dist);
-//		printf(" %f", score);
-//
-//
-//
-//		if (i < repeats.size() - 1)
-//		{
-//			string spacer = spacers[i];
-//			printf("\t %s\n", spacer.c_str());
-//		}
-//
-//	}
-//	cout << endl;
-//
-//}
-//
-//void Crispr::print(const string& genome, map<string, int> spacer_scores) const
-//{
-//	function<void(string)> print_spacer = [&](string spacer) {
-//		// printf("%d/%zd", spacer_scores[spacer], spacer.length());
-//	};
-//
-//	print_generic(genome, print_spacer);
-//}
-//
-//void Crispr::print(const string& genome) const
-//{
-//	function<void(string)> print_spacer = [](string spacer) {
-//		// printf("%d/%zd", -1, spacer.length());
-//	};
-//	print_generic(genome, print_spacer);
-//}
-
-string Crispr::identifier_string() const
-{
-	return fmt::format("{}:{}", this->genome_start, this->k);
-}
-
-
-bool CrisprUtil::heuristic_less(const Crispr* a, const Crispr* b)
-{
-	return a->overall_heuristic < b->overall_heuristic;
-}
-
 bool CrisprUtil::heuristic_greater(const Crispr* a, const Crispr* b)
 {
 	return a->overall_heuristic > b->overall_heuristic;
 }
-
-
-//void CrisprUtil::print(string genome, vector<Crispr*> crisprs, map<string, int> spacer_scores)
-//{
-//	printf("printing %zd crisprs\n", crisprs.size());
-//	for (Crispr* crispr : crisprs) crispr->print(genome, spacer_scores);
-//}
-//
-//void CrisprUtil::print(string genome, vector<Crispr*> crisprs)
-//{
-//	printf("printing %zd crisprs\n", crisprs.size());
-//	Util::sort(crisprs, CrisprUtil::heuristic_greater);
-//	for (Crispr* crispr : crisprs) crispr->print(genome);
-//}
-
 
 // Is the start and end of the given repeat a subset of any of the repeats of Crispr 'b'? 
 bool CrisprUtil::repeat_substring(Crispr* b, ull start, ull end)

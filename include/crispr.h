@@ -53,7 +53,7 @@ namespace CrisprUtil
     //void print(string genome, vector<Crispr*> crisprs);
     bool repeat_substring(Crispr* b, ull start, ull end);
     bool repeat_subset(Crispr* a, Crispr* b);
-    // void cas(string genome, vector<Crispr> crisprs, const ull k, const ull upstream_size);
+    // void predict_cas(string genome, vector<Crispr> crisprs, const ull k, const ull upstream_size);
     
     vector<Crispr*> get_domain_best(vector<Crispr*> crisprs);
     vector<Crispr*> spacer_score_filtered(vector<Crispr*> crisprs, map<string, int> spacer_scores);

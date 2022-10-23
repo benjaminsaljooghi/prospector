@@ -7,7 +7,6 @@
 #include "cas_profiles.h"
 #include "array_discovery.h"
 #include "path.h"
-#include <boost/algorithm/string.hpp>
 #include "config.h"
 #include "system.h"
 
@@ -48,10 +47,10 @@ vector<System*> gen_systems(vector<Locus*> loci)
 {
     vector<System*> systems;
 
-    if (loci.size() == 0)
+    if (loci.empty())
         return systems;
 
-    System* current = new System;
+    auto* current = new System;
     current->loci.push_back(loci[0]);
     for (size_t i = 1; i < loci.size(); i++)
     {
@@ -101,25 +100,22 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
 
     for (auto const& [genome_id, genome_sequence] : genome_map)
     {
-        vector<Translation*> translations;
         vector<Crispr*> crisprs;
+        vector<Prediction*> predictions;
 
-        if (Config::cas_only) {
-//            fmt::print("Acquiring translations for {}...\n", genome_id);
-//            translations = Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
-        } else {
-            fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
-            crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
-//            translations = Config::crispr_proximal_search ?
-//                    Cas::crispr_proximal_translations(genome_sequence, crisprs) :
-//                    Cas::get_sixframe(genome_sequence, 0, genome_sequence.length()-1);
+        fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
+        crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
+
+        ull min_start = ULONG_LONG_MAX; ull max_end = 0;
+        for (auto& c: crisprs) {
+            min_start = min(min_start, c->genome_start);
+            max_end = max(max_end, c->genome_final);
         }
 
-        fmt::print("Detecting Cas genes for {}...\n", genome_id);
-//        vector<Fragment*> fragments = Cas::cas(profiles, const_cast<string &>(genome_sequence));
-        auto predictions = Cas::cas(profiles, const_cast<string &>(genome_sequence));
+        string cas_region = genome_sequence.substr(min_start - Cas::upstream_size, (max_end - min_start) + Cas::upstream_size);
 
-//        vector<MultiFragment*> multifragments = gen_multifragments(fragments);
+        fmt::print("Detecting Cas genes for {}...\n", genome_id);
+        predictions = Cas::predict_cas(profiles, const_cast<string &>(cas_region), min_start - Cas::upstream_size);
 
         fmt::print("Collating results for {}...\n", genome_id);
         std::vector<Locus*> loci;
@@ -127,8 +123,8 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         for (Crispr* c : crisprs)
             loci.push_back(c);
 
-//        for (MultiFragment* f : multifragments)
-//            loci.push_back(f);
+        for (Prediction* p: predictions)
+            loci.push_back(p);
 
         std::sort(loci.begin(), loci.end(), [](Locus* a, Locus* b) { return a->get_start() < b->get_start(); });
 
@@ -142,8 +138,7 @@ void prospect_genome(vector<CasProfile*>& profiles, std::filesystem::path genome
         }
 
         for (Crispr* c : crisprs) delete c;
-        for (Translation* t : translations) delete t;
-//        for (MultiFragment* m : multifragments) delete m;
+        for (Prediction* p : predictions) delete p;
         for (System* s : systems) delete s;
     }
 
