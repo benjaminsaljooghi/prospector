@@ -5,14 +5,12 @@
 #include <filesystem>
 #include "fmt/core.h"
 #include "fmt/format.h"
-
-
 #include "util.h"
 #include "crispr.h"
 #include "cas_profiles.h"
 #include "debug.h"
 #include "locus.h"
-
+#include "config.h"
 
 namespace fs = std::filesystem;
 
@@ -207,8 +205,6 @@ struct MultiFragment : public Locus
     }
 };
 
-
-
 namespace Cas
 {
     static const ull upstream_size = 30000;
@@ -221,3 +217,17 @@ namespace Cas
     vector<Prediction> cas(vector<CasProfile*>& cas_profiles, string&);
 }
 
+struct FrequencyMap {
+    phmap::flat_hash_map<kmer, double> freq_map;
+    string file_path = Config::path_bin_pro / "frequency_map";
+
+    void load() {
+        phmap::BinaryInputArchive archive(file_path.c_str());
+        freq_map.load(archive);
+    }
+
+    void save() {
+        phmap::BinaryOutputArchive archive(file_path.c_str());
+        freq_map.dump(archive);
+    }
+};

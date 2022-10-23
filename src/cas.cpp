@@ -145,72 +145,21 @@ bool fragment_contains(const Fragment *a, const Fragment *b) {
     return a->clust_begin > b->clust_begin && a->clust_final < b->clust_final;
 }
 
-vector<Prediction> Cas::cas(vector<CasProfile *> &profiles, string &genome) {
-    auto start_cas = time();
-
-    // Load frequency map
-    phmap::flat_hash_map<kmer, double> freq_map;
-    string file_path = Config::path_bin_pro / "frequency_map";
-    phmap::BinaryInputArchive archive(file_path.c_str());
-    freq_map.load(archive);
-
-    phmap::flat_hash_map<size_t, Prediction> predicted_regions_map;
-    vector<Prediction> predictions;
-
-    double threshold = 50;
-    ui chunk_length = 1000;
-
-#pragma omp parallel for
-    for (size_t i = 0; i < genome.size() / chunk_length; i++) {
-        size_t start = i * chunk_length;
-        size_t end = start + chunk_length;
-
-        // Sample a chunk of the genome at a time
-        string genome_substr = genome.substr(start, chunk_length);
-        vector<Translation *> translations = Cas::get_sixframe(genome_substr, 0, genome_substr.length() - 1);
-
-        // For each profile, count the number of (weighted) kmers in the genome substr
-        for (auto &profile: profiles) {
-            double score = 0.0;
-            for (auto &t: translations)
-                for (auto &km: t->pure_kmerized_encoded)
-                    if (profile->hash_table.contains(km)) score += freq_map[km];
-
-#pragma omp critical
-            if (score > threshold &&
-                (!predicted_regions_map.contains(start) || predicted_regions_map[start].score < score))
-                predicted_regions_map[start] = {
-                        .score =  score,
-                        .start = start,
-                        .end = end,
-                        .id = CasProfileUtil::domain_table_fetch(profile->identifier)
-                };
-        }
-    }
-
-    if (predicted_regions_map.empty())
-        printf("Made no predictions...\n");
-
-    for (auto &pr: predicted_regions_map) {
-        auto p = pr.second;
-        predictions.push_back(p);
-
-        fmt::print("Made prediction:\n\tId: {}\n\tScore: {}\n\tStart: {}\n\tEnd: {}\n", p.id, p.score, p.start, p.end);
-    }
+vector<Prediction> collapse_predictions(vector<Prediction> predictions) {
+    vector<Prediction> collapsed_predictions;
 
     std::sort(predictions.begin(), predictions.end(),
               [](auto &a, auto &b) { return a.start < b.start; });
 
-    vector<Prediction> collapsed_predictions;
-    int skip = 1;
-
+    int skip;
     for (int i = 0; i < predictions.size() - 1; i += skip) {
         skip = 1;
         auto p1 = predictions[i];
         auto p2 = predictions[i + 1];
 
-        while (// Both predictions have the same Cas family (but potentially different profiles)
-                p1.id == p2.id) {
+        while (p1.id == p2.id) {
+            // Both predictions have the same Cas family (but potentially different profiles
+            // They can be 'collapsed' into a single prediction over a given domain
             p1 = predictions[i + skip];
             p2 = predictions[i + skip + 1];
             skip++;
@@ -224,19 +173,57 @@ vector<Prediction> Cas::cas(vector<CasProfile *> &profiles, string &genome) {
                                         });
     }
 
-    time(start_cas, "cas");
-
     return collapsed_predictions;
+}
+
+vector<Prediction> Cas::cas(vector<CasProfile *> &profiles, string &genome) {
+    // Load frequency map
+    FrequencyMap frequency_map;
+    frequency_map.load();
+
+    phmap::flat_hash_map<size_t, Prediction> predicted_regions_map;
+
+    size_t iterations = genome.size() / Config::cas_chunk_length;
+
+#pragma omp parallel for
+    for (size_t i = 0; i < iterations; i++) {
+        size_t start = i * Config::cas_chunk_length;
+        size_t end = start + Config::cas_chunk_length;
+
+        // Sample a chunk of the genome at a time
+        string genome_substr = genome.substr(start, Config::cas_chunk_length);
+        vector<Translation *> translations = Cas::get_sixframe(genome_substr, 0, genome_substr.length() - 1);
+
+        // For each profile, count the number of (weighted) kmers in the genome chunk
+        for (auto &profile: profiles) {
+            double score = 0.0;
+            for (auto &t: translations)
+                for (auto &km: t->pure_kmerized_encoded)
+                    if (profile->hash_table.contains(km)) score += frequency_map.freq_map[km];
+
+            bool should_save_score =
+                    !predicted_regions_map.contains(start) || predicted_regions_map[start].score < score;
+
+            if (score > Config::cas_threshold && should_save_score)
+                predicted_regions_map[start] = {
+                        .score =  score,
+                        .start = start,
+                        .end = end,
+                        .id = CasProfileUtil::domain_table_fetch(profile->identifier)
+                };
+        }
+    }
+
+    // Convert from map to a list
+    vector<Prediction> predictions;
+    for (auto &p: predicted_regions_map) predictions.push_back(p.second);
+
+    // Merge chunk predictions into larger chunks
+    return collapse_predictions(predictions);
 }
 
 vector<Fragment *> old_cas(vector<CasProfile *> &profiles, vector<Translation *> &translations, string &genome) {
     vector<Fragment *> fragments;
-
-    // Load frequency map
-    phmap::flat_hash_map<kmer, double> freq_map;
-    string file_path = Config::path_bin_pro / "frequency_map";
-    phmap::BinaryInputArchive archive(file_path.c_str());
-    freq_map.load(archive);
 
 #pragma omp parallel for
     for (auto profile: profiles) {

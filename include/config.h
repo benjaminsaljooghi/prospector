@@ -22,6 +22,8 @@ namespace Config
     extern int skip_serialisation;
     extern int cas_only;
     extern int dump_indices;
+    extern int cas_threshold;
+    extern int cas_chunk_length;
 
     void parse_program_args(int argc, char *argv[]);
 }

@@ -1,6 +1,7 @@
 #include "cas_profiles.h"
 #include "path.h"
 #include "config.h"
+#include "cas.h"
 
 static std::map<string, string> domain_map;
 static std::map<kmer, size_t> kmer_count_map;
@@ -300,13 +301,11 @@ void CasProfileUtil::serialize(std::filesystem::path path_bin_pro) {
     std::for_each(profiles.begin(), profiles.end(), serialize_profile);
 
     // Determine uniqueness of kmers
-    phmap::flat_hash_map<kmer, double> kmer_freq_map;
+    FrequencyMap frequency_map;
     for (auto const &[val, count]: kmer_count_map) {
-        kmer_freq_map[val] = ((double) total_kmer_count / (double) count) / (double) total_kmer_count;
+        frequency_map.freq_map[val] = ((double) total_kmer_count / (double) count) / (double) total_kmer_count;
     }
 
     // Dump uniqueness map to file
-    std::filesystem::path freq_map_filename = path_bin_pro / "frequency_map";
-    phmap::BinaryOutputArchive archive(freq_map_filename.string().c_str());
-    kmer_freq_map.dump(archive);
+    frequency_map.save();
 }
