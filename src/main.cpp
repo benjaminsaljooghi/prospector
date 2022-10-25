@@ -48,7 +48,7 @@ vector<System *> gen_systems(vector<Locus *> loci) {
     auto *current = new System;
     current->loci.push_back(loci[0]);
     for (size_t i = 1; i < loci.size(); i++) {
-        if (loci[i]->get_start() < current->get_final() + 30000) {
+        if (loci[i]->get_start() < current->get_final() + Cas::upstream_size) {
             current->loci.push_back(loci[i]);
         } else {
             systems.push_back(current);
@@ -91,8 +91,8 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
         fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
         crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
 
-        ull min_start = ULONG_LONG_MAX;
-        ull max_end = 0;
+        ull min_start = crisprs[0]->genome_start;
+        ull max_end = crisprs[0]->genome_final;
         for (auto &c: crisprs) {
             min_start = min(min_start, c->genome_start);
             max_end = max(max_end, c->genome_final);
@@ -103,8 +103,10 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
                 max((ull) genome_sequence.size(),
                     (max_end - min_start) + Cas::upstream_size)) : genome_sequence;
 
+        ull offset = Config::crispr_proximal_search ? min(min_start - Cas::upstream_size, (ull) 0) : 0;
+
         fmt::print("Detecting Cas genes for {}...\n", genome_id);
-        predictions = Cas::predict_cas(profiles, const_cast<string &>(cas_region), min_start - Cas::upstream_size);
+        predictions = Cas::predict_cas(profiles, const_cast<string &>(cas_region), offset);
 
         fmt::print("Collating results for {}...\n", genome_id);
         std::vector<Locus *> loci;

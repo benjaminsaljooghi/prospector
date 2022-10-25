@@ -14,11 +14,24 @@
 
 namespace fs = std::filesystem;
 
+struct Translation {
+    Crispr *reference_crispr;
+    ull genome_start;
+    ull genome_final;
+    bool pos;
+    string raw;
+    string pure;
+    vector<string> pure_kmerized;
+    vector<kmer> pure_kmerized_encoded;
+    vector<ull> pure_mapping;
+};
+
 struct Prediction : public Locus {
     double score;
     size_t start;
     size_t end;
     string id;
+    Translation *ref_translation;
 
     ull get_start() {
         return start;
@@ -48,18 +61,6 @@ struct Prediction : public Locus {
     bool is_gene() {
         return !is_domain();
     }
-};
-
-struct Translation {
-    Crispr *reference_crispr;
-    ull genome_start;
-    ull genome_final;
-    bool pos;
-    string raw;
-    string pure;
-    vector<string> pure_kmerized;
-    vector<kmer> pure_kmerized_encoded;
-    vector<ull> pure_mapping;
 };
 
 struct Fragment {
@@ -218,7 +219,7 @@ struct MultiFragment : public Locus {
 };
 
 namespace Cas {
-    static const ull upstream_size = 30000;
+    static const ull upstream_size = 68000;
     static const ull cluster_metric_min = 5; // lower = more sensitive
     static const ull max_inter_cluster_dist = 15; // higher = more sensitive
 

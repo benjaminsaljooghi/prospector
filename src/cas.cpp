@@ -33,6 +33,166 @@ ull generic_expand(const string &genome, unordered_set<string> &sinks, ull begin
 
 ull steps = 200;
 
+void prediction_expansion_pos(Prediction *prediction, const string &genome) {
+    auto initial_start = prediction->start;
+
+    prediction->start = generic_expand(genome, start_codons_pos, prediction->start, -3, steps);
+    prediction->end = generic_expand(genome, stop_codons_pos, prediction->end - 3, 3, steps) + 3;
+
+    if (prediction->start == initial_start) {
+        prediction->start = generic_expand(genome, alternate_starts_pos, prediction->start, -3,
+                                                         steps);
+    }
+}
+
+void prediction_expansion_neg(Prediction *prediction, const string &genome) {
+    auto initial_end = prediction->end;
+
+    prediction->start = generic_expand(genome, stop_codons_neg, prediction->start, -3, steps);
+    prediction->end =
+            generic_expand(genome, start_codons_neg, prediction->end - 3, 3, steps) + 3;
+
+    if (prediction->end == initial_end) {
+        prediction->end =
+                generic_expand(genome, alternate_starts_neg, prediction->end - 3, 3, steps) + 3;
+    }
+}
+
+vector<Prediction *> collapse_predictions(vector<Prediction *> predictions, string& genome) {
+    vector<Prediction *> collapsed_predictions;
+    if (predictions.empty()) return collapsed_predictions;
+
+    // Sort predictions by start bp, ascending
+    std::sort(predictions.begin(), predictions.end(), [](auto &a, auto &b) { return a->start < b->start; });
+
+    int skip;
+    for (int i = 0; i < predictions.size() - 1; i += skip) {
+        skip = 1;
+        auto p1 = predictions[i];
+        auto p2 = predictions[i + 1];
+        double total_score = p1->score;
+
+        while (p1->id == p2->id && (i + skip + 1) < predictions.size()) {
+            // Both predictions have the same Cas family (but potentially different profiles)
+            // They can be 'collapsed' into a single prediction over a given domain
+            p1 = predictions[i + skip];
+            p2 = predictions[i + skip + 1];
+
+            total_score += p1->score;
+            skip++;
+        }
+
+        auto *p = new Prediction;
+        p->score = total_score / skip;
+        p->start = predictions[i]->start;
+        p->end = predictions[i + skip - 1]->end;
+        p->id = predictions[i]->id;
+        p->ref_translation = predictions[i]->ref_translation;
+
+        collapsed_predictions.push_back(p);
+    }
+
+    return collapsed_predictions;
+}
+
+vector<Prediction *> resolve_overlaps(vector<Prediction *> predictions) {
+    vector<Prediction *> overlaps_removed;
+
+    for (int i = 0; i < predictions.size() - 1; i++) {
+        vector<Prediction *> preds_in_range;
+
+        auto this_p = predictions[i];
+        auto next_p = predictions[i + 1];
+
+        while (this_p->end > next_p->start) {
+            preds_in_range.push_back(this_p);
+
+            i++;
+
+            if (i > predictions.size() - 2) break;
+
+            this_p = predictions[i];
+            next_p = predictions[i + 1];
+        }
+
+        Prediction* max_p = preds_in_range.empty() ? this_p : preds_in_range[0];
+        for (auto& p : preds_in_range) {
+            max_p = max_p->score > p->score ? max_p : p;
+        }
+
+        overlaps_removed.push_back(max_p);
+    }
+
+    return overlaps_removed;
+}
+
+vector<Prediction *> Cas::predict_cas(vector<CasProfile *> &profiles, string &genome, ull offset) {
+    // Load frequency map
+    FrequencyMap frequency_map;
+    frequency_map.load();
+
+    phmap::flat_hash_map<size_t, Prediction *> predicted_regions_map;
+    size_t iterations = genome.size() / Config::cas_chunk_length;
+
+#pragma omp parallel for
+    for (size_t i = 0; i < iterations; i++) {
+        size_t start = i * Config::cas_chunk_length;
+        size_t end = start + Config::cas_chunk_length;
+
+        // Sample a chunk of the genome at a time
+        string genome_substr = genome.substr(start, Config::cas_chunk_length);
+        vector<Translation *> translations = Cas::get_sixframe(genome_substr, 0, genome_substr.length() - 1);
+
+        // For each profile, count the number of (weighted) kmers in the genome chunk
+        for (auto &profile: profiles) {
+            for (auto &t: translations) {
+                double score = 0.0;
+
+                for (auto &km: t->pure_kmerized_encoded)
+                    if (profile->hash_table.contains(km))
+                        score += frequency_map.freq_map[km];
+
+#pragma omp critical
+                {
+                    bool should_save_score =
+                            !predicted_regions_map.contains(start) || predicted_regions_map[start]->score < score;
+
+                    // Store predictions by the region they started in
+                    if (score > Config::cas_threshold && should_save_score) {
+                        auto *p = new Prediction;
+                        p->score = score;
+                        p->start = start + offset;
+                        p->end = end + offset;
+                        p->id = CasProfileUtil::domain_table_fetch(profile->identifier);
+                        p->ref_translation = t;
+
+                        // Expand cas gene prediction to start and stop codons
+                        auto expansion_func = p->ref_translation->pos ? prediction_expansion_pos :
+                                              prediction_expansion_neg;
+                        expansion_func(p, genome);
+
+                        predicted_regions_map[start] = p;
+                    }
+                };
+            }
+        }
+    }
+
+    // Convert from map to a list
+    vector<Prediction *> predictions;
+    for (auto &p: predicted_regions_map) predictions.push_back(p.second);
+
+    // Merge chunk predictions into larger chunks
+    auto collapsed_pred = collapse_predictions(predictions, genome);
+
+    // Cleanup old predictions
+    for (Prediction *p: predictions) delete p;
+
+    return collapsed_pred;
+}
+
+/** OLD **/
+
 void fragment_expansion_pos(Fragment *fragment, const string &genome) {
     fragment->expanded_genome_begin = generic_expand(genome, start_codons_pos, fragment->genome_begin, -3, steps);
     fragment->expanded_genome_final = generic_expand(genome, stop_codons_pos, fragment->genome_final - 3, 3, steps) + 3;
@@ -52,7 +212,6 @@ void fragment_expansion_neg(Fragment *fragment, const string &genome) {
         fragment->expanded_genome_final =
                 generic_expand(genome, alternate_starts_neg, fragment->genome_final - 3, 3, steps) + 3;
     }
-
 }
 
 vector<vector<ull>> cluster_index(const vector<ull> &indices) {
@@ -143,99 +302,6 @@ bool fragment_equivalent(const Fragment *a, const Fragment *b) {
 
 bool fragment_contains(const Fragment *a, const Fragment *b) {
     return a->clust_begin > b->clust_begin && a->clust_final < b->clust_final;
-}
-
-vector<Prediction *> collapse_predictions(vector<Prediction *> predictions) {
-    vector<Prediction *> collapsed_predictions;
-    if (predictions.empty()) return collapsed_predictions;
-
-    // Sort predictions by start bp, ascending
-    std::sort(predictions.begin(), predictions.end(), [](auto &a, auto &b) { return a->start < b->start; });
-
-    int skip;
-    for (int i = 0; i < predictions.size() - 1; i += skip) {
-        skip = 1;
-        auto p1 = predictions[i];
-        auto p2 = predictions[i + 1];
-        double total_score = p1->score;
-
-        while (p1->id == p2->id && (i + skip + 1) < predictions.size()) {
-            // Both predictions have the same Cas family (but potentially different profiles)
-            // They can be 'collapsed' into a single prediction over a given domain
-            p1 = predictions[i + skip];
-            p2 = predictions[i + skip + 1];
-
-            total_score += p1->score;
-            skip++;
-        }
-
-        auto *p = new Prediction;
-        p->score = total_score / skip;
-        p->start = predictions[i]->start;
-        p->end = predictions[i + skip - 1]->end;
-        p->id = predictions[i]->id;
-
-        collapsed_predictions.push_back(p);
-    }
-
-    return collapsed_predictions;
-}
-
-vector<Prediction *> Cas::predict_cas(vector<CasProfile *> &profiles, string &genome, ull offset) {
-    // Load frequency map
-    FrequencyMap frequency_map;
-    frequency_map.load();
-
-    phmap::flat_hash_map<size_t, Prediction *> predicted_regions_map;
-    size_t iterations = genome.size() / Config::cas_chunk_length;
-
-#pragma omp parallel for
-    for (size_t i = 0; i < iterations; i++) {
-        size_t start = i * Config::cas_chunk_length;
-        size_t end = start + Config::cas_chunk_length;
-
-        // Sample a chunk of the genome at a time
-        string genome_substr = genome.substr(start, Config::cas_chunk_length);
-        vector<Translation *> translations = Cas::get_sixframe(genome_substr, 0, genome_substr.length() - 1);
-
-        // For each profile, count the number of (weighted) kmers in the genome chunk
-        for (auto &profile: profiles) {
-            double score = 0.0;
-
-            for (auto &t: translations)
-                for (auto &km: t->pure_kmerized_encoded)
-                    if (profile->hash_table.contains(km)) score += frequency_map.freq_map[km];
-
-#pragma omp critical
-            {
-                bool should_save_score =
-                        !predicted_regions_map.contains(start) || predicted_regions_map[start]->score < score;
-
-                // Store predictions by the region they started in
-                if (score > Config::cas_threshold && should_save_score) {
-                    auto *p = new Prediction;
-                    p->score = score;
-                    p->start = start + offset;
-                    p->end = end + offset;
-                    p->id = CasProfileUtil::domain_table_fetch(profile->identifier);
-
-                    predicted_regions_map[start] = p;
-                }
-            };
-        }
-    }
-
-    // Convert from map to a list
-    vector<Prediction *> predictions;
-    for (auto &p: predicted_regions_map) predictions.push_back(p.second);
-
-    // Merge chunk predictions into larger chunks
-    auto collapsed_pred = collapse_predictions(predictions);
-
-    // Cleanup old predictions
-    for (Prediction* p : predictions) delete p;
-
-    return collapsed_pred;
 }
 
 vector<Fragment *> old_cas(vector<CasProfile *> &profiles, vector<Translation *> &translations, string &genome) {

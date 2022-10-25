@@ -32,14 +32,6 @@ string CasProfileUtil::domain_table_fetch(string name) {
     return it->second;
 }
 
-// bool CasProfileUtil::domain_contained(string query_domain)
-// {
-// 	for (auto const& [identifer, domain] : domain_map)
-// 		if (domain.find(query_domain) != string::npos)
-// 			return true;
-// 	return false;
-// }
-
 std::map<string, string> CasProfileUtil::get_domain_map() {
     return domain_map;
 }
@@ -50,28 +42,6 @@ void CasProfileUtil::print_profiles(vector<CasProfile *> profiles) {
         string domain = CasProfileUtil::domain_table_fetch(p->identifier);
         fmt::print("{}\t{}\n", id, domain);
     }
-}
-
-vector<CasProfile *> CasProfileUtil::deserialize_profiles(std::filesystem::path directory) {
-    vector<CasProfile *> profiles;
-    for (const auto &entry: std::filesystem::directory_iterator(directory)) {
-        string file_path = entry.path().string();
-        phmap::BinaryInputArchive archive(file_path.c_str());
-        auto *profile = new CasProfile;
-        profile->hash_table.load(archive);
-        profile->identifier = entry.path().stem().string();
-
-        if (!CasProfileUtil::domain_table_contains(profile->identifier)) {
-            fmt::print("deserialization of {} skipped due to domain table containment failure\n", profile->identifier);
-            continue;
-        }
-
-        profiles.push_back(profile);
-    }
-    CasProfileUtil::print_profiles(profiles);
-
-    fmt::print("loaded {} profiles\n", profiles.size());
-    return profiles;
 }
 
 CasProfile *profile_factory(string id, vector<string> sequences, ull k) {
@@ -124,142 +94,6 @@ CasProfile *profile_factory(string id, vector<string> sequences, ull k) {
     return profile;
 }
 
-vector<CasProfile *> generate_pfams(std::filesystem::path dir) {
-    // ifstream input(pfam_full);
-    // if (!input.good())
-    // throw runtime_error("input not good!");
-
-    auto is_seq = [](string &line) {
-        return !(
-                line.starts_with(" ") ||
-                line.starts_with("#=GF") ||
-                line.starts_with("#=GS") ||
-                line.starts_with("#=GC") ||
-                line.starts_with("#=GR") ||
-                line.starts_with("# STOCKHOLM 1.0") ||
-                line.starts_with("//") ||
-                line == "");
-    };
-
-    // vector<string> seq_buffer;
-    // string ac;
-    // ui line_count = 0;
-    // bool engage = false;
-    // string line;
-    // while (getline(input, line))
-    // {
-    // 	if (++line_count % 10000 == 0) fmt::print("{}\n", line_count);
-
-    // 	if (line.starts_with("#=GF AC"))
-    // 	{
-    // 		ac = line;
-    // 		ac.erase(0, 10);
-    // 		ac.erase(ac.find_first_of('.'));
-
-    // 		cout << ac << endl;
-    // 		if (domain_map.contains(ac))
-    // 		{
-    // 			engage = true;
-    // 		}
-
-    // 		continue;
-    // 	}
-
-    // 	if (!engage)
-    // 	{
-    // 		continue;
-    // 	}
-
-    // 	if (line.starts_with("//"))
-    // 	{
-    // 		ofstream output(dir / ac);
-
-    // 		for (string& line : seq_buffer)
-    // 		{
-    // 			string sequence = line.substr(line.find_last_of(' ') + 1);
-
-    // 			output << sequence << endl;
-    // 		}
-    // 		output.close();
-
-    // 		seq_buffer.clear();
-    // 		engage = false;
-    // 		continue;
-    // 	}
-
-    // 	if (is_seq(line)) continue;
-    // 	seq_buffer.push_back(line);
-    // }
-
-    // input.close();
-
-    vector<CasProfile *> profiles;
-
-    for (const auto &entry: std::filesystem::directory_iterator(dir)) {
-        ifstream raw(entry.path().string());
-
-        if (!raw.good())
-            throw runtime_error("input not good!");
-
-        string line;
-        string id = entry.path().stem().string();
-        vector<string> sequences;
-
-        while (getline(raw, line)) {
-            if (is_seq(line)) {
-                string sequence = line.substr(line.find_last_of(' ') + 1);
-                sequences.push_back(sequence);
-            }
-        }
-        profiles.push_back(profile_factory(id, sequences, CasProfileUtil::k));
-        fmt::print("{} pfam profiles built\n", profiles.size());
-    }
-
-
-    return profiles;
-}
-
-vector<CasProfile *> generate_tigrfams(std::filesystem::path tigr_dir) {
-    auto stockholm_to_profile = [](std::filesystem::path stockholm, string identifier) {
-        ifstream file(stockholm);
-        if (!file.good())
-            throw runtime_error("input not good!");
-
-        std::unordered_set<char> skip{'#', '/'};
-
-        vector<string> sequences;
-        string line;
-        while (getline(file, line)) {
-            if (skip.contains(line[0]))
-                continue;
-
-            string sequence = line.substr(line.find_last_of(' ') + 1);
-            sequences.push_back(sequence);
-        }
-
-        return profile_factory(identifier, sequences, CasProfileUtil::k);
-    };
-
-    vector<CasProfile *> profiles;
-
-    for (const auto &entry: std::filesystem::directory_iterator(tigr_dir)) {
-
-        string identifier = entry.path().filename().string();
-
-        if (identifier.ends_with(".SEED"))
-            identifier = identifier.substr(0, 9);
-
-        if (!domain_map.contains(identifier))
-            continue;
-
-        CasProfile *profile = stockholm_to_profile(entry.path(), identifier);
-        profiles.push_back(profile);
-        fmt::print("built: {}\n", profile->identifier);
-        fmt::print("{} tigrfam profiles built\n", profiles.size());
-    }
-    return profiles;
-}
-
 // This needs to be versatile in that it can handle fasta seqs that are both single-line and multi-line
 vector<CasProfile *> generate_from_fasta(std::filesystem::path fasta_dir) {
     vector<CasProfile *> profiles;
@@ -286,10 +120,6 @@ vector<CasProfile *> generate_from_fasta(std::filesystem::path fasta_dir) {
     return profiles;
 }
 
-vector<CasProfile *> generate_cogs(std::filesystem::path cog_dir) {
-    return generate_from_fasta(cog_dir);
-}
-
 void CasProfileUtil::serialize(std::filesystem::path path_bin_pro) {
     auto serialize_profile = [&](CasProfile *profile) {
         std::filesystem::path file_name = path_bin_pro / profile->identifier;
@@ -303,9 +133,32 @@ void CasProfileUtil::serialize(std::filesystem::path path_bin_pro) {
     // Determine uniqueness of kmers
     FrequencyMap frequency_map;
     for (auto const &[val, count]: kmer_count_map) {
-        frequency_map.freq_map[val] = ((double) total_kmer_count / (double) count) / (double) total_kmer_count;
+        double weight = ((double) total_kmer_count / (double) count) / (double) total_kmer_count;
+        frequency_map.freq_map[val] = weight;
     }
 
     // Dump uniqueness map to file
     frequency_map.save();
+}
+
+vector<CasProfile *> CasProfileUtil::deserialize_profiles(std::filesystem::path directory) {
+    vector<CasProfile *> profiles;
+    for (const auto &entry: std::filesystem::directory_iterator(directory)) {
+        string file_path = entry.path().string();
+        phmap::BinaryInputArchive archive(file_path.c_str());
+        auto *profile = new CasProfile;
+        profile->hash_table.load(archive);
+        profile->identifier = entry.path().stem().string();
+
+        if (!CasProfileUtil::domain_table_contains(profile->identifier)) {
+            fmt::print("deserialization of {} skipped due to domain table containment failure\n", profile->identifier);
+            continue;
+        }
+
+        profiles.push_back(profile);
+    }
+    CasProfileUtil::print_profiles(profiles);
+
+    fmt::print("loaded {} profiles\n", profiles.size());
+    return profiles;
 }
