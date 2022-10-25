@@ -340,7 +340,7 @@ vector<Translation *> Cas::get_triframe(const string &genome, ull genome_start, 
 
     vector<Translation *> translations;
     for (ull frame = 0; frame < 3; frame++) {
-        Translation *translation = new Translation;
+        auto *translation = new Translation;
         translation->pos = pos;
         translation->genome_start = pos ? genome_start + frame : genome_start;
         translation->genome_final = pos ? genome_final : genome_final - frame;

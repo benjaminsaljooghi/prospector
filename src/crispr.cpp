@@ -306,5 +306,5 @@ string Crispr::to_string_debug()
 
 string Crispr::to_string_summary()
 {
-	return fmt::format("{}\t{}\t{}\t{}\t{}", genome_start, genome_final, "?", "CRISPR", overall_heuristic);
+	return fmt::format("{}\t{}\t{}\t{}", genome_start, genome_final, "CRISPR", overall_heuristic);
 }

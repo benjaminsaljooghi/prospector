@@ -20,7 +20,6 @@ namespace Config
 
     extern int crispr_proximal_search;
     extern int skip_serialisation;
-    extern int cas_only;
     extern int dump_indices;
     extern int cas_threshold;
     extern int cas_chunk_length;

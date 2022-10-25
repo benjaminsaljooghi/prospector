@@ -25,7 +25,6 @@ namespace Config {
 
     int crispr_proximal_search = 0;
     int skip_serialisation = 0;
-    int cas_only = 0;
     int dump_indices = 0;
     int cas_threshold = 50; // Default to 50
     int cas_chunk_length = 1000; // Default to 1000
@@ -40,7 +39,6 @@ namespace Config {
             {"casChunkLength", required_argument, nullptr, CAS_CHUNK_LENGTH_OPTARG},
             {"skipSer",        no_argument,       &skip_serialisation,     1},
             {"proxSearch",     no_argument,       &crispr_proximal_search, 1},
-            {"casOnly",        no_argument,       &cas_only,               1},
             {"dumpIndices",    no_argument,       &dump_indices,           1},
             {0, 0,                                0,                       0},
     };
@@ -56,7 +54,6 @@ void print_help_message() {
             "\t[OPTIONAL] --out=/path/to/output_folder/     : Path to folder where all Prospector output will be stored, defaults to ./prospector_output/\n"
             "\t[OPTIONAL] --skipSer                         : skip serialisation of profiles\n"
             "\t[OPTIONAL] --proxSearch                      : Use the CRISPR Proximal Search method for finding Cas genes\n"
-            "\t[OPTIONAL] --casOnly                         : Only perform Cas detection, skipping CRISPR detection\n"
             "\t[OPTIONAL] --dumpIndices                     : Dump each Cas detection index to file, in the output folder prospector_output/index_dump/\n"
             "\t[OPTIONAL] --casThreshold=50                 : Threshold score for a given Cas gene prediction to be considered\n"
             "\t[OPTIONAL] --casChunkLength=1000             : Length (in bp) of genome chunk to be analysed for Cas gene prediction at a time\n");
