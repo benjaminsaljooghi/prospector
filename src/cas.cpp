@@ -176,6 +176,8 @@ vector<Prediction *> Cas::predict_cas(vector<CasProfile *> &profiles, string &ge
                 };
             }
         }
+
+        for (Translation* t: translations) delete t;
     }
 
     // Convert from map to a list

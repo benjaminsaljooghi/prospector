@@ -91,12 +91,18 @@ void prospect_genome(vector<CasProfile *> &profiles, std::filesystem::path genom
         fmt::print("Acquiring CRISPRs & translations for {}...\n", genome_id);
         crisprs = Array::get_crisprs(const_cast<string &>(genome_sequence));
 
-        ull min_start = crisprs[0]->genome_start;
-        ull max_end = crisprs[0]->genome_final;
-        for (auto &c: crisprs) {
-            min_start = min(min_start, c->genome_start);
-            max_end = max(max_end, c->genome_final);
+        ull min_start = 0;
+        ull max_end = genome_sequence.size();
+
+        if (!crisprs.empty()) {
+            min_start = crisprs[0]->genome_start;
+            max_end = crisprs[0]->genome_final;
+            for (auto &c: crisprs) {
+                min_start = min(min_start, c->genome_start);
+                max_end = max(max_end, c->genome_final);
+            }
         }
+
 
         string cas_region = Config::crispr_proximal_search ? genome_sequence.substr(
                 min((ull) 0, min_start - Cas::upstream_size),

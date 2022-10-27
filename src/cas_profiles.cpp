@@ -157,7 +157,6 @@ vector<CasProfile *> CasProfileUtil::deserialize_profiles(std::filesystem::path 
 
         profiles.push_back(profile);
     }
-    CasProfileUtil::print_profiles(profiles);
 
     fmt::print("loaded {} profiles\n", profiles.size());
     return profiles;
